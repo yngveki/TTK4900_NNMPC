@@ -1,0 +1,38 @@
+# Config file for values in "src/MPC_basis.py"
+#
+SYSTEM_PARAMETERS: 
+# Inputs:
+# u[0] = choke opening [%]
+# u[1] = gas lift rate [m^3/hr]
+  n_MV: 2
+
+# Outputs:
+# y[0] = oil rate [m^3/hr]
+# y[1] = gas rate [m^3/hr]
+  n_CV: 2
+
+TUNING_PARAMETERS: # Dummy values
+  Hu: 600
+  Hp: 300
+  Hw: 0
+
+  P_bar: [1, 1]
+  Q_bar: [0.0000001, 100]
+  rho_h: [1, 1] # Says that both 
+  rho_l: [1, 1]
+  z_bar_lb: [-0.55, -166.7, 0] # = [deltaU_lb, epsilon_h, epsilon_l] # Epsilon bounds come from (4.1b) in Kufoalor
+  z_bar_ub: [0.55, 166.7, 1000]
+  y_over_bar: [100000, 1000]
+  y_under_bar: [0, 0]
+  u_over_bar: [100, 10000]
+  u_under_bar: [0, 0]
+
+SET_POINTS: # Dummy values
+  ref: [11000, 305] 
+    #Gas_rate_ref = kan være hva som helst, men la oss si 5k --> (5000/24)*1000 = ca 200 000
+    #Oil_rate_ref = 5000/24 = 208.3 m3/h = ca. 210 
+
+
+RUNNING_PARAMETERS:
+  delta_t: 10
+  final_time: 3600 #1hr
