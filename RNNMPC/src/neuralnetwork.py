@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Implements a class that holds the neural network
 
 # Ref: https://github.com/bgrimstad/TTK28-Courseware/blob/master/model/flow_model.ipynb
@@ -29,13 +31,6 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(self.hlszs, self.n_CV)
         )
-        # self.layer_stack = nn.Sequential(
-        #     nn.Linear((self.n_MV * self.mu) + (self.n_CV * self.my), self.hlszs[0]),
-        #     nn.ReLU(),
-        #     nn.Linear(self.hlszs[0], self.hlszs[1]),
-        #     nn.ReLU(),
-        #     nn.Linear(self.hlszs[1], self.n_CV)
-        # )
 
     def forward(self, x):
         predictions = self.layer_stack(x)
@@ -43,6 +38,17 @@ class NeuralNetwork(nn.Module):
 
     def log_MSE(self, mse):
         self.mse = mse
+
+    def save(self, path):
+        """
+        Uncritically saves model to the given path. Whether a model already exists
+        at given path has to be done at higher level
+        :param path: the given path at which to save self.state_dict
+        """
+        torch.save(self.state_dict(), path)
+
+    def load(self):
+
 
 class EarlyStopping():
 

@@ -42,7 +42,10 @@ class GroundTruth():
 
         return len(self.u1)
 
-def main(TEST=False):
+
+if __name__ == '__main__':
+    TEST = True
+    # TODO: iterate over hyperparameter candidates smarter
     candidates = [10]
     for itr in candidates:
         print(f'Iteration nr. {itr}')
@@ -55,13 +58,9 @@ def main(TEST=False):
             if not hyperparameters:
                 Exception("Failed loading config file\n")
 
-        # datalen = 'long' # Used 'long' also before, but that gave poor results
         csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_36000.csv"
         csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_1_7200.csv"
-        
-        # model, train_losses, val_MSEs, test_losses, time, final_epoch = train_NN(hyperparameters, csv_path_train, csv_path_val)
-    
-        
+                
         # TRAIN = True
         if not TEST:
             model, train_losses, val_MSEs, time, final_epoch = train_NN(hyperparameters, csv_path_train, csv_path_val)
@@ -179,11 +178,6 @@ def main(TEST=False):
             
             fig_path_suffix = "figs/" + hyperparameter_nr + "/" + '_validation_14400_' + str(itr_nr) + '.png'
             fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-
-
-if __name__ == '__main__':
-    # main()
-    main(TEST=True)
 
     # csv_path = Path(__file__).parent / "generate_data/data/old/u1static_50_u2_7500_stairs_0_3600.csv"    
     # gt = GroundTruth(csv_path)
