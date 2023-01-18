@@ -97,6 +97,8 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     oil_rate = float(model.get('y[2]'))
     u1 = float(model.get('u[1]'))
     u2 = float(model.get('u[2]'))
+    choke_opening = model.get('choke.opening')
+    gas_lift_current= float(model.get('y[4]'))
     #oil_rate_per_hr = np.divide(oil_rate, 24)                   #Convert from m3/day to m3/hr
     #gas_rate_km3_per_hr = np.divide(gas_rate,24)                #Convert from km3/day to km3/hr
     #gas_rate_per_hr = np.multiply(gas_rate_km3_per_hr, 1000)    #Convert from km3/hr to m3/hr
@@ -107,4 +109,4 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
         return [gas_rate, oil_rate, u1, u2], time_series.append(time)
     else:
         #return [oil_rate_per_hr, gas_rate_per_hr, u1, u2]
-        return [gas_rate, oil_rate, u1, u2]
+        return [gas_rate, oil_rate, u1, u2, choke_opening, gas_lift_current]
