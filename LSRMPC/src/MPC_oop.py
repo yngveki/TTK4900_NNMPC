@@ -15,6 +15,7 @@ class MPC:
         """
         Takes in given paths to setup configuration parameters and constant matrices
         """
+
         # -- Setting config -- #
         configs = self._read_yaml(config_path)
 
@@ -68,52 +69,30 @@ class MPC:
         with open(file_path, "r") as f:
             return safe_load(f)
 
-# ----- FUNCTIONS ----- #
-
-def read_yaml(file_path):
-    # Reads the config-file of YAML-format at designated file_path and returns 
-    # a dictionary containing the configs
-    #
-    # Input:
-    # - file_path: file path relative to current script
-    # 
-    # Returns: Dictionary containing all config-values
-
-    with open(file_path, "r") as f:
-        return safe_load(f)
-
-def build_full_S(Sijs, n_CV, n_MV, Hu):
-    # Builds the S-matrix; the linear step response-model
-    #
-    # Inputs:
-    # - Sijs: each SISO vector, ex.: Sijs = [S11, S12, S21, S22] for a 2x2 system
-    #         NB! This order is important for the matrix comprehension in building
-    #         Si beneath! Shape of Sij: P x 1. Here assumed that P == N
-    # - 
-    #
-    # Returns: S-matrix, shape: n_CV * Hp x n_MV * (N - Hu)
-    
-    N = Sijs[0].shape[0] # Length of SISO-model
-    S = np.zeros((n_CV * N, n_MV * (N - Hu)))
-    Sis = np.zeros((n_CV * N, n_MV))
-
-    for i in range(N):
-
-        Si = np.zeros((n_CV * n_MV, 1)) # Will reshape to n_CV * n_MV after
-        for index, Sij in enumerate(Sijs):
-            Si[index] = Sij[i]
+    def S_xx_append(P, S_xx):
+        S_xx_steady = S_xx[(len(S_xx)-1)]
         
-        Sis[i * n_CV:(i + 1) * n_CV, :] = np.reshape(Si, (n_CV, n_MV))
+        for i in range(P-len(S_xx)):
+            S_xx = np.append(S_xx, S_xx_steady)
 
-    pad_sz = n_CV * (N - Hu)
-    Sis = np.pad(Sis, ((pad_sz, 0), (0,0)), mode='constant', constant_values=0)
+        return S_xx
 
-    for i in range(S.shape[1] // n_MV):
-        temp = Sis[pad_sz - (i * n_CV):pad_sz + (N - i) * n_CV, :]
-        S[:, i * n_MV:(i + 1) * n_MV] = temp
+    def read_S(rel_S_paths):
+        # Reads data file containing the S-matrix
+        #
+        # Input:
+        # - file_path: file path relative to current script
+        # 
+        # Returns: S matrix
 
-    return S
+        Sijs = []
+        for key in rel_S_paths:
+            # Sijs.append(S_xx_append(N, np.load(Path(__file__).parent / rel_path)))
+            Sijs.append(np.load(Path(__file__).parent / rel_S_paths[key]))
 
+        return np.array(Sijs)
+
+# ----- FUNCTIONS ----- #
 
 def S_xx_append(P, S_xx):
     S_xx_steady = S_xx[(len(S_xx)-1)]
