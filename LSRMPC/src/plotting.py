@@ -2,19 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter,filtfilt
 
-t = np.load('t.npy')
-oil_rate_per_hr_vec = np.load('oil_rate_per_hr_vec.npy')
-oil_rate_ref_vec = np.load('oil_rate_ref_vec.npy')
+import pathlib
+print(pathlib.Path().resolve())
 
-gas_rate_per_hr_vec = np.load('gas_rate_per_hr_vec.npy')
-gas_rate_ref_vec = np.load('gas_rate_ref_vec.npy')
+t = np.load('LSRMPC/t.npy')
+oil_rate_per_hr_vec = np.load('LSRMPC/oil_rate_per_hr_vec.npy')
+oil_rate_ref_vec = np.load('LSRMPC/oil_rate_ref_vec.npy')
 
-choke_input = np.load('choke_input.npy')
-gas_lift_input = np.load('gas_lift_input.npy')
-choke_actual = np.load('choke_actual.npy')
+gas_rate_per_hr_vec = np.load('LSRMPC/gas_rate_per_hr_vec.npy')
+gas_rate_ref_vec = np.load('LSRMPC/gas_rate_ref_vec.npy')
 
-bias_gas = np.load('bias_gas.npy')
-bias_oil = np.load('bias_oil.npy')
+choke_input = np.load('LSRMPC/choke_input.npy')
+gas_lift_input = np.load('LSRMPC/gas_lift_input.npy')
+choke_actual = np.load('LSRMPC/choke_actual.npy')
+
+bias_gas = np.load('LSRMPC/bias_gas.npy')
+bias_oil = np.load('LSRMPC/bias_oil.npy')
 
 
 t = t[200:]-2000
