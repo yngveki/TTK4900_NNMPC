@@ -161,16 +161,15 @@ class MPC:
         """
         Updates all matrices that are time-varying
         """
-        # TODO: Except for plotting, V, Lambda_d and T are only used locally here to build gd and bd. Don't need "self." if refactored wisely (wrt plotting)
-        self.V = matrix_generation.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
-        self.Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.V
-        self.T = matrix_generation.get_T(self.y_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
-        zeta = self.T - self.Lambda_d
+        V = matrix_generation.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
+        Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + V
+        T = matrix_generation.get_T(self.y_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
+        zeta = T - Lambda_d
 
         self.gd = np.vstack(((zeta.T @ self.gamma.T).T, 
                               self.rho_h, 
                               self.rho_l)).ravel()
-        self.bd = np.vstack((-self.G @ self.Lambda_d + self.g, 
+        self.bd = np.vstack((-self.G @ Lambda_d + self.g, 
                              -self.FKinvGamma @ self.U_tilde_prev + self.f))
 
     def update_OCP(self):
