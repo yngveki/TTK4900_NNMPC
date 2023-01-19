@@ -21,6 +21,8 @@ TUNING_PARAMETERS: # Dummy values
   u_under_bar: [0, 0]
   du_over_bar: [0.55, 166.7]
   du_under_bar: [-0.55, -166.7]
+  e_over_bar: 1000000
+  e_under_bar: 0
 
 
 SET_POINTS: # Dummy values

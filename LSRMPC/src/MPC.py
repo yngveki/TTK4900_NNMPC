@@ -104,8 +104,8 @@ rho_l_parameter = configs['TUNING_PARAMETERS']['rho_l'], (1,1)
 rho_h = np.vstack((rho_h_parameter[0][0], rho_h_parameter[0][1])) # Weight for slack variable eps_h
 rho_l = np.vstack((rho_l_parameter[0][0], rho_l_parameter[0][1])) # Weight for slack variable eps_l
 
-z_bar_lb = configs['TUNING_PARAMETERS']['z_bar_lb']
-z_bar_ub = configs['TUNING_PARAMETERS']['z_bar_ub'] # shape
+z_bar_lb = configs['TUNING_PARAMETERS']['z_bar_lb']         #! Redundant
+z_bar_ub = configs['TUNING_PARAMETERS']['z_bar_ub'] # shape #! Redundant
 
 y_over_bar = configs['TUNING_PARAMETERS']['y_over_bar']        # Upper limit of CVs
 y_under_bar = configs['TUNING_PARAMETERS']['y_under_bar']      # Lower limit of CVs
@@ -200,9 +200,10 @@ y_ref = configs['SET_POINTS']['ref']          # For now: one constant value per 
 U_tilde_prev = np.zeros((n_MV, 1))            # U_tilde(k - 1), p.36 in Kufoalor
 U_tilde_N = np.zeros((n_MV, 1))               # U_tilde(k - Nj), where Nj == N
 dU_tilde_prev = np.zeros((N-Hw-1, n_MV))
+# dU_tilde_prev = np.zeros(((N-Hw-1)*n_MV, 1))
 u_prev = np.zeros((n_MV, 1))
-U = np.zeros((Hu*n_MV, 1))
-U_next = np.zeros((2,1))
+U = np.zeros((Hu*n_MV, 1)) #! Redundant
+U_next = np.zeros((2,1)) #! Redundant if all occurences are just swapped with first values of U
 
 #### ----- Initialize outputs ----- ####
 y_hat = np.zeros((n_CV, 1))                   # TODO: If we start with a measurement, initialize as that measurement instead
@@ -264,8 +265,8 @@ run = True
 run_number = 0
 ##########
 
-y0[0] = y_sim[-1][0]
-y0[1] = y_sim[-1][1]
+y0[0] = y_sim[-1][0] #! Redundant
+y0[1] = y_sim[-1][1] #! Redundant
 
 y_hat_init = Psi @ dU_tilde_prev + Upsilon @ U_tilde_prev
 y_hat_k_minus_1[0] = y_hat_init[0]
@@ -382,8 +383,8 @@ while time < final_time:
 
     # --- Calculate the input and the predicted output --- #
     U = K_inv@(Gamma@U_tilde_prev + dU)
-    U[0:Hu] = U[0:Hu]
-    U[Hu:Hu*2] = U[Hu:Hu*2]
+    U[0:Hu] = U[0:Hu] #! Redundant
+    U[Hu:Hu*2] = U[Hu:Hu*2] #! Redundant
     
     y_hat = Psi @ dU_tilde_prev + Upsilon @ U_tilde_prev + Theta@dU
 

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     mpc = MPC(config_path, S_paths)
 
     # Ensure FMU is in a defined state
-    mpc.warm_start(fmu_path)
+    mpc.warm_start(fmu_path, warm_start_t=1000)
 
     # Set input profile for this simulation
     steps = [(3000, (0, 10)),

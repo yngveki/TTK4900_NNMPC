@@ -1,4 +1,7 @@
-- n_MV is used only during initialization, and does not need to be stored as "self.n_MV"
+- n_MV is used only during initialization, as well as during flipping after warm start.
+  If flip after warm start is removed (which it might, because for constant u during warm
+  start, it is in practice redundant), n_MV will be used only during initialization
+  and should have its scope decreased to __init__ local. For now, stored as "self.n_MV"
 - n_CV is used only during initialization, as well as during update of reference 
   T. Should therefore be stored as "self.n_CV", for reusability across __init__ 
   and update_matrices. If get_T is remade, such that it e.g. takes in the T to be 
