@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from MPC_oop import MPC
+from plotting import plot_LSRMPC
 
 if __name__ == "__main__":
     config_path = Path(__file__).parent / "../config/mpc_config.yaml"
@@ -26,7 +27,7 @@ if __name__ == "__main__":
              (16000, (-5000, -30))] # TODO: Consider fetching this from file
     mpc.step_input(steps)
 
-    while True:
+    while mpc.time < mpc.final_time:
         # Update matrices and constraints that are time dependent
         mpc.update_matrices()
         mpc.update_OCP()
@@ -37,9 +38,6 @@ if __name__ == "__main__":
         # Simulate one step for the system
         mpc.iterate_system()
 
-        # Plot for this step
-        # TODO
-
     # Plot full simulation
-    # TODO
+    plot_LSRMPC(mpc)
     

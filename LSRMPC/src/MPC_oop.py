@@ -124,6 +124,18 @@ class MPC:
         for i in range(4):
             self.variables.append(self.m.addVar(lb=e_under_bar, ub=e_over_bar, name="slack_var"))
 
+        #### ----- Initialize data structures to hold data that may be plotted ----- ####
+        self.gas_rate_per_hr_vec = []
+        self.oil_rate_per_hr_vec = []
+        self.gas_rate_ref_vec = []
+        self.oil_rate_ref_vec = []
+        self.choke_input = []
+        self.gas_lift_input = []
+        self.choke_actual = []
+        self.gas_lift_actual = []
+        self.bias_gas = []
+        self.bias_oil = []
+        self.t = []
 
     def warm_start(self, fmu_path, warm_start_t=1000):
         """
@@ -161,10 +173,10 @@ class MPC:
         """
         Updates all matrices that are time-varying
         """
-        V = matrix_generation.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
-        Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + V
-        T = matrix_generation.get_T(self.y_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
-        zeta = T - Lambda_d
+        self.V = matrix_generation.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
+        Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.V
+        self.T = matrix_generation.get_T(self.y_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
+        zeta = self.T - Lambda_d
 
         self.gd = np.vstack(((zeta.T @ self.gamma.T).T, 
                               self.rho_h, 
@@ -230,6 +242,21 @@ class MPC:
         self.y_sim[-1, 0] = self.y_prev[0]
         self.y_sim[-1, 1] = self.y_prev[1]
         
+        # --- Update plotting-data --- #
+        self.gas_rate_per_hr_vec.append(self.y_prev[0])
+        self.oil_rate_per_hr_vec.append(self.y_prev[1])
+        self.gas_rate_ref_vec.append(self.T[0:self.Hp])
+        self.oil_rate_ref_vec.append(self.T[self.Hp:])
+
+
+        self.choke_input.append(self.u_prev_act[0])
+        self.gas_lift_input.append(self.u_prev_act[1])
+        self.choke_actual.append(self.u_prev_meas[0])
+        self.gas_lift_actual.append(self.u_prev_meas[1]*1000/24)
+        self.bias_gas.append(self.V[0])
+        self.bias_oil.append(self.V[-1])
+
+        self.t.append(self.time)
         
     def step_input(self, steps):
         """
