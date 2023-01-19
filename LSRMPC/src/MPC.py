@@ -158,7 +158,7 @@ Hd[(n_MV * Hu) + n_eh:, (n_MV * Hu) + n_eh:] = np.zeros((n_el, n_el))
 gamma = -2 * (Theta.T @ Q_y)
 
 # Instantiate for later
-gd = np.zeros((Hd.shape[1], 1))
+gd = np.zeros((Hd.shape[1], 1)) #! Redundant
 
 ##########################################################
 
@@ -191,7 +191,7 @@ Gamma = matrix_generation.get_Gamma(Hu, n_MV)
 FKinvGamma = F @ K_inv @ Gamma
 
 # Instantiate for later
-bd = np.zeros((g.shape[0] + f.shape[0], 1))
+bd = np.zeros((g.shape[0] + f.shape[0], 1)) #! Redundant
 
 #### ----- Get desired set-points from file ----- ####
 y_ref = configs['SET_POINTS']['ref']          # For now: one constant value per CV fetched from file
@@ -211,7 +211,7 @@ y_prev = np.zeros((n_CV, 1))
 y0 = np.zeros((2,1))
 
 #### ----- Initialize bias ----- ####
-V = np.zeros((Hp - Hw + 1, 1))
+V = np.zeros((Hp - Hw + 1, 1)) #! Redundant
 
 #### ----- Set up time-keeping ----- ####
 time = 0
