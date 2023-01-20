@@ -9,6 +9,7 @@ from gurobipy import GRB
 
 import matplotlib.pyplot as plt
 import simulate_fmu
+from custom_timing import Timer
 
 # ----- FUNCTIONS ----- #
 
@@ -274,7 +275,7 @@ y_hat_k_minus_1[1] = y_hat_init[Hp-Hw+1]
 
 
 
-
+stopwatch = Timer()
 ###########----- OPTIMIZATION LOOP ----- ###########
 while time < final_time:
 
@@ -364,7 +365,10 @@ while time < final_time:
 
     
     m.update()
+
+    stopwatch.start()
     m.optimize()
+    stopwatch.stop()
     #print(m.status)
     #######################################################################
 

@@ -28,29 +28,31 @@ if __name__ == "__main__":
              (16000, (-5000, -30))] # TODO: Consider fetching this from file
     # TODO: mpc.step_input(steps)
 
-    stopwatch = Timer()
-    stopwatch.start()
+    timed_loop = True
+    if timed_loop: stopwatch = Timer()
+    if timed_loop: stopwatch.start()
     run = 1
     total_runs = mpc.final_time // mpc.delta_t
     while mpc.time < mpc.final_time:
         print(f'Run #{run} / {total_runs}')
         # Update matrices and constraints that are time dependent
-        stopwatch.lap()
+        if timed_loop: stopwatch.lap(silent=True)
         mpc.update_matrices()
 
-        stopwatch.lap()
+        if timed_loop: stopwatch.lap(silent=True)
         mpc.update_OCP()
 
         # Solve OCP for this timestep
-        stopwatch.lap()
+        if timed_loop: stopwatch.lap(silent=True)
         mpc.solve_OCP()
 
         # Simulate one step for the system
-        stopwatch.lap()
+        if timed_loop: stopwatch.lap(silent=True)
         mpc.iterate_system()
 
-        stopwatch.total_time()
+        if timed_loop: stopwatch.total_time()
         run += 1
+
     # Plot full simulation
-    #plot_LSRMPC(mpc)
+    plot_LSRMPC(mpc)
     

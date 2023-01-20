@@ -5,8 +5,8 @@ SYSTEM_PARAMETERS:
   n_CV: 2
 
 TUNING_PARAMETERS:
-  Hu: 200
-  Hp: 250
+  Hu: 80 #200
+  Hp: 100 #250
   Hw: 1
 
   P_bar: [0.1, 1]
@@ -31,4 +31,4 @@ SET_POINTS:
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  final_time: 200 #20000
+  final_time: 4000 #20000

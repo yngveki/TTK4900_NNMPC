@@ -30,11 +30,11 @@ class Timer:
         self._start_time = None
         print(f"Elapsed time: {elapsed_time:0.4f} seconds")
 
-    def lap(self):
+    def lap(self, silent=False):
         elapsed_time = time.perf_counter() - self._start_time
         self._total_time += elapsed_time
         self._start_time = None
-        print(f"Elapsed time: {elapsed_time:0.4f} seconds")
+        if not silent: print(f"Elapsed time: {elapsed_time:0.4f} seconds")
         
         self._start_time = time.perf_counter()
 

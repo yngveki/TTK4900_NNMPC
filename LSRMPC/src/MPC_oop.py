@@ -38,6 +38,11 @@ class MPC:
         
         self.rho_h = np.array(configs['TUNING_PARAMETERS']['rho_h'], dtype=int, ndmin=2).T
         self.rho_l = np.array(configs['TUNING_PARAMETERS']['rho_l'], dtype=int, ndmin=2).T
+
+        self.du_over_bar = configs['TUNING_PARAMETERS']['du_over_bar']      # Upper limit of deltaMVs
+        self.du_under_bar = configs['TUNING_PARAMETERS']['du_under_bar']    # Lower limit of deltaMVs
+        self.e_over_bar = configs['TUNING_PARAMETERS']['e_over_bar']        # Upper limit of slack variables epsilon
+        self.e_under_bar = configs['TUNING_PARAMETERS']['e_under_bar']      # Lower limit of slack variables epsilon
         
         # -- config used only during initialization -- #
         n_eh = self.n_CV                                         # Same as "ny_over_bar"; amount of CVs that have upper limits
@@ -46,14 +51,10 @@ class MPC:
         P_bar = configs['TUNING_PARAMETERS']['P_bar']       # Weight for actuations 
         Q_bar = configs['TUNING_PARAMETERS']['Q_bar']       # Weight for errors from ref
         
-        y_over_bar = configs['TUNING_PARAMETERS']['y_over_bar']        # Upper limit of CVs
-        y_under_bar = configs['TUNING_PARAMETERS']['y_under_bar']      # Lower limit of CVs
-        u_over_bar = configs['TUNING_PARAMETERS']['u_over_bar']        # Upper limit of MVs
-        u_under_bar = configs['TUNING_PARAMETERS']['u_under_bar']      # Lower limit of MVs
-        du_over_bar = configs['TUNING_PARAMETERS']['du_over_bar']      # Upper limit of deltaMVs
-        du_under_bar = configs['TUNING_PARAMETERS']['du_under_bar']    # Lower limit of deltaMVs
-        e_over_bar = configs['TUNING_PARAMETERS']['e_over_bar']        # Upper limit of slack variables epsilon
-        e_under_bar = configs['TUNING_PARAMETERS']['e_under_bar']      # Lower limit of slack variables epsilon
+        y_over_bar = configs['TUNING_PARAMETERS']['y_over_bar']             # Upper limit of CVs
+        y_under_bar = configs['TUNING_PARAMETERS']['y_under_bar']           # Lower limit of CVs
+        u_over_bar = configs['TUNING_PARAMETERS']['u_over_bar']             # Upper limit of MVs
+        u_under_bar = configs['TUNING_PARAMETERS']['u_under_bar']           # Lower limit of MVs
 
         # -- time-keeping -- #
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
@@ -113,20 +114,6 @@ class MPC:
         self.y_hat = np.zeros((self.n_CV, 1))
         self.y_hat_k_minus_1 = np.zeros((2,1))
         self.y_prev = np.zeros((self.n_CV, 1))
-
-        #### ----- Initialize model for solving with gurobi ----- ####
-        self.m = gp.Model("qp")
-        self.m.Params.LogToConsole = 0
-
-        self.variables = []
-        for i in range(self.Hu):
-            self.variables.append(self.m.addVar(lb=du_under_bar[0], ub=du_over_bar[0], name="dU_1"))
-
-        for i in range(self.Hu):
-            self.variables.append(self.m.addVar(lb=du_under_bar[1], ub=du_over_bar[1], name="dU_2"))
-
-        for i in range(4):
-            self.variables.append(self.m.addVar(lb=e_under_bar, ub=e_over_bar, name="slack_var"))
 
         #### ----- Initialize data structures to hold data that may be plotted ----- ####
         self.gas_rate_per_hr_vec = []
@@ -193,11 +180,30 @@ class MPC:
         Sets the OCP matrices and constraints. Intended as an update after matrices and/or
         constraints have been updated for increased time, such that the OCP is up to date
         """
-        # TODO: Is it a problem to use "addMConstr" over and over? Is it additive, since self.m is referenced?
-        # (don't think it is - tried adding several lines of the same in the original, and didn't seem to affect the "Constraints"-variable)
-        self.m.addMConstr(self.Ad, self.variables, "<=", self.bd)
+        # TODO:
+        # May be possible to do this dynamically, isntead of reinitializing at every step, by setAttr
+        # https://support.gurobi.com/hc/en-us/community/posts/360054720932-Updating-the-RHS-and-LHS-of-specific-constraints-Python-
+        # ^ if you want to look into it
+        #
+        # Alternatively use getConstrs and chgCoeff for all constraints
+
+        # #### ----- Initialize model for solving with gurobi ----- ####
+        self.m = gp.Model("qp")
+        self.m.Params.LogToConsole = 0
+
+        variables = []
+        for i in range(self.Hu):
+            variables.append(self.m.addVar(lb=self.du_under_bar[0], ub=self.du_over_bar[0], name="dU_1"))
+
+        for i in range(self.Hu):
+            variables.append(self.m.addVar(lb=self.du_under_bar[1], ub=self.du_over_bar[1], name="dU_2"))
+
+        for i in range(4):
+            variables.append(self.m.addVar(lb=self.e_under_bar, ub=self.e_over_bar, name="slack_var"))
+
+        self.m.addMConstr(self.Ad, variables, "<=", self.bd)
         self.m.setMObjective(self.Hd, self.gd, 0, None, None, None, GRB.MINIMIZE)
-        
+
         self.m.update()
 
     def solve_OCP(self):
@@ -205,7 +211,6 @@ class MPC:
         """
         Performs the solving of the OCP and stores the next optimal control actions.
         """
-
         self.m.optimize()
 
         dU = np.array([v.X for v in self.m.getVars()], dtype=float, ndmin=2).T
@@ -252,20 +257,20 @@ class MPC:
         # stopwatch.stop()
         
         # --- Update plotting-data --- #
-        # self.gas_rate_per_hr_vec.append(self.y_prev[0])
-        # self.oil_rate_per_hr_vec.append(self.y_prev[1])
-        # self.gas_rate_ref_vec.append(self.T[0:self.Hp])
-        # self.oil_rate_ref_vec.append(self.T[self.Hp:])
+        self.gas_rate_per_hr_vec.append(self.y_prev[0])
+        self.oil_rate_per_hr_vec.append(self.y_prev[1])
+        self.gas_rate_ref_vec.append(self.T[0])
+        self.oil_rate_ref_vec.append(self.T[self.Hp])
 
 
-        # self.choke_input.append(self.u_prev_act[0])
-        # self.gas_lift_input.append(self.u_prev_act[1])
-        # self.choke_actual.append(self.u_prev_meas[0])
-        # self.gas_lift_actual.append(self.u_prev_meas[1]*1000/24)
-        # self.bias_gas.append(self.V[0])
-        # self.bias_oil.append(self.V[-1])
+        self.choke_input.append(self.u_prev_act[0])
+        self.gas_lift_input.append(self.u_prev_act[1])
+        self.choke_actual.append(self.u_prev_meas[0])
+        self.gas_lift_actual.append(self.u_prev_meas[1]*1000/24)
+        self.bias_gas.append(self.V[0])
+        self.bias_oil.append(self.V[-1])
 
-        # self.t.append(self.time)
+        self.t.append(self.time)
 
         self.time += self.delta_t
         

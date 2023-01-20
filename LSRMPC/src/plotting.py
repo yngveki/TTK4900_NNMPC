@@ -21,19 +21,19 @@ def plot_LSRMPC(mpc=None):
         bias_gas = np.load('bias_gas.npy')
         bias_oil = np.load('bias_oil.npy')
     else:
-        t = mpc.t
-        oil_rate_per_hr_vec = mpc.oil_rate_per_hr_vec
-        oil_rate_ref_vec = mpc.oil_rate_ref_vec
+        t = np.array(mpc.t) # This array is just a list of floats, not a list of arrays, as the rest
+        oil_rate_per_hr_vec = np.array(mpc.oil_rate_per_hr_vec)[:,0]
+        oil_rate_ref_vec = np.array(mpc.oil_rate_ref_vec)[:,0]
 
-        gas_rate_per_hr_vec = mpc.gas_rate_per_hr_vec
-        gas_rate_ref_vec = mpc.gas_rate_ref_vec
+        gas_rate_per_hr_vec = np.array(mpc.gas_rate_per_hr_vec)[:,0]
+        gas_rate_ref_vec = np.array(mpc.gas_rate_ref_vec)[:,0]
 
-        choke_input = mpc.choke_input
-        gas_lift_input = mpc.gas_lift_input
-        choke_actual = mpc.choke_actual
+        choke_input = np.array(mpc.choke_input)[:,0]
+        gas_lift_input = np.array(mpc.gas_lift_input)[:,0]
+        choke_actual = np.array(mpc.choke_actual)[:,0]
 
-        bias_gas = mpc.bias_gas
-        bias_oil = mpc.bias_oil
+        bias_gas = np.array(mpc.bias_gas)[:,0]
+        bias_oil = np.array(mpc.bias_oil)[:,0]
 
     t = t[200:]-2000
     gas_rate_per_hr_vec = gas_rate_per_hr_vec[200:]
