@@ -5,34 +5,35 @@ from scipy.signal import butter,filtfilt
 import pathlib
 print(pathlib.Path().resolve())
 
-def plot_LSRMPC(mpc):
-    # t = np.load('LSRMPC/t.npy')
-    # oil_rate_per_hr_vec = np.load('LSRMPC/oil_rate_per_hr_vec.npy')
-    # oil_rate_ref_vec = np.load('LSRMPC/oil_rate_ref_vec.npy')
+def plot_LSRMPC(mpc=None):
+    if not mpc:
+        t = np.load('t.npy')
+        oil_rate_per_hr_vec = np.load('oil_rate_per_hr_vec.npy')
+        oil_rate_ref_vec = np.load('oil_rate_ref_vec.npy')
 
-    # gas_rate_per_hr_vec = np.load('LSRMPC/gas_rate_per_hr_vec.npy')
-    # gas_rate_ref_vec = np.load('LSRMPC/gas_rate_ref_vec.npy')
+        gas_rate_per_hr_vec = np.load('gas_rate_per_hr_vec.npy')
+        gas_rate_ref_vec = np.load('gas_rate_ref_vec.npy')
 
-    # choke_input = np.load('LSRMPC/choke_input.npy')
-    # gas_lift_input = np.load('LSRMPC/gas_lift_input.npy')
-    # choke_actual = np.load('LSRMPC/choke_actual.npy')
+        choke_input = np.load('choke_input.npy')
+        gas_lift_input = np.load('gas_lift_input.npy')
+        choke_actual = np.load('choke_actual.npy')
 
-    # bias_gas = np.load('LSRMPC/bias_gas.npy')
-    # bias_oil = np.load('LSRMPC/bias_oil.npy')
+        bias_gas = np.load('bias_gas.npy')
+        bias_oil = np.load('bias_oil.npy')
+    else:
+        t = mpc.t
+        oil_rate_per_hr_vec = mpc.oil_rate_per_hr_vec
+        oil_rate_ref_vec = mpc.oil_rate_ref_vec
 
-    t = mpc.t
-    oil_rate_per_hr_vec = mpc.oil_rate_per_hr_vec
-    oil_rate_ref_vec = mpc.oil_rate_ref_vec
+        gas_rate_per_hr_vec = mpc.gas_rate_per_hr_vec
+        gas_rate_ref_vec = mpc.gas_rate_ref_vec
 
-    gas_rate_per_hr_vec = mpc.gas_rate_per_hr_vec
-    gas_rate_ref_vec = mpc.gas_rate_ref_vec
+        choke_input = mpc.choke_input
+        gas_lift_input = mpc.gas_lift_input
+        choke_actual = mpc.choke_actual
 
-    choke_input = mpc.choke_input
-    gas_lift_input = mpc.gas_lift_input
-    choke_actual = mpc.choke_actual
-
-    bias_gas = mpc.bias_gas
-    bias_oil = mpc.bias_oil
+        bias_gas = mpc.bias_gas
+        bias_oil = mpc.bias_oil
 
     t = t[200:]-2000
     gas_rate_per_hr_vec = gas_rate_per_hr_vec[200:]
@@ -144,3 +145,6 @@ def plot_LSRMPC(mpc):
 
 
     plt.show()
+
+if __name__ == "__main__":
+    plot_LSRMPC()

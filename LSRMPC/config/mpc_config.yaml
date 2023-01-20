@@ -4,14 +4,14 @@ SYSTEM_PARAMETERS:
   n_MV: 2
   n_CV: 2
 
-TUNING_PARAMETERS: # Dummy values
+TUNING_PARAMETERS:
   Hu: 200
   Hp: 250
   Hw: 1
 
   P_bar: [0.1, 1]
   Q_bar: [0.01, 1000]
-  rho_h: [10000, 10000] # Says that both 
+  rho_h: [10000, 10000]
   rho_l: [10, 10]
   z_bar_lb: [-0.55, -166.7, 0] # = [deltaU_lb, epsilon_h, epsilon_l] # Epsilon bounds come from (4.1b) in Kufoalor
   z_bar_ub: [0.55, 166.7, 1000]
@@ -25,10 +25,10 @@ TUNING_PARAMETERS: # Dummy values
   e_under_bar: 0
 
 
-SET_POINTS: # Dummy values
+SET_POINTS:
   ref: [11500, 280]
 
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  final_time: 20000 #1hr
+  final_time: 200 #20000

@@ -10,9 +10,13 @@ from gurobipy import GRB
 import matplotlib.pyplot as plt
 from simulate_fmu import init_model, simulate_singlewell_step
 
+from custom_timing import Timer
+stopwatch = Timer()
+
+
 class MPC:
 
-    __N = 100 # TODO: Should be defined more robust
+    __N = 100 # TODO: Should be defined more robustly
 
     def __init__(self, config_path, S_paths):
         """
@@ -24,6 +28,17 @@ class MPC:
         #### ----- Setting config ----- ####
         configs = self._read_yaml(config_path)
 
+        # -- config used during updates inside control loop -- #
+        self.n_MV = configs['SYSTEM_PARAMETERS']['n_MV']         # number of input variables - given from system (p.426)
+        self.n_CV = configs['SYSTEM_PARAMETERS']['n_CV']         # number of outputs - given from system (p. 423) 
+
+        self.Hu = configs['TUNING_PARAMETERS']['Hu']             # control horizon - design parameter (p. 416)
+        self.Hp = configs['TUNING_PARAMETERS']['Hp']             # prediction horizon - design parameter (p. 417)
+        self.Hw = configs['TUNING_PARAMETERS']['Hw']             # time step from which prediction horizon effectively starts
+        
+        self.rho_h = np.array(configs['TUNING_PARAMETERS']['rho_h'], dtype=int, ndmin=2).T
+        self.rho_l = np.array(configs['TUNING_PARAMETERS']['rho_l'], dtype=int, ndmin=2).T
+        
         # -- config used only during initialization -- #
         n_eh = self.n_CV                                         # Same as "ny_over_bar"; amount of CVs that have upper limits
         n_el = self.n_CV                                         # Same as "ny_under_bar"; amount of CVs that have lower limits
@@ -40,17 +55,6 @@ class MPC:
         e_over_bar = configs['TUNING_PARAMETERS']['e_over_bar']        # Upper limit of slack variables epsilon
         e_under_bar = configs['TUNING_PARAMETERS']['e_under_bar']      # Lower limit of slack variables epsilon
 
-        # -- config used also during updates -- #
-        self.n_MV = configs['SYSTEM_PARAMETERS']['n_MV']         # number of input variables - given from system (p.426)
-        self.n_CV = configs['SYSTEM_PARAMETERS']['n_CV']         # number of outputs - given from system (p. 423) 
-
-        self.Hu = configs['TUNING_PARAMETERS']['Hu']             # control horizon - design parameter (p. 416)
-        self.Hp = configs['TUNING_PARAMETERS']['Hp']             # prediction horizon - design parameter (p. 417)
-        self.Hw = configs['TUNING_PARAMETERS']['Hw']             # time step from which prediction horizon effectively starts
-        
-        self.rho_h = np.array(configs['TUNING_PARAMETERS']['rho_h'], dtype=object, ndmin=2).T
-        self.rho_l = np.array(configs['TUNING_PARAMETERS']['rho_l'], dtype=object, ndmin=2).T
-        
         # -- time-keeping -- #
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
         self.final_time = configs['RUNNING_PARAMETERS']['final_time']
@@ -139,14 +143,14 @@ class MPC:
 
     def warm_start(self, fmu_path, warm_start_t=1000):
         """
-        Simulates the fmu for a few steps to ensure defined state
+        Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
         self.model, self.u_sim, self.y_sim = init_model(fmu_path, 
-                                                                     self.start_time, 
-                                                                     self.final_time, # Needed for initialization, but different from warm start time
-                                                                     warm_start_t,
-                                                                     self.delta_t, 
-                                                                     self.Hp)
+                                                        self.start_time, 
+                                                        self.final_time, # Needed for initialization, but different from warm start time
+                                                        self.delta_t, 
+                                                        self.Hp,
+                                                        warm_start_t)
         self.y_prev[0] = self.y_sim[-1][0]
         self.y_prev[1] = self.y_sim[-1][1]
         self.y_hat[0] = 0
@@ -192,48 +196,52 @@ class MPC:
         # TODO: Is it a problem to use "addMConstr" over and over? Is it additive, since self.m is referenced?
         # (don't think it is - tried adding several lines of the same in the original, and didn't seem to affect the "Constraints"-variable)
         self.m.addMConstr(self.Ad, self.variables, "<=", self.bd)
-        self.m.setMObjective(self.Hd, self.gd, None, None, None, GRB.MINIMIZE)
+        self.m.setMObjective(self.Hd, self.gd, 0, None, None, None, GRB.MINIMIZE)
         
         self.m.update()
 
     def solve_OCP(self):
+        # TODO: This step takes increasingly long the longer the optimization loop has run
         """
         Performs the solving of the OCP and stores the next optimal control actions.
         """
 
         self.m.optimize()
 
-        dU = np.array([v.X for v in self.m.getVars()], dtype=object, ndmin=2).T
+        dU = np.array([v.X for v in self.m.getVars()], dtype=float, ndmin=2).T
+        dU = dU[:self.Hu * 2] # Indexing dU since we only want values for actuations, not slack variables
+        
         U = self.Kinv @ (self.Gamma @ self.U_tilde_prev + dU) # TODO: Might need class-wide scope if needed for plotting
-
         self.U_next = [U[0], U[self.Hu]]
+
+        self.y_hat = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.Theta @ dU
 
     def iterate_system(self):
         """
         Applies optimal control and updates values input and output values' timestep
         accordingly
         """
-        self.y_prev[0], self.y_prev[1], 
-        self.u_prev_act[0], self.u_prev_act[1], 
+        # stopwatch.start()
+        self.y_prev[0], self.y_prev[1], \
+        self.u_prev_act[0], self.u_prev_act[1], \
         self.u_prev_meas[0], self.u_prev_meas[1] = simulate_singlewell_step(self.model, 
                                                                             self.time, 
                                                                             self.delta_t, 
                                                                             self.U_next) # measurement from FMU, i.e. result from previous actuation
-
         # --- Roll the input, and set the newest input at the end --- #
         self.u_sim = np.roll(self.u_sim, [-1, -1]) # put newest input at end of array
-        self.u_sim[-1, 0] = self.u_prev[0]
-        self.u_sim[-1, 1] = self.u_prev[1]
+        self.u_sim[-1, 0] = self.u_prev_act[0]
+        self.u_sim[-1, 1] = self.u_prev_act[1]
 
-        self.U_tilde_prev[0] = self.u_prev[0]
-        self.U_tilde_prev[1] = self.u_prev[1]
+        self.U_tilde_prev[0] = self.u_prev_act[0]
+        self.U_tilde_prev[1] = self.u_prev_act[1]
 
         # --- Roll the change input, and set the newest change in input at the end --- #
         self.dU_tilde_prev = np.roll(self.dU_tilde_prev, 1)
         self.dU_tilde_prev[0] = self.u_sim[-1][0] - self.u_sim[-2][0]
         self.dU_tilde_prev[self.__N - self.Hw - 1] = self.u_sim[-1][1] - self.u_sim[-2][1]
 
-        # --- Collect the first predited output --- #
+        # --- Collect the first predicted output --- #
         self.y_hat_k_minus_1[0] = self.y_hat[0]
         self.y_hat_k_minus_1[1] = self.y_hat[self.Hp - self.Hw + 1]
 
@@ -241,22 +249,25 @@ class MPC:
         self.y_sim = np.roll(self.y_sim, [-1, -1]) # put newest measurement at end of array
         self.y_sim[-1, 0] = self.y_prev[0]
         self.y_sim[-1, 1] = self.y_prev[1]
+        # stopwatch.stop()
         
         # --- Update plotting-data --- #
-        self.gas_rate_per_hr_vec.append(self.y_prev[0])
-        self.oil_rate_per_hr_vec.append(self.y_prev[1])
-        self.gas_rate_ref_vec.append(self.T[0:self.Hp])
-        self.oil_rate_ref_vec.append(self.T[self.Hp:])
+        # self.gas_rate_per_hr_vec.append(self.y_prev[0])
+        # self.oil_rate_per_hr_vec.append(self.y_prev[1])
+        # self.gas_rate_ref_vec.append(self.T[0:self.Hp])
+        # self.oil_rate_ref_vec.append(self.T[self.Hp:])
 
 
-        self.choke_input.append(self.u_prev_act[0])
-        self.gas_lift_input.append(self.u_prev_act[1])
-        self.choke_actual.append(self.u_prev_meas[0])
-        self.gas_lift_actual.append(self.u_prev_meas[1]*1000/24)
-        self.bias_gas.append(self.V[0])
-        self.bias_oil.append(self.V[-1])
+        # self.choke_input.append(self.u_prev_act[0])
+        # self.gas_lift_input.append(self.u_prev_act[1])
+        # self.choke_actual.append(self.u_prev_meas[0])
+        # self.gas_lift_actual.append(self.u_prev_meas[1]*1000/24)
+        # self.bias_gas.append(self.V[0])
+        # self.bias_oil.append(self.V[-1])
 
-        self.t.append(self.time)
+        # self.t.append(self.time)
+
+        self.time += self.delta_t
         
     def step_input(self, steps):
         """
@@ -279,7 +290,7 @@ class MPC:
         with open(file_path, "r") as f:
             return safe_load(f)
 
-    def _S_xx_append(P, S_xx):
+    def _S_xx_append(self, P, S_xx):
         S_xx_steady = S_xx[(len(S_xx)-1)]
         
         for i in range(P-len(S_xx)):
@@ -287,7 +298,7 @@ class MPC:
 
         return S_xx
 
-    def _read_S(rel_S_paths):
+    def _read_S(self, rel_S_paths):
         # Reads data file containing the S-matrix
         #
         # Input:
