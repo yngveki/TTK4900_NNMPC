@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from pathlib import Path
 
-from neuralnetwork import NeuralNetwork
+from src.neuralnetwork import NeuralNetwork
 from generate_data.load_stepresponse_data import load_stepresponse_data
 
 class EarlyStopping():
@@ -96,6 +96,14 @@ def validation_loop(dataloader, model, epoch):
 # ----- TRAINING ----- #
 def train_NN(hyperparameters, csv_path_train, csv_path_val):
 
+    #! TEMP
+    gen_data_config_path = Path(__file__).parent / "../config/generate_data.yaml"
+    mu = hyperparameters['STRUCTURE']['mu']
+    my = hyperparameters['STRUCTURE']['my']
+    batch_size = hyperparameters['TRAINING']['bsz']
+    train_dl = load_stepresponse_data(csv_path_train, gen_data_config_path, train=True,
+                                            bsz=batch_size, mu=mu, my=my, shuffle=True)
+                                            
     n_MV = hyperparameters['STRUCTURE']['n_MV']
     n_CV = hyperparameters['STRUCTURE']['n_CV']
     mu = hyperparameters['STRUCTURE']['mu']
@@ -113,6 +121,8 @@ def train_NN(hyperparameters, csv_path_train, csv_path_val):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     gen_data_config_path = Path(__file__).parent / "../config/generate_data.yaml"
+    train_dl = load_stepresponse_data(csv_path_train, gen_data_config_path, train=True,
+                                            bsz=batch_size, mu=mu, my=my, shuffle=True)
     
     train_dl = load_stepresponse_data(csv_path_train, gen_data_config_path, train=True,
                                             bsz=batch_size, mu=mu, my=my, shuffle=True)

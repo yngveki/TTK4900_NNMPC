@@ -9,7 +9,9 @@ import matplotlib
 import pandas as pd
 import numpy as np
 
-from src.neuralnetwork import train_NN, test_NN, load_NN
+# from src.neuralnetwork import train_NN, test_NN, load_NN
+from src.train import train_NN
+from src.test import test_NN
 
 class GroundTruth():
     """Holds simply arrays showing u1, u2, y1, y2"""
@@ -44,9 +46,9 @@ class GroundTruth():
 
 
 if __name__ == '__main__':
-    TEST = True
+    TEST = False
     # TODO: iterate over hyperparameter candidates smarter
-    candidates = [10]
+    candidates = [0]
     for itr in candidates:
         print(f'Iteration nr. {itr}')
         hyperparameter_nr = "hyperparameters_" + str(itr)

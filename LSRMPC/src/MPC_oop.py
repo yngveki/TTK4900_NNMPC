@@ -54,15 +54,18 @@ class References:
     refs = [(0, [11000,300]), (1000, [12000, 290])]
     """
 
-    finished: bool
+    def __init__(self, ref_path, time=0):
+        refs_frame = pd.read_csv(ref_path)
+        assert len(refs_frame) > 0, "At least one reference must be given!"
 
-    # TODO: instead of taking in a list of refs, take in path to refs? fix everything internally?
-    def __init__(self, refs, time=0):
-        assert len(refs) > 0, "At least one reference must be given!"
-        self.finished = False
-        self.refs = refs#.sort()
+        refs = []
+        for row in range(len(refs_frame)):
+            ref = refs_frame.iloc[row,:]
+            refs.append(Reference(time=ref[0],
+                                  ref=[ref[1],ref[2]]))
+        refs.sort()
+        self.refs = refs
         
-
         # Initialization of current reference
         self._curr_ref = self.refs[0]
 
@@ -84,7 +87,6 @@ class References:
     @property
     def curr_ref(self):
         return self._curr_ref
-        #return [self._curr_ref[0], self._curr_ref[1]]
 
     @curr_ref.setter
     def curr_ref(self, new_ref):
@@ -110,17 +112,14 @@ class References:
     def __len__(self):
         return len(self.refs)
 
-
-
 class MPC:
 
     __N = 100 # TODO: Should be defined more robustly
 
     def __init__(self, 
                 config_path,
-                S_paths): 
-                #ref_path
-                #):
+                S_paths, 
+                ref_path):
         """
         Takes in given paths to setup configuration parameters and constant matrices
         """
@@ -165,15 +164,8 @@ class MPC:
         self.start_time = self.time
         
         # -- reference -- #
-        self.y_ref = configs['SET_POINTS']['ref']
-        # TODO:
-        # refs_frame = pd.read_csv(ref_path)
-        # refs = []
-        # for row in range(len(refs_frame)):
-        #     ref = refs_frame.iloc[row,:]
-        #     refs.append(Reference(time=ref[0],
-        #                             ref=[ref[1],ref[2]]))
-        # self.refs = References(refs)
+        self.refs = References(ref_path)
+        self.y_ref = self.refs.curr_ref
 
         #### ----- Reading in the step response model ----- ####
         self.Sijs = np.array([self._S_xx_append(self.Hp, siso) for siso in self._read_S(S_paths)])

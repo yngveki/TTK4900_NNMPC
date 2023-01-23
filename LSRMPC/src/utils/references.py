@@ -100,16 +100,3 @@ class References:
 
     def __len__(self):
         return len(self.refs)
-
-if __name__ == "__main__":
-    
-    # Instantiate References-object
-    ref_path = Path(__file__).parent / "../config/refs.csv"
-    refs = References(ref_path)
-    print(refs)
-
-    # Test switching of Reference within References-object upon iterating time
-    print(refs.curr_ref)
-    refs.curr_time = 3000
-    print(refs.curr_ref)
-    print(refs.curr_ref.stripped())
