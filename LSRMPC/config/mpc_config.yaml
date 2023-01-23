@@ -31,4 +31,4 @@ SET_POINTS:
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  final_time: 4000 #20000
+  final_time: 10000 #20000

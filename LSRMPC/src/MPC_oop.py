@@ -3,6 +3,7 @@ from qpsolvers import solve_qp
 import matrix_generation
 from yaml import safe_load
 from pathlib import Path
+import pandas as pd
 
 import gurobipy as gp
 from gurobipy import GRB
@@ -13,12 +14,113 @@ from simulate_fmu import init_model, simulate_singlewell_step
 from custom_timing import Timer
 stopwatch = Timer()
 
+class Reference:
+    """
+    Takes in a time associated with reference values that should be set for gas rate
+    and oil rate specifically at that time.
+    """
+    
+    def __init__(self, time=0, ref=None, nxt=None, prev=None):
+        self.time = time
+        
+        assert ref != None, "\'ref\' must contain exactly two values (1 for gas rate, 1 for oil rate)"
+        self.ref = ref
+        self.nxt = nxt
+        self.prev = prev
+
+    def stripped(self):
+        return [self.ref[0], self.ref[1]]
+
+    def __lt__(self, other):
+        return self.time < other.time
+
+    def __repr__(self):
+        return f"Reference object. (t = {self.time}, [{self.ref[0]}, {self.ref[1]}])"
+
+    def __str__(self):
+        return f"(t = {self.time}, [{self.ref[0]}, {self.ref[1]}])"
+
+    def __getitem__(self, key):
+        return self.ref[key]
+
+class References:
+    """
+    Takes in a collection of reference values and their corresponding times,
+    such that a given timestamp will result in an output reference value
+    for both gas rate and oil rate.
+
+    Example of input:
+
+    refs = [(0, [11000,300]), (1000, [12000, 290])]
+    """
+
+    finished: bool
+
+    # TODO: instead of taking in a list of refs, take in path to refs? fix everything internally?
+    def __init__(self, refs, time=0):
+        assert len(refs) > 0, "At least one reference must be given!"
+        self.finished = False
+        self.refs = refs#.sort()
+        
+
+        # Initialization of current reference
+        self._curr_ref = self.refs[0]
+
+        num_refs_left = len(self) - 1
+        if num_refs_left > 0:
+            self._link_refs()
+        
+        self._curr_time = time
+
+    def _link_refs(self):
+        self.refs[0].nxt = self.refs[1]
+
+        for idx in range(1, len(self) - 1):
+            self.refs[idx].prev = self.refs[idx - 1]
+            self.refs[idx].nxt = self.refs[idx + 1]
+
+        self.refs[-1].prev = self.refs[-2]
+
+    @property
+    def curr_ref(self):
+        return self._curr_ref
+        #return [self._curr_ref[0], self._curr_ref[1]]
+
+    @curr_ref.setter
+    def curr_ref(self, new_ref):
+        self._curr_ref = new_ref
+        
+    @property
+    def curr_time(self):
+        return self._curr_time
+
+    @curr_time.setter
+    def curr_time(self, new_time):
+        self._curr_time = new_time
+        if self.curr_ref.nxt.time <= self.curr_time:
+            self.curr_ref = self.curr_ref.nxt
+            
+    def __str__(self):
+        out = ""
+        for ref in self.refs:
+            out += repr(ref) + "\n"
+
+        return out
+
+    def __len__(self):
+        return len(self.refs)
+
+
 
 class MPC:
 
     __N = 100 # TODO: Should be defined more robustly
 
-    def __init__(self, config_path, S_paths):
+    def __init__(self, 
+                config_path,
+                S_paths): 
+                #ref_path
+                #):
         """
         Takes in given paths to setup configuration parameters and constant matrices
         """
@@ -64,6 +166,14 @@ class MPC:
         
         # -- reference -- #
         self.y_ref = configs['SET_POINTS']['ref']
+        # TODO:
+        # refs_frame = pd.read_csv(ref_path)
+        # refs = []
+        # for row in range(len(refs_frame)):
+        #     ref = refs_frame.iloc[row,:]
+        #     refs.append(Reference(time=ref[0],
+        #                             ref=[ref[1],ref[2]]))
+        # self.refs = References(refs)
 
         #### ----- Reading in the step response model ----- ####
         self.Sijs = np.array([self._S_xx_append(self.Hp, siso) for siso in self._read_S(S_paths)])
@@ -72,7 +182,7 @@ class MPC:
         self.Theta = matrix_generation.get_Theta(self.Sijs, self.Hp, self.Hu, self.Hw)
         self.Psi = matrix_generation.get_Psi(self.Sijs, self.Hp, self.Hu, self.Hw, self.__N)
         self.Upsilon = matrix_generation.get_Upsilon(self.Sijs, self.Hp, self.Hw)
-        
+
         # -- Build minimization problem matrix Hd -- #
         Q_y = matrix_generation.get_Q(Q_bar, self.Hp, self.Hw)    # shape: (n_CV * (Hp - Hw + 1)) x (n_CV * (Hp - Hw + 1)).
         P = matrix_generation.get_P(P_bar, self.Hu)               # shape: (n_MV * Hu) x (n_MV * Hu).
@@ -166,7 +276,35 @@ class MPC:
         """
         self.V = matrix_generation.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
         Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.V
+        # TODO:
+        # self.y_ref = self.curr_ref
+        
         self.T = matrix_generation.get_T(self.y_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
+        
+        if ((self.time > 3000) and (self.time <= 5000)):
+            self.T[self.Hp:] = self.T[self.Hp:] + 10
+
+        if ((self.time > 5000) and (self.time <= 7000)):
+            self.T[self.Hp:] = self.T[self.Hp:] + 20
+
+        if ((self.time > 7000) and (self.time <= 9000)):
+            self.T[self.Hp:] = self.T[self.Hp:] + 10
+
+        if ((self.time > 9000) and (self.time <= 11000)):
+            self.T[self.Hp:] = self.T[self.Hp:] + 10
+            self.T[0:self.Hp] = self.T[0:self.Hp] + 1000
+
+        if ((self.time > 11000) and (self.time <= 13000)):
+            self.T[0:self.Hp] = self.T[0:self.Hp] + 1000
+
+        if ((self.time > 13000) and (self.time <= 16000)):
+            self.T[self.Hp:] = self.T[self.Hp:] - 30
+            self.T[0:self.Hp] = self.T[0:self.Hp]
+
+        if self.time > 16000:
+            self.T[self.Hp:] = self.T[self.Hp:] - 30
+            self.T[0:self.Hp] = self.T[0:self.Hp] - 5000
+        
         zeta = self.T - Lambda_d
 
         self.gd = np.vstack(((zeta.T @ self.gamma.T).T, 
@@ -207,7 +345,6 @@ class MPC:
         self.m.update()
 
     def solve_OCP(self):
-        # TODO: This step takes increasingly long the longer the optimization loop has run
         """
         Performs the solving of the OCP and stores the next optimal control actions.
         """
@@ -280,6 +417,10 @@ class MPC:
         
         :param steps: list of tuples, where each tuple holds timestep and a tuple of increments
         """
+        assert np.array(steps).shape == (2,1), "Wrong format for given steps."
+
+        # for step in steps:
+
 
 
     # --- Private funcs --- #
@@ -317,3 +458,6 @@ class MPC:
             Sijs.append(np.load(Path(__file__).parent / rel_S_paths[key]))
 
         return np.array(Sijs)
+
+if __name__ == "__main__":
+    print("this is for testing")

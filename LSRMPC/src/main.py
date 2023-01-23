@@ -11,6 +11,7 @@ if __name__ == "__main__":
     S_paths = {'S11': '../data/S11_data_new.npy', 'S21': '../data/S12_data_new.npy',
                'S12': '../data/S21_data_new.npy', 'S22': '../data/S22_data_new.npy'}
     fmu_path = Path(__file__).parent / "../fmu/fmu_endret_deadband.fmu"
+    ref_path = Path(__file__).parent / "../config/refs.csv"
 
     # Initialize the controller. Sets up all parameters and static matrices
     mpc = MPC(config_path, S_paths)
