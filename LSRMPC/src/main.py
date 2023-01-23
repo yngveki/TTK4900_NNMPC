@@ -14,20 +14,10 @@ if __name__ == "__main__":
     ref_path = Path(__file__).parent / "../config/refs.csv"
 
     # Initialize the controller. Sets up all parameters and static matrices
-    mpc = MPC(config_path, S_paths)
+    mpc = MPC(config_path, S_paths, ref_path)
 
     # Ensure FMU is in a defined state
     mpc.warm_start(fmu_path, warm_start_t=1000)
-
-    # Set input profile for this simulation
-    steps = [(3000, (0, 10)),
-             (5000, (0, 20)),
-             (7000, (0, 10)),
-             (9000, (1000, 10)),
-             (11000, (1000, 0)),
-             (13000, (0, -30)),
-             (16000, (-5000, -30))] # TODO: Consider fetching this from file
-    # TODO: mpc.step_input(steps)
 
     timed_loop = True
     if timed_loop: stopwatch = Timer()

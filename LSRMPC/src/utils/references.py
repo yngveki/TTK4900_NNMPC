@@ -32,6 +32,9 @@ class Reference:
     def __getitem__(self, key):
         return self.ref[key]
 
+    def __len__(self):
+        return len(self.ref)
+
 class References:
     """
     Takes in a collection of reference values and their corresponding times,
