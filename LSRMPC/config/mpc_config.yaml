@@ -5,8 +5,8 @@ SYSTEM_PARAMETERS:
   n_CV: 2
 
 TUNING_PARAMETERS:
-  Hu: 80 #200
-  Hp: 100 #250
+  Hu: 200 # 80 gir helt ok resultater
+  Hp: 250 # 100 gir helt ok resultater
   Hw: 1
 
   P_bar: [0.1, 1]
@@ -24,11 +24,9 @@ TUNING_PARAMETERS:
   e_over_bar: 1000000
   e_under_bar: 0
 
-
 SET_POINTS:
   ref: [11500, 280]
 
-
 RUNNING_PARAMETERS:
   delta_t: 10
-  final_time: 10000 #20000
+  final_time: 20000 #20000

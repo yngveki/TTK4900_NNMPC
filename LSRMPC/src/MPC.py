@@ -1,6 +1,6 @@
 import numpy as np
 from qpsolvers import solve_qp
-import matrix_generation
+import utils.matrix_generation as matrix_generation
 from yaml import safe_load
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from gurobipy import GRB
 
 import matplotlib.pyplot as plt
 import simulate_fmu
-from custom_timing import Timer
+from utils.custom_timing import Timer
 
 # ----- FUNCTIONS ----- #
 

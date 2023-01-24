@@ -1,21 +1,21 @@
 # Library imports
 import numpy as np
 from qpsolvers import solve_qp
-import matrix_generation
+import utils.matrix_generation as mg
 from yaml import safe_load
 from pathlib import Path
 import pandas as pd
+import copy
+import matplotlib.pyplot as plt
 
 import gurobipy as gp
 from gurobipy import GRB
-
-import matplotlib.pyplot as plt
 
 # Custom imports
 from simulate_fmu import init_model, simulate_singlewell_step
 from utils.references import References
 
-from custom_timing import Timer
+from utils.custom_timing import Timer
 stopwatch = Timer()
 
 class MPC:
@@ -68,6 +68,7 @@ class MPC:
         self.final_time = configs['RUNNING_PARAMETERS']['final_time']
         self.time = 0
         self.start_time = self.time
+        num_steps = self.final_time // self.delta_t
         
         # -- reference -- #
         self.refs = References(ref_path)
@@ -77,24 +78,24 @@ class MPC:
         self.Sijs = np.array([self._S_xx_append(self.Hp, siso) for siso in self._read_S(S_paths)])
         
         #### ----- Build constant matrices ----- ####
-        self.Theta = matrix_generation.get_Theta(self.Sijs, self.Hp, self.Hu, self.Hw)
-        self.Psi = matrix_generation.get_Psi(self.Sijs, self.Hp, self.Hu, self.Hw, self.__N)
-        self.Upsilon = matrix_generation.get_Upsilon(self.Sijs, self.Hp, self.Hw)
+        self.Theta = mg.get_Theta(self.Sijs, self.Hp, self.Hu, self.Hw)
+        self.Psi = mg.get_Psi(self.Sijs, self.Hp, self.Hu, self.Hw, self.__N)
+        self.Upsilon = mg.get_Upsilon(self.Sijs, self.Hp, self.Hw)
 
         # -- Build minimization problem matrix Hd -- #
-        Q_y = matrix_generation.get_Q(Q_bar, self.Hp, self.Hw)    # shape: (n_CV * (Hp - Hw + 1)) x (n_CV * (Hp - Hw + 1)).
-        P = matrix_generation.get_P(P_bar, self.Hu)               # shape: (n_MV * Hu) x (n_MV * Hu).
+        Q_y = mg.get_Q(Q_bar, self.Hp, self.Hw)    # shape: (n_CV * (Hp - Hw + 1)) x (n_CV * (Hp - Hw + 1)).
+        P = mg.get_P(P_bar, self.Hu)               # shape: (n_MV * Hu) x (n_MV * Hu).
 
         self.Hd = np.zeros(((self.n_MV * self.Hu) + n_eh + n_el, (self.n_MV * self.Hu) + n_eh + n_el))
         self.Hd[:(self.n_MV * self.Hu), :(self.n_MV * self.Hu)] = self.Theta.T @ Q_y @ self.Theta + P # Hd_bar
         self.Hd *= 2
 
         # -- Build inequality system matrix Ad -- #
-        self.G = matrix_generation.get_G(self.Hp, self.Hw, self.n_CV)
-        F = matrix_generation.get_F(self.Hu, self.n_MV)
-        self.Kinv = np.linalg.inv(matrix_generation.get_K(self.Hu, self.n_MV))
-        Mh = matrix_generation.get_Mh(self.Hp, self.Hw, n_eh)
-        Ml = matrix_generation.get_Ml(self.Hp, self.Hw, n_el)
+        self.G = mg.get_G(self.Hp, self.Hw, self.n_CV)
+        F = mg.get_F(self.Hu, self.n_MV)
+        self.Kinv = np.linalg.inv(mg.get_K(self.Hu, self.n_MV))
+        Mh = mg.get_Mh(self.Hp, self.Hw, n_eh)
+        Ml = mg.get_Ml(self.Hp, self.Hw, n_el)
 
         vec1 = np.hstack((self.G @ self.Theta, -Mh, -Ml))
         FKinv = F @ self.Kinv
@@ -106,9 +107,9 @@ class MPC:
         # -- Build the rest -- #
         # Necessary for variable matrices later
         self.gamma = -2 * (self.Theta.T @ Q_y)
-        self.g = matrix_generation.get_g(self.Hp, self.Hw, self.n_CV, y_over_bar, y_under_bar)
-        self.f = matrix_generation.get_f(self.Hu, self.n_MV, u_over_bar, u_under_bar)
-        self.Gamma = matrix_generation.get_Gamma(self.Hu, self.n_MV)
+        self.g = mg.get_g(self.Hp, self.Hw, self.n_CV, y_over_bar, y_under_bar)
+        self.f = mg.get_f(self.Hu, self.n_MV, u_over_bar, u_under_bar)
+        self.Gamma = mg.get_Gamma(self.Hu, self.n_MV)
         self.FKinvGamma = FKinv @ self.Gamma
 
         #### ----- Set up inputs and outputs ----- ####
@@ -124,17 +125,17 @@ class MPC:
         self.y_prev = np.zeros((self.n_CV, 1))
 
         #### ----- Initialize data structures to hold data that may be plotted ----- ####
-        self.gas_rate_per_hr_vec = []
-        self.oil_rate_per_hr_vec = []
-        self.gas_rate_ref_vec = []
-        self.oil_rate_ref_vec = []
-        self.choke_input = []
-        self.gas_lift_input = []
-        self.choke_actual = []
-        self.gas_lift_actual = []
-        self.bias_gas = []
-        self.bias_oil = []
-        self.t = []
+        self.gas_rate_per_hr_vec = [0] * num_steps
+        self.oil_rate_per_hr_vec = [0] * num_steps
+        self.gas_rate_ref_vec = [0] * num_steps
+        self.oil_rate_ref_vec = [0] * num_steps
+        self.choke_input = [0] * num_steps
+        self.gas_lift_input = [0] * num_steps
+        self.choke_actual = [0] * num_steps
+        self.gas_lift_actual = [0] * num_steps
+        self.bias_gas = [0] * num_steps
+        self.bias_oil = [0] * num_steps
+        self.t = [0] * num_steps
 
     def warm_start(self, fmu_path, warm_start_t=1000):
         """
@@ -172,9 +173,9 @@ class MPC:
         """
         Updates all matrices that are time-varying
         """
-        self.V = matrix_generation.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
+        self.V = mg.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
         Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.V        
-        self.T = matrix_generation.get_T(self.refs.curr_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
+        self.T = mg.get_T(self.refs.curr_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
         
         zeta = self.T - Lambda_d
 
@@ -234,7 +235,9 @@ class MPC:
         Applies optimal control and updates values input and output values' timestep
         accordingly
         """
+        # TODO: self.y_prev is never updated!
         # stopwatch.start()
+        temp = None
         self.y_prev[0], self.y_prev[1], \
         self.u_prev_act[0], self.u_prev_act[1], \
         self.u_prev_meas[0], self.u_prev_meas[1] = simulate_singlewell_step(self.model, 
@@ -265,23 +268,38 @@ class MPC:
         # stopwatch.stop()
         
         # --- Update plotting-data --- #
-        self.gas_rate_per_hr_vec.append(self.y_prev[0])
-        self.oil_rate_per_hr_vec.append(self.y_prev[1])
-        self.gas_rate_ref_vec.append(self.T[0])
-        self.oil_rate_ref_vec.append(self.T[self.Hp])
+        curr_step = self.time // self.delta_t
+        self.gas_rate_per_hr_vec[curr_step] = copy.deepcopy(self.y_prev[0])
+        self.oil_rate_per_hr_vec[curr_step] = copy.deepcopy(self.y_prev[1])
+        self.gas_rate_ref_vec[curr_step] = copy.deepcopy(self.T[0])
+        self.oil_rate_ref_vec[curr_step] = copy.deepcopy(self.T[self.Hp])
 
 
-        self.choke_input.append(self.u_prev_act[0])
-        self.gas_lift_input.append(self.u_prev_act[1])
-        self.choke_actual.append(self.u_prev_meas[0])
-        self.gas_lift_actual.append(self.u_prev_meas[1]*1000/24)
-        self.bias_gas.append(self.V[0])
-        self.bias_oil.append(self.V[-1])
+        self.choke_input[curr_step] = copy.deepcopy(self.u_prev_act[0])
+        self.gas_lift_input[curr_step] = copy.deepcopy(self.u_prev_act[1])
+        self.choke_actual[curr_step] = copy.deepcopy(self.u_prev_meas[0])
+        self.gas_lift_actual[curr_step] = copy.deepcopy(self.u_prev_meas[1] * 1000 / 24)
+        self.bias_gas[curr_step] = copy.deepcopy(self.V[0])
+        self.bias_oil[curr_step] = copy.deepcopy(self.V[-1])
 
-        self.t.append(self.time)
+        self.t[curr_step] = copy.deepcopy(self.time)
 
         self.time += self.delta_t
         self.refs.curr_time += self.delta_t
+
+    def save_data(self, data_path):
+        np.save(data_path / 't.npy', self.t)
+        np.save(data_path / 'oil_rate_ref_vec.npy', self.oil_rate_ref_vec)
+
+        np.save(data_path / 'gas_rate_per_hr_vec.npy', self.gas_rate_per_hr_vec )
+        np.save(data_path / 'gas_rate_ref_vec.npy', self.gas_rate_ref_vec)
+
+        np.save(data_path / 'choke_input.npy', self.choke_input)
+        np.save(data_path / 'gas_lift_input.npy', self.gas_lift_input)
+        np.save(data_path / 'choke_actual.npy', self.choke_actual)
+
+        np.save(data_path / 'bias_gas.npy', self.bias_gas)
+        np.save(data_path / 'bias_oil.npy', self.bias_oil)
 
 
     # --- Private funcs --- #

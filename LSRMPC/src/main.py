@@ -3,15 +3,15 @@
 from pathlib import Path
 
 from MPC_oop import MPC
-from plotting import plot_LSRMPC
-from custom_timing import Timer
+from utils.plotting import plot_LSRMPC
+from utils.custom_timing import Timer
 
 if __name__ == "__main__":
     config_path = Path(__file__).parent / "../config/mpc_config.yaml"
     S_paths = {'S11': '../data/S11_data_new.npy', 'S21': '../data/S12_data_new.npy',
                'S12': '../data/S21_data_new.npy', 'S22': '../data/S22_data_new.npy'}
     fmu_path = Path(__file__).parent / "../fmu/fmu_endret_deadband.fmu"
-    ref_path = Path(__file__).parent / "../config/refs.csv"
+    ref_path = Path(__file__).parent / "../config/refs0.csv"
 
     # Initialize the controller. Sets up all parameters and static matrices
     mpc = MPC(config_path, S_paths, ref_path)
@@ -43,7 +43,10 @@ if __name__ == "__main__":
 
         if timed_loop: stopwatch.total_time()
         run += 1
-
+    # Save data, so plotting is possible later, without running the full simulation
+    data_path = Path(__file__).parent / "../data/mpc_runs/"
+    mpc.save_data(data_path)
+    
     # Plot full simulation
     plot_LSRMPC(mpc)
     

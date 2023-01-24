@@ -35,16 +35,24 @@ def plot_LSRMPC(mpc=None):
         bias_gas = np.array(mpc.bias_gas)[:,0]
         bias_oil = np.array(mpc.bias_oil)[:,0]
 
-    t = t[200:]-2000
-    gas_rate_per_hr_vec = gas_rate_per_hr_vec[200:]
-    gas_rate_ref_vec = gas_rate_ref_vec[200:]
-    oil_rate_per_hr_vec = oil_rate_per_hr_vec[200:]
-    oil_rate_ref_vec = oil_rate_ref_vec[200:]
-    choke_input = choke_input[200:]
-    gas_lift_input = gas_lift_input[200:]
-    choke_actual = choke_actual[200:]
-    bias_gas = bias_gas[200:]
-    bias_oil = bias_oil[200:]
+    """
+    The time shift is performed because the initialization of the fmu is done with values
+    for actuation ([50,0]) that are, although reasonable in and of themselves, not related to
+    neither the control values nor the given references.
+
+    To avoid plotting the resulting spikes in the beginning, a subsection is cut off.
+    """
+    time_shift = 200 # Shift 200 steps
+    t = t[time_shift:] - time_shift * 10 # Magic number because importing mpc.delta_t fails when mpc == None
+    gas_rate_per_hr_vec = gas_rate_per_hr_vec[time_shift:]
+    gas_rate_ref_vec = gas_rate_ref_vec[time_shift:]
+    oil_rate_per_hr_vec = oil_rate_per_hr_vec[time_shift:]
+    oil_rate_ref_vec = oil_rate_ref_vec[time_shift:]
+    choke_input = choke_input[time_shift:]
+    gas_lift_input = gas_lift_input[time_shift:]
+    choke_actual = choke_actual[time_shift:]
+    bias_gas = bias_gas[time_shift:]
+    bias_oil = bias_oil[time_shift:]
 
 
     #Filter
@@ -72,7 +80,6 @@ def plot_LSRMPC(mpc=None):
     # Filter the data, and plot both the original and filtered signals.
     oil_rate_per_hr_vec = butter_lowpass_filter(oil_rate_per_hr_vec, cutoff, fs, order)
     gas_rate_per_hr_vec = butter_lowpass_filter(gas_rate_per_hr_vec, cutoff, fs, order)
-
 
 
     figure = plt.figure(1)
@@ -123,7 +130,6 @@ def plot_LSRMPC(mpc=None):
     plt.ylabel('Gas-lift rate [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
 
-    # TODO: Fix clipping of peaks
     figure = plt.figure(3)
     plt.subplot(211)
     plt.plot(t, bias_gas, label = 'Gas rate bias', linewidth = 4)
@@ -132,7 +138,7 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Bias [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-    plt.ylim((2000,8000))
+    # plt.ylim((2000,8000))
 
     plt.subplot(212)
     plt.plot(t, bias_oil, label = 'Oil rate bias', linewidth = 4)
@@ -141,7 +147,7 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Bias [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-    plt.ylim((200,260))
+    # plt.ylim((200,260))
 
 
     plt.show()

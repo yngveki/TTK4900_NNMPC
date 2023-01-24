@@ -91,7 +91,7 @@ class References:
     @curr_time.setter
     def curr_time(self, new_time):
         self._curr_time = new_time
-        if self.curr_ref.nxt.time <= self.curr_time:
+        if self.curr_ref.nxt != None and self.curr_ref.nxt.time <= self.curr_time:
             self.curr_ref = self.curr_ref.nxt
             
     def __str__(self):
