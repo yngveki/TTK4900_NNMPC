@@ -7,7 +7,7 @@ import copy
 import gurobipy as gp
 
 # Custom imports
-from simulate_fmu import init_model, simulate_singlewell_step
+from utils.simulate_fmu import init_model, simulate_singlewell_step
 from utils.references import References
 
 class MPC:
