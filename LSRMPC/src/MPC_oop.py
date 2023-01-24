@@ -1,22 +1,14 @@
 # Library imports
 import numpy as np
-from qpsolvers import solve_qp
 import utils.matrix_generation as mg
 from yaml import safe_load
 from pathlib import Path
-import pandas as pd
 import copy
-import matplotlib.pyplot as plt
-
 import gurobipy as gp
-from gurobipy import GRB
 
 # Custom imports
 from simulate_fmu import init_model, simulate_singlewell_step
 from utils.references import References
-
-from utils.custom_timing import Timer
-stopwatch = Timer()
 
 class MPC:
 
@@ -72,7 +64,6 @@ class MPC:
         
         # -- reference -- #
         self.refs = References(ref_path)
-        self.y_ref = self.refs.curr_ref
 
         #### ----- Reading in the step response model ----- ####
         self.Sijs = np.array([self._S_xx_append(self.Hp, siso) for siso in self._read_S(S_paths)])
@@ -175,8 +166,7 @@ class MPC:
         """
         self.V = mg.get_V_matrix(self.y_prev, self.y_hat_k_minus_1, self.Hp, self.Hw)
         Lambda_d = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.V        
-        self.T = mg.get_T(self.refs.curr_ref, self.n_CV, self.Hp, self.Hw) #TODO: Alter the way this works. Don't need to update at every timestep when y_ref is constant. With the "steps" function, no update should be required at all, really
-        
+        self.T = mg.get_T(self.refs.curr_ref, self.n_CV, self.Hp, self.Hw)
         zeta = self.T - Lambda_d
 
         self.gd = np.vstack(((zeta.T @ self.gamma.T).T, 
@@ -190,7 +180,6 @@ class MPC:
         Sets the OCP matrices and constraints. Intended as an update after matrices and/or
         constraints have been updated for increased time, such that the OCP is up to date
         """
-        # TODO:
         # May be possible to do this dynamically, isntead of reinitializing at every step, by setAttr
         # https://support.gurobi.com/hc/en-us/community/posts/360054720932-Updating-the-RHS-and-LHS-of-specific-constraints-Python-
         # ^ if you want to look into it
@@ -212,7 +201,7 @@ class MPC:
             variables.append(self.m.addVar(lb=self.e_under_bar, ub=self.e_over_bar, name="slack_var"))
 
         self.m.addMConstr(self.Ad, variables, "<=", self.bd)
-        self.m.setMObjective(self.Hd, self.gd, 0, None, None, None, GRB.MINIMIZE)
+        self.m.setMObjective(self.Hd, self.gd, 0, None, None, None, gp.GRB.MINIMIZE)
 
         self.m.update()
 
@@ -235,9 +224,6 @@ class MPC:
         Applies optimal control and updates values input and output values' timestep
         accordingly
         """
-        # TODO: self.y_prev is never updated!
-        # stopwatch.start()
-        temp = None
         self.y_prev[0], self.y_prev[1], \
         self.u_prev_act[0], self.u_prev_act[1], \
         self.u_prev_meas[0], self.u_prev_meas[1] = simulate_singlewell_step(self.model, 
@@ -265,7 +251,6 @@ class MPC:
         self.y_sim = np.roll(self.y_sim, [-1, -1]) # put newest measurement at end of array
         self.y_sim[-1, 0] = self.y_prev[0]
         self.y_sim[-1, 1] = self.y_prev[1]
-        # stopwatch.stop()
         
         # --- Update plotting-data --- #
         curr_step = self.time // self.delta_t
@@ -333,7 +318,6 @@ class MPC:
 
         Sijs = []
         for key in rel_S_paths:
-            # Sijs.append(S_xx_append(N, np.load(Path(__file__).parent / rel_path)))
             Sijs.append(np.load(Path(__file__).parent / rel_S_paths[key]))
 
         return np.array(Sijs)

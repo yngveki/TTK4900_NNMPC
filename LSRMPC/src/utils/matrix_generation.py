@@ -74,9 +74,7 @@ def get_Theta_ij(s_ij, Hp, Hu, Hw):
         endIdx += 1
         if (i >Hu-Hw -1):
             startIdx += 1
-        #print("Row ", i, "", arr)
-    #np.set_printoptions(threshold=sys.maxsize)
-    #print(res)
+
     return np.array(res)
 
 def get_Theta(s_ij, Hp, Hu, Hw):
@@ -114,7 +112,6 @@ def get_psi_ij(s_ij_enlarged, Hp, Hu, Hw, N):
         else:
             startIdx = startIdx
             endIdx = endIdx
-        #print(res)
 
     return np.array(res)
 

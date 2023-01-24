@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import butter,filtfilt
-
-import pathlib
-print(pathlib.Path().resolve())
+from scipy.signal import butter, filtfilt
 
 def plot_LSRMPC(mpc=None):
     if not mpc:
@@ -57,20 +54,12 @@ def plot_LSRMPC(mpc=None):
 
     #Filter
     # Filter requirements.
-    T = 5.0         # Sample Period
     fs = 30.0       # sample rate, Hz
     cutoff = 2      # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
-    nyq = 0.5 * fs  # Nyquist Frequency
     order = 2       # sin wave can be approx represented as quadratic
-    n = int(T * fs) # total number of samples
-
-    # sin wave
-    sig = np.sin(1.2*2*np.pi*t)
-    # Lets add some noise
-    noise = 1.5*np.cos(9*2*np.pi*t) + 0.5*np.sin(12.0*2*np.pi*t)
-    data = sig + noise
 
     def butter_lowpass_filter(data, cutoff, fs, order):
+        nyq = 0.5 * fs # Nyquist frequency
         normal_cutoff = cutoff / nyq
         # Get the filter coefficients 
         b, a = butter(order, normal_cutoff, btype='low', analog=False)
@@ -92,7 +81,6 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Gas rate [m3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-    #plt.ylim((10000,14000))
 
 
 
@@ -104,7 +92,6 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Oil rate [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-    #plt.ylim((250,320))
 
 
     figure = plt.figure(2)
@@ -123,7 +110,6 @@ def plot_LSRMPC(mpc=None):
 
     plt.subplot(212)
     plt.plot(t, gas_lift_input, label = 'Gas-lift rate', linewidth = 4)
-    #plt.plot(t, gas_lift_actual, label = 'Actual gas-lift rate', linewidth = 0.5)
     plt.title('Gas-lift rate input', fontsize=16)
     plt.grid(linestyle='dotted', linewidth=1)
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
@@ -138,7 +124,6 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Bias [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-    # plt.ylim((2000,8000))
 
     plt.subplot(212)
     plt.plot(t, bias_oil, label = 'Oil rate bias', linewidth = 4)
@@ -147,8 +132,6 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Bias [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-    # plt.ylim((200,260))
-
 
     plt.show()
 

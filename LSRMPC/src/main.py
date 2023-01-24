@@ -24,6 +24,7 @@ if __name__ == "__main__":
     if timed_loop: stopwatch.start()
     run = 1
     total_runs = mpc.final_time // mpc.delta_t
+
     while mpc.time < mpc.final_time:
         print(f'Run #{run} / {total_runs}')
         # Update matrices and constraints that are time dependent
@@ -43,10 +44,13 @@ if __name__ == "__main__":
 
         if timed_loop: stopwatch.total_time()
         run += 1
+
     # Save data, so plotting is possible later, without running the full simulation
     data_path = Path(__file__).parent / "../data/mpc_runs/"
     mpc.save_data(data_path)
     
     # Plot full simulation
     plot_LSRMPC(mpc)
+
+# TODO: Make timing-suite decoratable
     
