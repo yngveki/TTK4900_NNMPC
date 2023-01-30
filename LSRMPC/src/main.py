@@ -26,7 +26,8 @@ if __name__ == "__main__":
     total_runs = mpc.final_time // mpc.delta_t
 
     while mpc.time < mpc.final_time:
-        print(f'Run #{run} / {total_runs}')
+        if run % 10 == 0: print(f'Run #{run} / {total_runs}')
+        
         # Update matrices and constraints that are time dependent
         if timed_loop: stopwatch.lap(silent=True)
         mpc.update_matrices()
