@@ -25,8 +25,10 @@ class RNNMPC:
         self.simulated_y['full'] = [] # Concatenates the two above
 
         # Initialize basics of OCP
-
-        # TODO
+        self.args = {}  # TODO
+        self.opts = {}  # TODO
+        nlp = {'x': ..., 'p': ..., 'f': ..., 'g': ...}  # TODO
+        self.solver = cs.nlpsol('solver', 'ipopt', nlp, self.opts)
 
         # Load neural network model to assign weights and biases as coefficients
         # to equality constraint in OCP 
@@ -59,7 +61,8 @@ class RNNMPC:
         return NotImplementedError
 
     def solve_OCP(self):
-        return NotImplementedError
+        res = self.solver(**self.args)
+        self.u_opt = res[0:1] # TODO: What will be correct format?
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
