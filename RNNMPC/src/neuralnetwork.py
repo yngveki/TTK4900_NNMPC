@@ -76,3 +76,13 @@ class NeuralNetwork(nn.Module):
 
         # Default to evaluation mode when loaded
         self.eval()
+
+    def extract_coefficients(self):
+        """
+        Returns weights and biases for the current model as dicts
+        """
+
+        weights = {}
+        biases = {}
+
+        return NotImplementedError
