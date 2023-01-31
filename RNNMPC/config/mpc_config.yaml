@@ -27,4 +27,4 @@ TUNING_PARAMETERS:
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  final_time: 20000 #20000
+  final_t: 20000

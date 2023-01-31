@@ -15,7 +15,7 @@ class RNNMPC:
         Takes in given paths to setup the framework around the OCP
         """
         
-        # Initialized variables to be filled out during runtime
+        # -- Initialization of variables for later availability -- #
         self.fmu = None
 
         self.simulated_u = {}
@@ -27,61 +27,45 @@ class RNNMPC:
         self.simulated_y['sim'] = []  # Will keep data from control loop
         self.simulated_y['full'] = [] # Concatenates the two above
 
-        # Set parameters of MPC
-
+        # -- config parameters -- #
         configs = self._read_yaml(config_path)
 
-        # -- config used during updates inside control loop -- #
-        self.n_MV = configs['SYSTEM_PARAMETERS']['n_MV']         # number of input variables - given from system (p.426)
-        self.n_CV = configs['SYSTEM_PARAMETERS']['n_CV']         # number of outputs - given from system (p. 423) 
+        # Horizons
+        self.Hu = configs['TUNING_PARAMETERS']['Hu']
+        self.Hp = configs['TUNING_PARAMETERS']['Hp']
 
-        self.Hu = configs['TUNING_PARAMETERS']['Hu']             # control horizon - design parameter (p. 416)
-        self.Hp = configs['TUNING_PARAMETERS']['Hp']             # prediction horizon - design parameter (p. 417)
-        self.Hw = configs['TUNING_PARAMETERS']['Hw']             # time step from which prediction horizon effectively starts
-        
-        self.rho_h = np.array(configs['TUNING_PARAMETERS']['rho_h'], dtype=int, ndmin=2).T
-        self.rho_l = np.array(configs['TUNING_PARAMETERS']['rho_l'], dtype=int, ndmin=2).T
+        # Weights
+        self.Q = configs['TUNING_PARAMETERS']['Q']
+        self.P = configs['TUNING_PARAMETERS']['P']
+        self.rho = configs['TUNING_PARAMETERS']['rho']
 
-        self.du_over_bar = configs['TUNING_PARAMETERS']['du_over_bar']      # Upper limit of deltaMVs
-        self.du_under_bar = configs['TUNING_PARAMETERS']['du_under_bar']    # Lower limit of deltaMVs
-        self.e_over_bar = configs['TUNING_PARAMETERS']['e_over_bar']        # Upper limit of slack variables epsilon
-        self.e_under_bar = configs['TUNING_PARAMETERS']['e_under_bar']      # Lower limit of slack variables epsilon
-        
-        # -- config used only during initialization -- #
-        n_eh = self.n_CV                                         # Same as "ny_over_bar"; amount of CVs that have upper limits
-        n_el = self.n_CV                                         # Same as "ny_under_bar"; amount of CVs that have lower limits
-        
-        P_bar = configs['TUNING_PARAMETERS']['P_bar']       # Weight for actuations 
-        Q_bar = configs['TUNING_PARAMETERS']['Q_bar']       # Weight for errors from ref
-        
-        y_over_bar = configs['TUNING_PARAMETERS']['y_over_bar']             # Upper limit of CVs
-        y_under_bar = configs['TUNING_PARAMETERS']['y_under_bar']           # Lower limit of CVs
-        u_over_bar = configs['TUNING_PARAMETERS']['u_over_bar']             # Upper limit of MVs
-        u_under_bar = configs['TUNING_PARAMETERS']['u_under_bar']           # Lower limit of MVs
+        # Constraints
+        self.ylb = configs['TUNING_PARAMETERS']['ylb']
+        self.yub = configs['TUNING_PARAMETERS']['yub']
+        self.ulb = configs['TUNING_PARAMETERS']['ulb']
+        self.uub = configs['TUNING_PARAMETERS']['uub']
+        self.dulb = configs['TUNING_PARAMETERS']['dulb']
+        self.duub = configs['TUNING_PARAMETERS']['duub']
+        self.elb = configs['TUNING_PARAMETERS']['elb']
+        self.eub = configs['TUNING_PARAMETERS']['eub']
 
-        # -- time-keeping -- #
+        # Timekeeping
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.final_time = configs['RUNNING_PARAMETERS']['final_time']
-        self.time = 0
-        self.start_time = self.time
-        num_steps = self.final_time // self.delta_t
+        self.final_t = configs['RUNNING_PARAMETERS']['final_t']
 
-        # Initialize basics of OCP
+        # -- Set up framework for OCP -- #
         self.args = {}  # TODO
         self.opts = {}  # TODO
         nlp = {'x': ..., 'p': ..., 'f': ..., 'g': ...}  # TODO
         self.solver = cs.nlpsol('solver', 'ipopt', nlp, self.opts)
 
-        # Load neural network model to assign weights and biases as coefficients
-        # to equality constraint in OCP 
-        
+        # -- Load neural network model -- #        
         # Load model
         self.model = NeuralNetwork()
         self.model.load(nn_path)
 
         # Extract weights and biases
         weights, biases = self.model.extract_coefficients()
-
 
         # Set weights and biases as coefficients of OCP
         # TODO
