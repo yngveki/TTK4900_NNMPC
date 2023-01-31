@@ -55,7 +55,7 @@ class References:
             ref = refs_frame.iloc[row,:]
             refs.append(Reference(time=ref[0],
                                   ref=[ref[1],ref[2]]))
-        refs.sort()
+        refs.sort() # In case given references are not sorted chronologically
         self.refs = refs
         
         # Initialization of current reference
@@ -104,3 +104,50 @@ class References:
 
     def __len__(self):
         return len(self.refs)
+
+    def __getitem__(self, key):
+        """
+        Returns the reference valid at the specified time in linear time(?)
+        
+        Could probably be improved by better search method 
+        """
+        item = None
+        for ref in self.refs:
+            if ref.nxt is None:
+                item = ref
+                break
+            
+            if key >= ref.time and key < ref.nxt.time:
+                item = ref
+                break
+
+        return item
+
+class ReferenceTimeseries(References):
+    """
+    Extend the class References by implementing a series of values
+    that hold reference values for a corresponding sequence of time.
+    
+    A reference for 5 timesteps could then look like:
+    
+    [Reference0, Reference1, Reference2, Reference3, Reference4]
+    """
+
+    def __init__(self, ref_path, length, delta_t, time=0):
+        super().__init__(ref_path, time)
+
+        self.delta_t = delta_t
+        self.length = length
+        self.ref_series = [0] * self.length
+        self.update()
+
+    def update(self):
+        """
+        Updates the references-timeseries to be valid from current time
+        and a _length_ number of timesteps into the future"""
+        self.ref_series[0] = self.curr_ref
+
+        t = self.curr_time
+        for i in range(1, self.length):
+            self.ref_series[i] = self.refs[t + (i * self.delta_t)]
+    
