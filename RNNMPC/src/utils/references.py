@@ -11,11 +11,20 @@ class Reference:
     
     def __init__(self, time=0, ref=None, nxt=None, prev=None):
         self.time = time
+        # self._time = time
         
         assert ref != None, "\'ref\' must contain exactly two values (1 for gas rate, 1 for oil rate)"
         self.ref = ref
         self.nxt = nxt
         self.prev = prev
+
+    # @property
+    # def time(self):
+    #     return self._time
+
+    # @time.setter
+    # def time(self, new_time):
+    #     self._time = new_time
 
     def stripped(self):
         return [self.ref[0], self.ref[1]]
@@ -24,7 +33,7 @@ class Reference:
         return self.time < other.time
 
     def __repr__(self):
-        return f"Reference object. (t = {self.time}, [{self.ref[0]}, {self.ref[1]}])"
+        return f"Reference object. (t = {self.time}, [{self.ref[0]}, {self.ref[1]}]), [prev={self.prev}, nxt={self.nxt}]"
 
     def __str__(self):
         return f"(t = {self.time}, [{self.ref[0]}, {self.ref[1]}])"
@@ -44,6 +53,11 @@ class References:
     Example of input:
 
     refs = [(0, [11000,300]), (1000, [12000, 290])]
+
+    Note that this implementation only gives out a single reference that is the
+    currently valid one, based on time. If the references are to be projected
+    over some time, and may vary during that time if a new reference becomes valid
+    during that time into the future, the class ReferencesTimeseries must be used.
     """
 
     def __init__(self, ref_path, time=0):
@@ -69,8 +83,15 @@ class References:
 
     def _link_refs(self):
         self.refs[0].nxt = self.refs[1]
+        
+        if isinstance(self, Reference):
+            length = len(self)
+        elif isinstance(self, ReferenceTimeseries):
+            length = super(ReferenceTimeseries, self).__len__()
+        else:
+            return TypeError
 
-        for idx in range(1, len(self) - 1):
+        for idx in range(1, length - 1):
             self.refs[idx].prev = self.refs[idx - 1]
             self.refs[idx].nxt = self.refs[idx + 1]
 
@@ -103,25 +124,13 @@ class References:
         return out
 
     def __len__(self):
+        """
+        Returns number of reference points given csv-files consists of
+        """
         return len(self.refs)
 
-    def __getitem__(self, key):
-        """
-        Returns the reference valid at the specified time in linear time(?)
-        
-        Could probably be improved by better search method 
-        """
-        item = None
-        for ref in self.refs:
-            if ref.nxt is None:
-                item = ref
-                break
-            
-            if key >= ref.time and key < ref.nxt.time:
-                item = ref
-                break
-
-        return item
+    def __repr__(self):
+        return "References as collection points"
 
 class ReferenceTimeseries(References):
     """
@@ -134,11 +143,12 @@ class ReferenceTimeseries(References):
     """
 
     def __init__(self, ref_path, length, delta_t, time=0):
-        super().__init__(ref_path, time)
-
         self.delta_t = delta_t
         self.length = length
         self.ref_series = [0] * self.length
+
+        super().__init__(ref_path, time)
+        
         self.update()
 
     def update(self):
@@ -149,5 +159,40 @@ class ReferenceTimeseries(References):
 
         t = self.curr_time
         for i in range(1, self.length):
-            self.ref_series[i] = self.refs[t + (i * self.delta_t)]
-    
+            t_in_future = t + (i * self.delta_t)
+            self.ref_series[i] = self[t_in_future]
+            
+    def __len__(self):
+        """
+        Returns how many steps into the future a series of reference
+        values should reach
+        """
+        return self.length
+
+    def __str__(self):
+        out = ""
+        for ref in self.ref_series:
+            out += repr(ref) + "\n"
+
+        return out
+
+    def __repr__(self):
+        return "References Timeseries"
+
+    def __getitem__(self, key):
+        """
+        Returns the reference valid at the specified time in linear time(?)
+        
+        Could probably be improved by better search method 
+        """
+        item = None
+        for ref in self.refs:
+            if ref.nxt is None:
+                item = ref
+                break
+
+            if key >= ref.time and key < ref.nxt.time:
+                item = ref
+                break
+
+        return item
