@@ -1,15 +1,14 @@
-# Config file for values in "src/MPC_basis.py"
-#
 SYSTEM_PARAMETERS: 
   n_MV: 2
   n_CV: 2
 
 TUNING_PARAMETERS:
-  #! Horizon and tuning values are tentative and should be tuned properly
+  #! Horizon values are tentative and should be tuned properly
   # Horizons
   Hu: 50
   Hp: 50
 
+  #! Tuning parameters are tentative and should be tuned properly
   # Tuning parameters
   Q: [1,1]
   P: [1,1]

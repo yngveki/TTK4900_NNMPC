@@ -52,6 +52,7 @@ class RNNMPC:
         # Timekeeping
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
         self.final_t = configs['RUNNING_PARAMETERS']['final_t']
+        self.t = 0
 
         # -- Set up framework for OCP -- #
         self.args = {}  # TODO
@@ -77,11 +78,10 @@ class RNNMPC:
         self.fmu, \
         self.simulated_u['init'], \
         self.simulated_y['init'] = init_model(fmu_path, 
-                                                        self.start_time, 
-                                                        self.final_time, # Needed for initialization, but different from warm start time
-                                                        self.delta_t, 
-                                                        self.Hp,
-                                                        warm_start_t)
+                                            start_time = self.t, 
+                                            final_time = self.final_t, # Needed for initialization, but different from warm start time
+                                            delta_t = self.delta_t,
+                                            warm_start_t=2000) # TODO: Figure out adequate value
 
     def update_OCP(self):
         return NotImplementedError
@@ -94,12 +94,20 @@ class RNNMPC:
         gas_rate_k, oil_rate_k, \
         choke_act_k, gas_lift_act_k, \
         _, _ = simulate_singlewell_step(self.model, 
-                                        self.time, 
+                                        self.t, 
                                         self.delta_t, 
-                                        self.U_next) # measurement from FMU, i.e. result from previous actuation
+                                        self.u_opt) # measurement from FMU, i.e. result from previous actuation
 
         self.simulated_y['sim'].append([gas_rate_k, oil_rate_k])
-        self.simulated_u['sim'].append([choke_act_k, gas_lift_act_k])                                                                           
+        self.simulated_u['sim'].append([choke_act_k, gas_lift_act_k])   
+
+    def merge_sim_data(self):
+        """
+        Convenience function to make the full timeseries more convenient
+        """
+        # TODO: If this is done at init, will the ['full'] array update dynamically? -> TEST
+        self.simulated_u['full'] = self.simulated_u['init'] + self.simulated_u['sim']
+        self.simulated_y['full'] = self.simulated_y['init'] + self.simulated_y['sim']                                                                        
     
     
     # --- Private funcs --- #
