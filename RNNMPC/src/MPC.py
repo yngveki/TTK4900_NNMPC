@@ -29,35 +29,45 @@ class RNNMPC:
 
         # -- config parameters -- #
         configs = self._read_yaml(config_path)
+        self.config = {}
 
         # Horizons
-        self.Hu = configs['TUNING_PARAMETERS']['Hu']
-        self.Hp = configs['TUNING_PARAMETERS']['Hp']
+        self.config['Hu'] = configs['TUNING_PARAMETERS']['Hu']
+        self.config['Hp'] = configs['TUNING_PARAMETERS']['Hp']
 
         # Weights
-        self.Q = configs['TUNING_PARAMETERS']['Q']
-        self.P = configs['TUNING_PARAMETERS']['P']
-        self.rho = configs['TUNING_PARAMETERS']['rho']
+        self.config['Q'] = configs['TUNING_PARAMETERS']['Q']
+        self.config['P'] = configs['TUNING_PARAMETERS']['P']
+        self.config['rho'] = configs['TUNING_PARAMETERS']['rho']
 
         # Constraints
-        self.ylb = configs['TUNING_PARAMETERS']['ylb']
-        self.yub = configs['TUNING_PARAMETERS']['yub']
-        self.ulb = configs['TUNING_PARAMETERS']['ulb']
-        self.uub = configs['TUNING_PARAMETERS']['uub']
-        self.dulb = configs['TUNING_PARAMETERS']['dulb']
-        self.duub = configs['TUNING_PARAMETERS']['duub']
-        self.elb = configs['TUNING_PARAMETERS']['elb']
-        self.eub = configs['TUNING_PARAMETERS']['eub']
+        self.config['ylb'] = configs['TUNING_PARAMETERS']['ylb']
+        self.config['yub'] = configs['TUNING_PARAMETERS']['yub']
+        self.config['ulb'] = configs['TUNING_PARAMETERS']['ulb']
+        self.config['uub'] = configs['TUNING_PARAMETERS']['uub']
+        self.config['dulb'] = configs['TUNING_PARAMETERS']['dulb']
+        self.config['duub'] = configs['TUNING_PARAMETERS']['duub']
+        self.config['elb'] = configs['TUNING_PARAMETERS']['elb']
+        self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
 
         # Timekeeping
-        self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.final_t = configs['RUNNING_PARAMETERS']['final_t']
-        self.t = 0
+        self.config['delta_t'] = configs['RUNNING_PARAMETERS']['delta_t']
+        self.config['final_t'] = configs['RUNNING_PARAMETERS']['final_t']
+        self.config['t'] = 0
 
-        # -- Set up framework for OCP -- #
+        # -- Set up framework for OCP using Opti from CasADi -- #
         self.args = {}  # TODO
         self.opts = {}  # TODO
-        nlp = {'x': ..., 'p': ..., 'f': ..., 'g': ...}  # TODO
+
+        # TODO:
+        # Should be delta_u for k:k+N-1 and epsilon_y?
+        x = ... # vertical stack of optimization variables
+
+        # 
+        f = ... # vertical stack of equations for optimization variables' derivatives
+        p = ... #
+        g = ... # vertical stack of 
+        nlp = {'x': x, 'p': p, 'f': f, 'g': g}
         self.solver = cs.nlpsol('solver', 'ipopt', nlp, self.opts)
 
         # -- Load neural network model -- #        
@@ -78,9 +88,9 @@ class RNNMPC:
         self.fmu, \
         self.simulated_u['init'], \
         self.simulated_y['init'] = init_model(fmu_path, 
-                                            start_time = self.t, 
-                                            final_time = self.final_t, # Needed for initialization, but different from warm start time
-                                            delta_t = self.delta_t,
+                                            start_time = self.config['t'], 
+                                            final_time = self.config['final_t'], # Needed for initialization, but different from warm start time
+                                            delta_t = self.config['delta_t'],
                                             warm_start_t=2000) # TODO: Figure out adequate value
 
     def update_OCP(self):
@@ -94,8 +104,8 @@ class RNNMPC:
         gas_rate_k, oil_rate_k, \
         choke_act_k, gas_lift_act_k, \
         _, _ = simulate_singlewell_step(self.model, 
-                                        self.t, 
-                                        self.delta_t, 
+                                        self.config['t'], 
+                                        self.config['final_t'], 
                                         self.u_opt) # measurement from FMU, i.e. result from previous actuation
 
         self.simulated_y['sim'].append([gas_rate_k, oil_rate_k])
