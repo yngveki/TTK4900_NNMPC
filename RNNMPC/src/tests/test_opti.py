@@ -3,13 +3,13 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-import casadi as cs
+import casadi as ca
 import numpy as np
 import utils.references as references
 from pathlib import Path
 
 def basic_example():
-    opti = cs.Opti()
+    opti = ca.Opti()
 
     x = opti.variable()
     y = opti.variable()
@@ -39,11 +39,11 @@ def update_recursive_cost_constraints_casadi(uk, yk, Y_ref):
     mu = 2 # mock value
     my = 2 # mock value
 
-    Y = cs.MX.sym('Y_hat',2,N+1+my)
-    DU = cs.MX.sym('DU',2,N+mu)
-    epsy = cs.MX.sym('epsy',2,1)
+    Y = ca.MX.sym('Y_hat',2,N+1+my)
+    DU = ca.MX.sym('DU',2,N+mu)
+    epsy = ca.MX.sym('epsy',2,1)
 
-    U = cs.MX.sym('U',2,N)
+    U = ca.MX.sym('U',2,N)
 
     # Initialization, because f_MLP needs historical values
     Y[:,0:my] = yk
@@ -57,11 +57,11 @@ def update_recursive_cost_constraints_casadi(uk, yk, Y_ref):
         cost += (Y[:,i] - Y_ref[:,i]) @ Q @ (Y[:,i] - Y_ref[:,i]).T + DU[:,i] @ R @ DU[:,i].T
 
     cost += rho.T @ epsy # This should now be equal to the 'f' keyword taken by the solver
-    # cost = cs.Function('cost', [Y,DU,epsy], [cost])
+    # cost = ca.Function('cost', [Y,DU,epsy], [cost])
 
     # Define constraints recursively
     f_MLP = ... # TODO: How implement generic neural network?
-    # cs.Function('f_MLP', [y, du, epsy], [cost])
+    # ca.Function('f_MLP', [y, du, epsy], [cost])
 
     for i in range(N):
         Y[:,i + 1] == f_MLP([Y[:,i - my:i],U[:,i - 1 - mu:i - 1], U[:,i]])   # (1c)
@@ -73,15 +73,15 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config):
     #       -> Maybe define the variables as my+N and mu+N long, and just
     #          initialize all past values to same value as yk?
     
-    # TODO: Possible to group all constraints together and simply say opti.subject_to(constraints)?
+    # mock values
     N = 20
     Q = np.ones((2,2))
     R = np.ones((2,2))
-    rho = np.ones((2,))
-    mu = 2 # mock value
-    my = 2 # mock value
+    rho = np.ones((2,1))
+    mu = 2 
+    my = 2 
 
-    opti = cs.Opti()
+    opti = ca.Opti()
     Y = opti.variable(2,N+1+my)
     DU = opti.variable(2,N+mu)
     epsy = opti.variable(2)
@@ -98,36 +98,43 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config):
     # Define cost function recursively ("Fold"; see https://web.casadi.org/docs/#for-loop-equivalents)
     cost = 0
     for i in range(N):
-        t1 = Y[:,i]
-        t2 = Y_ref[i]
-        t3 = DU[:,i]
-        cost += (Y[:,i] - Y_ref[i]) @ Q @ (Y[:,i] - Y_ref[i]).T + DU[:,i] @ R @ DU[:,i].T
+        cost += (Y[:,i] - Y_ref[i]).T @ Q @ (Y[:,i] - Y_ref[i]) + DU[:,i].T @ R @ DU[:,i]
 
-    cost += rho.T @ epsy # This should now be equal to the 'f' keyword taken by the solver
-    opti.minimize(cost)
+    cost += rho.T @ epsy 
+    opti.minimize(cost) # (1a)
 
-    # Define constraints recursively
-
-    opti.subject_to(Y[:,my] ==   yk)    # (1b)
-    for i in range(N):
-        opti.subject_to(U[:,i] == U[:,i - 1] + DU[:,i])                                     # (1g)
-
-        opti.subject_to(config['ylb'] - epsy <= Y[:,i + 1] <= config['yub'] + epsy)         # (1d)
-        opti.subject_to(config['dulb'] <= DU[:,i] <= config['duub'])                        # (1e)
-        opti.subject_to(config['ulb'] <= U[:,i] <= config['uub'])                           # (1f)
+    # Define constraints, respecting recursion in (1g)
+    constraints = []
+    constraints.append(Y[:,my] == yk) # (1b)
+    for i in range(N):          
+        constraints.append(opti.bounded(config['ylb'] - epsy,\
+                                        Y[:,i + 1],\
+                                        config['yub'] + epsy)) # (1d)
+        constraints.append(opti.bounded(config['dulb'],\
+                                        DU[:,i],\
+                                        config['duub'])) # (1e)
+        constraints.append(opti.bounded(config['ulb'],\
+                                        U[:,i],\
+                                        config['uub'])) # (1f)
+        constraints.append(U[:,i] == U[:,i - 1] + DU[:,i]) # (1g)
     
-    opti.subject_to(config['elb'] <= epsy <= config['eub'])                                 # (1h)
+    constraints.append(opti.bounded(config['elb'],\
+                                    epsy,\
+                                    config['eub'])) # (1h)
 
     #! Defined at bottom so debugging of other more trivial stuff can happen above until this finishes
     # TODO: How implement generic neural network?
-    f_MLP = ... 
-    for i in range(N):
-        opti.subject_to(Y[:,i + 1] == f_MLP([Y[:,i - my:i],U[:,i - 1 - mu:i - 1], U[:,i]])) # (1c)
+    # f_MLP = ... 
+    # for i in range(N):
+    #     opti.subject_to(Y[:,i + 1] == f_MLP([Y[:,i - my:i],U[:,i - 1 - mu:i - 1], U[:,i]])) # (1c)
 
+    opti.subject_to(constraints)
 
+    p_opts = {"expand":True}    
+    s_opts = {"max_iter": 100}
+    opti.solver('ipopt', p_opts, s_opts)
 
 if __name__ == "__main__":
-    # basic_example()
 
     N = 20
     config = {}
@@ -141,12 +148,12 @@ if __name__ == "__main__":
     config['rho'] = 1000 * np.ones((2,))
 
     # Constraints
-    config['ylb'] = [0,0]
+    config['ylb'] = [1,1]
     config['yub'] = [16000,500]
     config['ulb'] = [0,0]
     config['uub'] = [100,10000]
-    config['dulb'] = [-0.55,-166.7]
-    config['duub'] = [0.55,166.7]
+    config['dulb'] = np.array([-0.55,-166.7])
+    config['duub'] = np.array([0.55,166.7])
     config['elb'] = [0,0]
     config['eub'] = [1000000,1000000]
 
@@ -157,7 +164,7 @@ if __name__ == "__main__":
 
     ref_path = Path(__file__).parent / "../../config/refs/testrefs.csv"
     refs = references.ReferenceTimeseries(ref_path, N, config['delta_t'])
-    Y_ref = refs.ref_series
+    Y_ref = refs.refs_as_lists()
     uk = [50, 5000]     # Fine as temp values?
     yk = [10000, 280]   # Fine as temp values?
     update_recursive_cost_constraints_opti(uk, yk, Y_ref, config)

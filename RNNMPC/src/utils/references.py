@@ -81,22 +81,6 @@ class References:
         
         self._curr_time = time
 
-    def _link_refs(self):
-        self.refs[0].nxt = self.refs[1]
-        
-        if isinstance(self, Reference):
-            length = len(self)
-        elif isinstance(self, ReferenceTimeseries):
-            length = super(ReferenceTimeseries, self).__len__()
-        else:
-            return TypeError
-
-        for idx in range(1, length - 1):
-            self.refs[idx].prev = self.refs[idx - 1]
-            self.refs[idx].nxt = self.refs[idx + 1]
-
-        self.refs[-1].prev = self.refs[-2]
-
     @property
     def curr_ref(self):
         return self._curr_ref
@@ -115,6 +99,35 @@ class References:
         if self.curr_ref.nxt != None:
             if self.curr_ref.nxt.time <= self.curr_time:
                 self.curr_ref = self.curr_ref.nxt
+
+    def refs_as_lists(self):
+        """
+        Turns the Reference objects within self.refs into lists,
+        discarding the corresponding timestamps.
+        
+        Ex.: [(t=0,[100,0]), (t=4,[90,10])] -> [[100,0],[90,10]]
+        """
+        as_lists = [0] * len(self)
+        for idx, _ in enumerate(as_lists):
+            as_lists[idx] = self[idx].stripped()
+
+        return as_lists
+
+    def _link_refs(self):
+        self.refs[0].nxt = self.refs[1]
+        
+        if isinstance(self, Reference):
+            length = len(self)
+        elif isinstance(self, ReferenceTimeseries):
+            length = super(ReferenceTimeseries, self).__len__()
+        else:
+            return TypeError
+
+        for idx in range(1, length - 1):
+            self.refs[idx].prev = self.refs[idx - 1]
+            self.refs[idx].nxt = self.refs[idx + 1]
+
+        self.refs[-1].prev = self.refs[-2]
             
     def __str__(self):
         out = ""
