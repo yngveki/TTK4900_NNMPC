@@ -8,6 +8,9 @@ import numpy as np
 import utils.references as references
 from pathlib import Path
 
+def ReLU(x):
+    return x * (x > 0)
+
 def basic_example():
     opti = ca.Opti()
 
@@ -68,25 +71,25 @@ def update_recursive_cost_constraints_casadi(uk, yk, Y_ref):
         U[:,i] == U[:,i - 1] + DU[:,i]      
         
         
-def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config):
+def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biases):
     # TODO: How access the variables of Y that are before 0?
     #       -> Maybe define the variables as my+N and mu+N long, and just
     #          initialize all past values to same value as yk?
     
     # mock values
-    N = 20
-    Q = np.ones((2,2))
-    R = np.ones((2,2))
-    rho = np.ones((2,1))
-    mu = 2 
-    my = 2 
+    N = config['N']
+    mu = config['mu']
+    my = config['my']
+    Q = config['Q']
+    R = config['R']
+    rho = config['rho']
 
     opti = ca.Opti()
-    Y = opti.variable(2,N+1+my)
-    DU = opti.variable(2,N+mu)
+    Y = opti.variable(config['n_CV'],N+1+my)
+    DU = opti.variable(config['n_MV'],N)
     epsy = opti.variable(2)
 
-    U = opti.variable(2,N)
+    U = opti.variable(2,N+mu)
 
     # Initialization, because f_MLP needs historical values (opti.set_value()?)
     for i in range(my):
@@ -106,6 +109,7 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config):
     # Define constraints, respecting recursion in (1g)
     constraints = []
     constraints.append(Y[:,my] == yk) # (1b)
+    temp = Y[:,my]
     for i in range(N):          
         constraints.append(opti.bounded(config['ylb'] - epsy,\
                                         Y[:,i + 1],\
@@ -122,12 +126,26 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config):
                                     epsy,\
                                     config['eub'])) # (1h)
 
-    #! Defined at bottom so debugging of other more trivial stuff can happen above until this finishes
-    # TODO: How implement generic neural network?
-    # f_MLP = ... 
-    # for i in range(N):
-    #     opti.subject_to(Y[:,i + 1] == f_MLP([Y[:,i - my:i],U[:,i - 1 - mu:i - 1], U[:,i]])) # (1c)
 
+    # # Defining the neural network as constraint
+    assert len(weights) == len(biases), "There must be a set of biases for each set of weights!"
+    x0 = ca.horzcat(U[:,:mu + 1], Y[:,:my + 1])# Input to the network
+    x = x0.reshape((x0.shape[0] * x0.shape[1],1))
+    for W, b in zip(weights, biases):
+        # print(isinstance(x, ca.MX))
+        # assert isinstance(x, ca.MX), "x is indeed not symbolic"
+        layer = ca.Function('layer', [x], [ca.mtimes(W.T, x) + b],\
+                            ['input layer'], ['output layer']) # Defining the current layer
+        x = layer([x, W, b])
+        relu = ca.Function('ReLU', [x], [x * (x > 0)])
+        x = relu(x)
+    f_MLP = ca.Function('f_MLP', [x0], [x])
+
+    assert mu == my, "below indexing currently can\'t handle mu != my"
+    for i in range(my, N + my):
+        #! This indexing goes wrong when mu != my
+        constraints.append(Y[:,i + 1] == f_MLP([Y[:,i - my:i],U[:,i - 1 - mu:i - 1], U[:,i]])) # (1c)
+        
     opti.subject_to(constraints)
 
     p_opts = {"expand":True}    
@@ -137,15 +155,21 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config):
 if __name__ == "__main__":
 
     N = 20
-    config = {}
+    n_MV = 2
+    n_CV = 2
+    mu = 2
+    my = 2
 
+    config = {}
     # Horizons
+    config['N'] = N
     config['Hu'] = N 
     config['Hp'] = N
+
     # Weights
     config['Q'] = np.eye(2)
-    config['P'] = np.eye(2)
-    config['rho'] = 1000 * np.ones((2,))
+    config['R'] = np.eye(2)
+    config['rho'] = 1000 * np.ones((2,1))
 
     # Constraints
     config['ylb'] = [1,1]
@@ -162,11 +186,25 @@ if __name__ == "__main__":
     config['final_t'] = 200
     config['t'] = 0
 
+    # misc parameters
+    config['n_MV'] = n_MV
+    config['n_CV'] = n_CV
+    config['mu'] = mu
+    config['my'] = my
+
     ref_path = Path(__file__).parent / "../../config/refs/testrefs.csv"
     refs = references.ReferenceTimeseries(ref_path, N, config['delta_t'])
     Y_ref = refs.refs_as_lists()
     uk = [50, 5000]     # Fine as temp values?
     yk = [10000, 280]   # Fine as temp values?
-    update_recursive_cost_constraints_opti(uk, yk, Y_ref, config)
+    
+    # Define a mock net on form 12->10->2 (n_MV * (mu + 1) + n_CV * (my + 1) equals 12)
+    weights = []
+    weights.append(np.ones((n_MV * (mu + 1) + n_CV * (my + 1), 10)))
+    weights.append(np.ones((10,2)))
+    biases = []
+    biases.append(10)
+    biases.append(2)
+    update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biases)
 
     print("finished :)")
