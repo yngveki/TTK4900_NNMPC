@@ -40,3 +40,5 @@ if __name__ == "__main__":
 
         if timed_loop: stopwatch.total_time()
         run += 1
+    
+    mpc.merge_sim_data()
