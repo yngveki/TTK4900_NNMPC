@@ -83,7 +83,6 @@ def build_nn_ca(weights, biases):
         x = layer(x)
         if (l+1) < n_layers: # Don't want activation function on output layer
             x = ReLU(x)
-        # x = ReLU(x)
 
     return ca.Function('f_MLP', [x0], [x], ['MLP_in'], ['MLP_out'])
 

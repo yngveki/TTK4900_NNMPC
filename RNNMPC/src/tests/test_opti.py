@@ -12,26 +12,28 @@ from pathlib import Path
 def ReLU(x):
     return x * (x > 0)
 
-def casadi_MLP(layer_szs, weights, biases):
-        assert len(layer_szs) >= 3, "Must include at least input layer, hidden layer and output layer!"
-        # Defining activation function
-        placeholder = ca.MX.sym('placeholder')
-        ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
-                                    ['relu_in'], ['relu_out'])
+def build_MLP(weights, biases):
+    assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
+    assert len(weights) >= 2, "Must include at least input layer, hidden layer and output layer!"
+    
+    n_layers = len(weights) # Number of layers (excluding input layer, since no function call happens there)
 
-        # Setting up neural network
-        x0 = ca.MX.sym('x', layer_szs[0])
-        x = x0
-        for l in range(1, len(layer_szs)):
-            W = weights[l-1]
-            b = biases[l-1]
-            x_t = ca.MX.sym('x', layer_szs[l-1]) # Placeholder for each layer's input
+    placeholder = ca.MX.sym('placeholder')
+    ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
+                                ['relu_in'], ['relu_out'])
 
-            layer = ca.Function('f_MLP', [x_t], [W.T @ x_t + b],\
-                                    ['input'], ['output'])
-            x = ReLU(layer(x))
+    x_in = ca.MX.sym('x', len(weights[0]))
+    x = x_in
+    for l, (W, b) in enumerate(zip(weights,biases)):
+        layer_sz = len(W)
+        x_t = ca.MX.sym('x', layer_sz)
+        layer = ca.Function('f_MLP', [x_t], [W.T @ x_t + b],\
+                              ['layer_in'], ['layer_out'])
+        x = layer(x)
+        if (l+1) < n_layers:
+            x = ReLU(x)
 
-        return ca.Function('f_MLP', [x0], [x], ['input_MLP'], ['output_MLP'])
+    return ca.Function('f_MLP', [x_in], [x], ['MLP_in'], ['MLP_out'])
 
 # -- Proofs of concepts -- #
 def basic_example():
@@ -112,7 +114,7 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
     DU = opti.variable(config['n_MV'],N)
     epsy = opti.variable(2)
 
-    U = opti.variable(2,N+mu)
+    U = opti.variable(2,N+1+mu) # History has to have +1, since it's mu steps backwards from k-1; u_k == U[:,mu+1]
 
     # Initialization, because f_MLP needs historical values (opti.set_value()?)
     for i in range(my):
@@ -121,29 +123,26 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
         U[:,i] = uk
     U[:,mu] =   uk
 
-    # Define cost function recursively ("Fold"; see https://web.casadi.org/docs/#for-loop-equivalents)
     cost = 0
     for i in range(N):
-        cost += (Y[:,i] - Y_ref[i]).T @ Q @ (Y[:,i] - Y_ref[i]) + DU[:,i].T @ R @ DU[:,i]
-
+        cost += (Y[:,my+i] - Y_ref[i]).T @ Q @ (Y[:,my+i] - Y_ref[i]) + DU[:,i].T @ R @ DU[:,i]
     cost += rho.T @ epsy 
     opti.minimize(cost) # (1a)
 
     # Define constraints, respecting recursion in (1g)
     constraints = []
     constraints.append(Y[:,my] == yk) # (1b)
-    temp = Y[:,my]
     for i in range(N):          
         constraints.append(opti.bounded(config['ylb'] - epsy,\
-                                        Y[:,i + 1],\
+                                        Y[:,my + 1 + i],\
                                         config['yub'] + epsy)) # (1d)
         constraints.append(opti.bounded(config['dulb'],\
                                         DU[:,i],\
                                         config['duub'])) # (1e)
         constraints.append(opti.bounded(config['ulb'],\
-                                        U[:,i],\
+                                        U[:,mu + 1 + i],\
                                         config['uub'])) # (1f)
-        constraints.append(U[:,i] == U[:,i - 1] + DU[:,i]) # (1g)
+        constraints.append(U[:,mu + 1 + i] == U[:,mu + i] + DU[:,i]) # (1g)
     
     constraints.append(opti.bounded(config['elb'],\
                                     epsy,\
@@ -151,23 +150,17 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
 
     
     # # Defining the neural network as constraint
-    assert len(weights) == len(biases), "There must be a set of biases for each set of weights!"
-    x0 = ca.horzcat(U[:,:mu + 1], Y[:,:my + 1])# Input to the network
-    x = x0.reshape((x0.shape[0] * x0.shape[1],1))
-    for W, b in zip(weights, biases):
-        # print(isinstance(x, ca.MX))
-        # assert isinstance(x, ca.MX), "x is indeed not symbolic"
-        layer = ca.Function('layer', [x], [ca.mtimes(W.T, x) + b],\
-                            ['input layer'], ['output layer']) # Defining the current layer
-        x = layer([x, W, b])
-        relu = ca.Function('ReLU', [x], [x * (x > 0)])
-        x = relu(x)
-    f_MLP = ca.Function('f_MLP', [x0], [x])
-
-    assert mu == my, "below indexing currently can\'t handle mu != my"
-    for i in range(my, N + my):
-        #! This indexing goes wrong when mu != my
-        constraints.append(Y[:,i + 1] == f_MLP([Y[:,i - my:i],U[:,i - 1 - mu:i - 1], U[:,i]])) # (1c)
+    f_MLP = build_MLP(weights, biases)
+    assert mu == my, "below indexing currently can\'t handle mu != my" #! This indexing goes wrong when mu != my
+    for i in range(N):
+        # t1 = U[:,i:mu + i] # slice: u_{k+i-1:k+i-1-mu} -> mu+1+i-1-mu : mu+1+i-1
+        # t2 = U[:,mu + 1 + i] # k == mu + 1 (correcting for history)
+        # t3 = Y[:,i:my + i + 1] # slice: y_{k+i:k+i-my} -> my+i-my : my+i (correcting for history) (fra og med k+i-my, til og med k+i)
+        x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
+        x = ca.reshape(x, x.numel(), 1)
+        temp = Y[:,my + 1 + i]
+        res = f_MLP(MLP_in=x)
+        constraints.append(temp == res['MLP_out']) # (1c)
         
     opti.subject_to(constraints)
 
@@ -222,12 +215,15 @@ if __name__ == "__main__":
     yk = [10000, 280]   # Fine as temp values?
     
     # Define a mock net on form 12->10->2 (n_MV * (mu + 1) + n_CV * (my + 1) equals 12)
+    in_sz = n_MV * (mu + 1) + n_CV * (my + 1)
+    hl_sz = 10
+    out_sz = 2
     weights = []
-    weights.append(np.ones((n_MV * (mu + 1) + n_CV * (my + 1), 10)))
-    weights.append(np.ones((10,2)))
+    weights.append(np.ones((in_sz, hl_sz)))
+    weights.append(np.ones((hl_sz,out_sz)))
     biases = []
-    biases.append(10)
-    biases.append(2)
+    biases.append(np.ones((hl_sz,)) * 10)
+    biases.append(np.ones((out_sz,)) * 2)
     update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biases)
 
     print("finished :)")
