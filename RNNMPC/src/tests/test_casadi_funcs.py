@@ -66,6 +66,7 @@ def build_nn_ca(weights, biases):
     assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
     assert len(weights) >= 2, "Must include at least input layer, hidden layer and output layer!"
     
+    n_layers = len(weights) # Number of layers (excluding input layer, since no function call happens there)
     # Defining activation function
     placeholder = ca.MX.sym('placeholder')
     ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
@@ -74,13 +75,15 @@ def build_nn_ca(weights, biases):
     # Setting up neural network
     x0 = ca.MX.sym('x', len(weights[0]))
     x = x0
-    for W, b in zip(weights,biases):
+    for l, (W, b) in enumerate(zip(weights,biases)):
         layer_sz = len(W)
         x_t = ca.MX.sym('x', layer_sz)
         layer = ca.Function('f_MLP', [x_t], [W.T @ x_t + b],\
                               ['layer_in'], ['layer_out'])
-        # x = ReLU(layer(x))
-        x = ReLU(layer(x))
+        x = layer(x)
+        if (l+1) < n_layers: # Don't want activation function on output layer
+            x = ReLU(x)
+        # x = ReLU(x)
 
     return ca.Function('f_MLP', [x0], [x], ['MLP_in'], ['MLP_out'])
 
@@ -91,7 +94,8 @@ if __name__ == "__main__":
 
     layer_szs = [2,5,2]
     weights = [np.ones((2,5)), np.ones((5,2))]
-    biases = [np.ones((5,)) * 10, np.ones((2,)) * 5]
+    biases = [np.ones((5,)) * 10, np.ones((2,)) * (-3)]
     f_MLP = build_nn_ca(weights, biases)
 
-    print(f'output from NN: {f_MLP(MLP_in=[1,-20])}')
+    res = f_MLP(MLP_in=[1,-10])
+    print(f'output from NN: {res}')
