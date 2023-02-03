@@ -14,7 +14,9 @@ if __name__ == "__main__":
     config_path = Path(__file__).parent / "config/mpc_config.yaml"
 
     # Initialize the controller
-    mpc = RNNMPC()
+    mpc = RNNMPC(nn_path=model_path,
+                 config_path=config_path,
+                 ref_path=ref_path)
 
     # Ensure FMU is in a defined state
     mpc.warm_start(fmu_path, warm_start_t=1000)

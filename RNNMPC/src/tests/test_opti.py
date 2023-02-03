@@ -97,12 +97,9 @@ def update_recursive_cost_constraints_casadi(uk, yk, Y_ref):
         
         
 def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biases):
-    # TODO: How access the variables of Y that are before 0?
-    #       -> Maybe define the variables as my+N and mu+N long, and just
-    #          initialize all past values to same value as yk?
-    
     # mock values
-    N = config['N']
+    Hp = config['Hp']
+    Hu = config['Hu']
     mu = config['mu']
     my = config['my']
     Q = config['Q']
@@ -110,11 +107,11 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
     rho = config['rho']
 
     opti = ca.Opti()
-    Y = opti.variable(config['n_CV'],N+1+my)
-    DU = opti.variable(config['n_MV'],N)
+    Y = opti.variable(config['n_CV'],Hp+1+my)
+    DU = opti.variable(config['n_MV'],Hu)
     epsy = opti.variable(2)
 
-    U = opti.variable(2,N+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
+    U = opti.variable(2,Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
 
     # Initializing overhead for (1c)
     # Expand so Y and U also contain historical values # TODO: maybe have to use opti.set_value()(?)
@@ -126,12 +123,13 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
         Y[:,i] = yk
     for i in range(mu):
         U[:,i] = uk
-    U[:,mu] =   uk
-    
+    U[:,mu] = uk
 
     cost = 0
-    for i in range(N):
-        cost += (Y[:,my+i] - Y_ref[i]).T @ Q @ (Y[:,my+i] - Y_ref[i]) + DU[:,i].T @ R @ DU[:,i]
+    for i in range(Hp):
+        cost += (Y[:,my+i] - Y_ref[i]).T @ Q @ (Y[:,my+i] - Y_ref[i])
+    for i in range(Hu):
+        DU[:,i].T @ R @ DU[:,i]
     cost += rho.T @ epsy 
     opti.minimize(cost) # (1a)
 
@@ -140,7 +138,7 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
     f_MLP = build_MLP(weights, biases)
 
     constraints.append(Y[:,my] == yk) # (1b)
-    for i in range(N):   
+    for i in range(Hp):   
         # (1c)
         x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
         x = ca.reshape(x, x.numel(), 1)
@@ -150,7 +148,8 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
         constraints.append(opti.bounded(config['ylb'] - epsy,\
                                         Y[:,my + 1 + i],\
                                         config['yub'] + epsy)) 
-                                        
+
+    for i in range(Hu):
         # (1e)
         constraints.append(opti.bounded(config['dulb'],\
                                         DU[:,i],\
@@ -168,16 +167,6 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
     constraints.append(opti.bounded(config['elb'],\
                                     epsy,\
                                     config['eub'])) 
-
-    
-    # # Defining the neural network as constraint
-    for i in range(N):
-        # t1 = U[:,i:mu + i] # slice: u_{k+i-1:k+i-1-mu} -> mu+1+i-1-mu : mu+1+i-1
-        # t2 = U[:,mu + 1 + i] # k == mu + 1 (correcting for history)
-        # t3 = Y[:,i:my + i + 1] # slice: y_{k+i:k+i-my} -> my+i-my : my+i (correcting for history) (fra og med k+i-my, til og med k+i)
-        x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
-        x = ca.reshape(x, x.numel(), 1)
-        constraints.append(Y[:,my + 1 + i] == f_MLP(MLP_in=x)['MLP_out']) # (1c)
         
     opti.subject_to(constraints)
 
@@ -187,7 +176,6 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
 
 if __name__ == "__main__":
 
-    N = 20
     n_MV = 2
     n_CV = 2
     mu = 2
@@ -195,9 +183,8 @@ if __name__ == "__main__":
 
     config = {}
     # Horizons
-    config['N'] = N
-    config['Hu'] = N 
-    config['Hp'] = N
+    config['Hu'] = 20 
+    config['Hp'] = 10
 
     # Weights
     config['Q'] = np.eye(2)
@@ -224,9 +211,9 @@ if __name__ == "__main__":
     config['n_CV'] = n_CV
     config['mu'] = mu
     config['my'] = my
-
+ 
     ref_path = Path(__file__).parent / "../../config/refs/testrefs.csv"
-    refs = references.ReferenceTimeseries(ref_path, N, config['delta_t'])
+    refs = references.ReferenceTimeseries(ref_path, config['Hp'], config['delta_t'])
     Y_ref = refs.refs_as_lists()
     uk = [50, 5000]     # Fine as temp values?
     yk = [10000, 280]   # Fine as temp values?

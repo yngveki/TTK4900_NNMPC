@@ -1,6 +1,12 @@
 SYSTEM_PARAMETERS: 
   n_MV: 2
   n_CV: 2
+  mu: 10
+  my: 10
+
+SOLVER_PARAMETERS:
+  expand: True
+  max_iter: 100
 
 TUNING_PARAMETERS:
   #! Horizon values are tentative and should be tuned properly
