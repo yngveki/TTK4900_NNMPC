@@ -61,46 +61,37 @@ def iterative_fold_example():
     res = F(F_in=0)
     print(f'res: {res}')
 
-
-def build_nn_ca(layer_szs, weights, biases):
-    assert len(layer_szs) >= 3, "Must include at least input layer, hidden layer and output layer!"
+# TODO: If possible, would have been smoother using `fold`
+def build_nn_ca(weights, biases):
+    assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
+    assert len(weights) >= 2, "Must include at least input layer, hidden layer and output layer!"
+    
     # Defining activation function
     placeholder = ca.MX.sym('placeholder')
     ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
                                 ['relu_in'], ['relu_out'])
 
     # Setting up neural network
-    x0 = ca.MX.sym('x', layer_szs[0])
+    x0 = ca.MX.sym('x', len(weights[0]))
     x = x0
-    for l in range(1, len(layer_szs)):
-        W = weights[l-1]
-        b = biases[l-1]
-        #TODO: Some assertion to make sure sizes are in accordance with layer_szs?
-        x_t = ca.MX.sym('x', layer_szs[l-1])
-        # W = ca.MX.sym('W', layer_szs[l-1], layer_szs[l])
-        # b = ca.MX.sym('b', layer_szs[l])
-
-        #! Below line fails after first run-through because x then no
-        #! longer is purely symbolic
+    for W, b in zip(weights,biases):
+        layer_sz = len(W)
+        x_t = ca.MX.sym('x', layer_sz)
         layer = ca.Function('f_MLP', [x_t], [W.T @ x_t + b],\
-                              ['input'], ['output'])
-        temp = layer(x)
-        x = ReLU(temp)
-        print(x)
-    
-    # TODO: Try to use "fold" instead, as in `basic_fold_example`
-    #! That might not be possible when layers are of different sizes, 
-    #! and thus weights and biases must be as well
-    f_MLP = ca.Function('F', [x0], [x], ['input_MLP'], ['output_MLP'])
-    return f_MLP
+                              ['layer_in'], ['layer_out'])
+        # x = ReLU(layer(x))
+        x = ReLU(layer(x))
+
+    return ca.Function('f_MLP', [x0], [x], ['MLP_in'], ['MLP_out'])
 
 # -- RUN -- #
 if __name__ == "__main__":
     # basic_fold_example(use_fold=True)
     # iterative_fold_example()
 
+    layer_szs = [2,5,2]
     weights = [np.ones((2,5)), np.ones((5,2))]
-    biases = np.array([10, 2], ndmin=2).T
-    f_MLP = build_nn_ca([2,5,2], weights, biases)
+    biases = [np.ones((5,)) * 10, np.ones((2,)) * 5]
+    f_MLP = build_nn_ca(weights, biases)
 
-    print(f'output from NN: {f_MLP(input_MLP=[1,2])}')
+    print(f'output from NN: {f_MLP(MLP_in=[1,-20])}')

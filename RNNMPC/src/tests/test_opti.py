@@ -8,9 +8,32 @@ import numpy as np
 import utils.references as references
 from pathlib import Path
 
+# -- Utils -- #
 def ReLU(x):
     return x * (x > 0)
 
+def casadi_MLP(layer_szs, weights, biases):
+        assert len(layer_szs) >= 3, "Must include at least input layer, hidden layer and output layer!"
+        # Defining activation function
+        placeholder = ca.MX.sym('placeholder')
+        ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
+                                    ['relu_in'], ['relu_out'])
+
+        # Setting up neural network
+        x0 = ca.MX.sym('x', layer_szs[0])
+        x = x0
+        for l in range(1, len(layer_szs)):
+            W = weights[l-1]
+            b = biases[l-1]
+            x_t = ca.MX.sym('x', layer_szs[l-1]) # Placeholder for each layer's input
+
+            layer = ca.Function('f_MLP', [x_t], [W.T @ x_t + b],\
+                                    ['input'], ['output'])
+            x = ReLU(layer(x))
+
+        return ca.Function('f_MLP', [x0], [x], ['input_MLP'], ['output_MLP'])
+
+# -- Proofs of concepts -- #
 def basic_example():
     opti = ca.Opti()
 
@@ -126,7 +149,7 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
                                     epsy,\
                                     config['eub'])) # (1h)
 
-
+    
     # # Defining the neural network as constraint
     assert len(weights) == len(biases), "There must be a set of biases for each set of weights!"
     x0 = ca.horzcat(U[:,:mu + 1], Y[:,:my + 1])# Input to the network
