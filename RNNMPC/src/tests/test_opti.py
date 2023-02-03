@@ -114,14 +114,20 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
     DU = opti.variable(config['n_MV'],N)
     epsy = opti.variable(2)
 
-    U = opti.variable(2,N+1+mu) # History has to have +1, since it's mu steps backwards from k-1; u_k == U[:,mu+1]
+    U = opti.variable(2,N+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
 
-    # Initialization, because f_MLP needs historical values (opti.set_value()?)
+    # Initializing overhead for (1c)
+    # Expand so Y and U also contain historical values # TODO: maybe have to use opti.set_value()(?)
+    # Note that this has implications for indexing:
+    #   -> From (1c): u_{k+i-1:k+i-mu}   -> [mu+i-mu : mu+1+i-1]     -> [i : mu + i] (fra og med k+i-mu, til _og med_ k+i; historie)
+    #                 u_{k+i}            -> [mu + 1 + i]             -> [mu + 1 + i] (nåværende)
+    #   -> From (1c): y_{k+i:k+i-my}     -> [my+i-my : my+i]         -> [i : my + 1 + i] (fra og med k+i-my, til _og med_ k+i; nåværende pluss historie)
     for i in range(my):
         Y[:,i] = yk
     for i in range(mu):
         U[:,i] = uk
     U[:,mu] =   uk
+    
 
     cost = 0
     for i in range(N):
@@ -131,36 +137,47 @@ def update_recursive_cost_constraints_opti(uk, yk, Y_ref, config, weights, biase
 
     # Define constraints, respecting recursion in (1g)
     constraints = []
+    f_MLP = build_MLP(weights, biases)
+
     constraints.append(Y[:,my] == yk) # (1b)
-    for i in range(N):          
+    for i in range(N):   
+        # (1c)
+        x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
+        x = ca.reshape(x, x.numel(), 1)
+        constraints.append(Y[:,my + 1 + i] == f_MLP(MLP_in=x)['MLP_out']) 
+
+        # (1d)
         constraints.append(opti.bounded(config['ylb'] - epsy,\
                                         Y[:,my + 1 + i],\
-                                        config['yub'] + epsy)) # (1d)
+                                        config['yub'] + epsy)) 
+                                        
+        # (1e)
         constraints.append(opti.bounded(config['dulb'],\
                                         DU[:,i],\
-                                        config['duub'])) # (1e)
+                                        config['duub']))
+
+        # (1f)
         constraints.append(opti.bounded(config['ulb'],\
-                                        U[:,mu + 1 + i],\
-                                        config['uub'])) # (1f)
-        constraints.append(U[:,mu + 1 + i] == U[:,mu + i] + DU[:,i]) # (1g)
+                                        U[:,mu + i],\
+                                        config['uub'])) 
+
+        # (1g)                                        
+        constraints.append(U[:,mu + i] == U[:,mu + i - 1] + DU[:,i]) 
     
+    # (1h)
     constraints.append(opti.bounded(config['elb'],\
                                     epsy,\
-                                    config['eub'])) # (1h)
+                                    config['eub'])) 
 
     
     # # Defining the neural network as constraint
-    f_MLP = build_MLP(weights, biases)
-    assert mu == my, "below indexing currently can\'t handle mu != my" #! This indexing goes wrong when mu != my
     for i in range(N):
         # t1 = U[:,i:mu + i] # slice: u_{k+i-1:k+i-1-mu} -> mu+1+i-1-mu : mu+1+i-1
         # t2 = U[:,mu + 1 + i] # k == mu + 1 (correcting for history)
         # t3 = Y[:,i:my + i + 1] # slice: y_{k+i:k+i-my} -> my+i-my : my+i (correcting for history) (fra og med k+i-my, til og med k+i)
         x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
         x = ca.reshape(x, x.numel(), 1)
-        temp = Y[:,my + 1 + i]
-        res = f_MLP(MLP_in=x)
-        constraints.append(temp == res['MLP_out']) # (1c)
+        constraints.append(Y[:,my + 1 + i] == f_MLP(MLP_in=x)['MLP_out']) # (1c)
         
     opti.subject_to(constraints)
 
