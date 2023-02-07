@@ -15,7 +15,7 @@ from yaml import safe_load
 # ----- NEURAL NETWORK ----- #
 class NeuralNetwork(nn.Module):
     
-    def __init__(self, layers=None):
+    def __init__(self, layers=None, model_path=None):
         """
         Initializes a network with the given structural hyperparameters.
 
@@ -35,6 +35,12 @@ class NeuralNetwork(nn.Module):
                 self.layer_stack.append(nn.ReLU())
 
             self.layer_stack.append(nn.Linear(self.layers[l], self.layers[l + 1]))
+
+        if model_path is not None:
+            try:
+                self.load(model_path)
+            except ValueError:
+                print(f"Given path {model_path} doesn\'t hold a model!")
 
     def forward(self, x):
         """

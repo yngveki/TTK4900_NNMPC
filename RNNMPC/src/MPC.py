@@ -3,15 +3,16 @@
 import casadi as ca
 from yaml import safe_load
 
-from utils.simulate_fmu import init_model, simulate_singlewell_step
-from neuralnetwork import NeuralNetwork
-from utils.references import ReferenceTimeseries
+from src.utils.simulate_fmu import init_model, simulate_singlewell_step
+from src.neuralnetwork import NeuralNetwork
+from src.utils.references import ReferenceTimeseries
 
 class RNNMPC:
 
     def __init__(self, 
                 nn_path,
-                config_path,
+                mpc_config_path,
+                nn_config_path,
                 ref_path):
         """
         Takes in given paths to setup the framework around the OCP
@@ -33,14 +34,12 @@ class RNNMPC:
         self.uk = None
 
         # -- config parameters -- #
-        configs = self._read_yaml(config_path)
+        configs = self._read_yaml(mpc_config_path)
         self.config = {}
 
         # System parameters
         self.config['n_MV'] = configs['SYSTEM_PARAMETERS']['n_MV']
         self.config['n_CV'] = configs['SYSTEM_PARAMETERS']['n_CV']
-        self.config['mu'] = configs['SYSTEM_PARAMETERS']['mu']
-        self.config['my'] = configs['SYSTEM_PARAMETERS']['my']
 
         # Horizons
         self.config['Hu'] = configs['TUNING_PARAMETERS']['Hu']
@@ -72,10 +71,16 @@ class RNNMPC:
                                         self.config['delta_t'],
                                         time=0)
 
-        # -- Load neural network model -- #        
+        # -- Load neural network model -- #   
+        configs = self._read_yaml(nn_config_path)
+        self.config['mu'] = configs['STRUCTURE']['mu']
+        self.config['my'] = configs['STRUCTURE']['my']    
         # Load model
-        self.model = NeuralNetwork()
-        self.model.load(nn_path)
+        layers = []
+        layers.append(self.config['mu'] * self.config['n_MV'] + self.config['my'] * self.config['n_CV'])
+        layers += configs['STRUCTURE']['hlszs']
+        layers.append(self.config['n_CV'])
+        self.model = NeuralNetwork(layers=layers, model_path=nn_path)
 
         # Extract weights and biases # TODO: Verify that they are lists of ndarrays
         self.weights, self.biases = self.model.extract_coefficients()
@@ -111,7 +116,7 @@ class RNNMPC:
         DU = self.opti.variable(self.config['n_MV'],Hu)
         epsy = self.opti.variable(2)
 
-        U = self.opti.variable(2,Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
+        U = self.opti.variable(self.config['n_MV'],Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
         Y_ref = self.refs.refs_as_lists()
 
         # (1a)
@@ -182,9 +187,10 @@ class RNNMPC:
 
     def solve_OCP(self):
         sol = self.opti.solve()
-        res = sol.value(self.opti.x).full() # How retrieve full vector of values?
+        res = sol.value(self.opti.x)
+        states = res['x'].full().flatten()
 
-        self.uk = ... # TODO
+        self.uk = states[:self.n_MV] # TODO
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
