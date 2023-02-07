@@ -26,15 +26,17 @@ class NeuralNetwork(nn.Module):
         
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        assert layers != None, "You need to properly define at least input and output layers"
+        assert layers != None, "Your need to provide sizes for the layers!"
+        assert len(layers) >= 3, "You need to define at least an input, hidden and output layer"
         self.layers = layers
 
-        self.layer_stack = nn.Sequential()        
-        for l in range(len(self.layers) - 1):
-            if l > 0:            
-                self.layer_stack.append(nn.ReLU())
+        temp = []
+        for idx in range(len(layers) - 1):
+            temp.append(nn.Linear(layers[idx], layers[idx + 1]))
 
-            self.layer_stack.append(nn.Linear(self.layers[l], self.layers[l + 1]))
+        self.layers = nn.ModuleList(temp)
+
+        self.act = torch.nn.ReLU(inplace=False)
 
         if model_path is not None:
             try:
@@ -49,8 +51,11 @@ class NeuralNetwork(nn.Module):
         Args:
             :param x: the given input data to be fed through the neural network.
         """
-        predictions = self.layer_stack(x)
-        return predictions
+        input = x
+        for l in self.layers[:-1]:
+            input = self.act(l(input))
+
+        return self.layers[-1](input)
 
     def log_MSE(self, mse):
         """
