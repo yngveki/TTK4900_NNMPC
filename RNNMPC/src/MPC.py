@@ -80,6 +80,8 @@ class RNNMPC:
         layers.append(self.config['mu'] * self.config['n_MV'] + self.config['my'] * self.config['n_CV'])
         layers += configs['STRUCTURE']['hlszs']
         layers.append(self.config['n_CV'])
+
+        # TODO: Could remove overhead if able to only extract weights and biases; that's all we really need
         self.model = NeuralNetwork(layers=layers, model_path=nn_path)
 
         # Extract weights and biases # TODO: Verify that they are lists of ndarrays
@@ -104,7 +106,7 @@ class RNNMPC:
                                             start_time = self.config['t'], 
                                             final_time = self.config['final_t'], # Needed for initialization, but different from warm start time
                                             delta_t = self.config['delta_t'],
-                                            warm_start_t=2000) # TODO: Figure out adequate value
+                                            warm_start_t=warm_start_t)
 
     def update_OCP(self):
         Hp = self.config['Hp']
@@ -132,7 +134,7 @@ class RNNMPC:
 
         # Define constraints, respecting recursion in (1c) and (1g)
         constraints = []
-        f_MLP = self._build_MLP(self.weights, self.biases)
+        f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
 
         constraints.append(Y[:,my] == yk) # (1b)
 
@@ -190,7 +192,7 @@ class RNNMPC:
         res = sol.value(self.opti.x)
         states = res['x'].full().flatten()
 
-        self.uk = states[:self.n_MV] # TODO
+        self.uk = states[:self.n_MV] # TODO: verify
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
