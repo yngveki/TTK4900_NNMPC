@@ -133,5 +133,4 @@ def train(hyperparameters, csv_path_train, csv_path_val):
 
     print("Done!")
 
-
     return model, train_losses, val_MSEs, time, t

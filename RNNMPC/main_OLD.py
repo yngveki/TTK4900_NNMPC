@@ -5,16 +5,15 @@ from pathlib import Path
 from os.path import exists
 from yaml import safe_load
 import matplotlib.pyplot as plt
-import matplotlib
 import pandas as pd
 import numpy as np
 
-# from src.neuralnetwork import train_NN, test_NN, load_NN
-from src.train import train_NN
-from src.test import test_NN
+from src.neuralnetwork import NeuralNetwork
+from src.train import train
+from src.test import test
 
 class GroundTruth():
-    """Holds simply arrays showing u1, u2, y1, y2"""
+    """Holds arrays showing u1, u2, y1, y2"""
     def __init__(self, csv_path):
         df = pd.read_csv(csv_path)
         self.u1 = np.asarray(df.iloc[0,:])
@@ -22,7 +21,7 @@ class GroundTruth():
         self.y1 = np.asarray(df.iloc[2,:])
         self.y2 = np.asarray(df.iloc[3,:])
 
-    def _plot(self):
+    def plot(self):
         _, axs = plt.subplots(2, 2)
         t = np.linspace(0, len(self) - 1, num=len(self))
 
@@ -38,9 +37,10 @@ class GroundTruth():
         plt.show()
 
     def __len__(self):
-        assert len(self.u1) == len(self.u2)
-        assert len(self.u1) == len(self.y1)
-        assert len(self.u1) == len(self.y2)
+        if all((len(self.u1) != len(self.u2), 
+                len(self.u1) != len(self.y1), 
+                len(self.u1) != len(self.y2))):
+            Exception('All data sequences must be equally long!\n')
 
         return len(self.u1)
 
@@ -65,16 +65,13 @@ if __name__ == '__main__':
                 
         # TRAIN = True
         if not TEST:
-            model, train_losses, val_MSEs, time, final_epoch = train_NN(hyperparameters, csv_path_train, csv_path_val)
+            model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
         else:
             nn_path_suffix = "models/model_" + hyperparameter_nr + "_36000_10" + ".pt"
             nn_path = Path(__file__).parent / nn_path_suffix
-            model = load_NN(nn_path, hyperparameters)
+            model = NeuralNetwork(layers=hyperparameters['STRUCTURE']['hlszs'], model_path=nn_path)
 
         # ----- PLOTTING ----- #  
-        # PLOT = True
-        # if PLOT:
-        #     
         if not TEST:
             # Plotting training against validation error
             fig, ax = plt.subplots()
@@ -100,7 +97,7 @@ if __name__ == '__main__':
             csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_1_36000.csv"
         
             gt = GroundTruth(csv_path_test)
-            pred = test_NN(model, csv_path_test, hyperparameters)
+            pred = test(model, csv_path_test, hyperparameters)
 
             fig2, axes = plt.subplots(2, 2, sharex=True)
             # fig2.tight_layout()
@@ -146,6 +143,7 @@ if __name__ == '__main__':
 
         
         # ----- SAVING ----- #
+        # TODO: Make more robust
         # Model:
         itr_nr = 11 # The number of times the same main-loop has been run
         model_path_suffix = "models/model_" + hyperparameter_nr + "_36000_" + str(itr_nr) + ".pt"
@@ -180,7 +178,3 @@ if __name__ == '__main__':
             
             fig_path_suffix = "figs/" + hyperparameter_nr + "/" + '_validation_14400_' + str(itr_nr) + '.png'
             fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-
-    # csv_path = Path(__file__).parent / "generate_data/data/old/u1static_50_u2_7500_stairs_0_3600.csv"    
-    # gt = GroundTruth(csv_path)
-    # gt._plot()
