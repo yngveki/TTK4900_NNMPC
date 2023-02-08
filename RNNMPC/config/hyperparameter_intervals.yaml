@@ -1,0 +1,7 @@
+STRUCTURE: 
+  mu: [8,20]          # history of inputs considered
+  my: [8,20]          # history of outputs considered
+
+LEARNING:
+  bsz: [50,500]        # batch size
+  lr: [0.0001,0.01]    # learning rate

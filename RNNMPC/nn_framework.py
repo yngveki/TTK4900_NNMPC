@@ -11,6 +11,7 @@ import numpy as np
 from src.neuralnetwork import NeuralNetwork
 from src.train import train
 from src.test import test
+from src.utils.splitter import Splitter
 
 class GroundTruth():
     """Holds arrays showing u1, u2, y1, y2"""
@@ -47,28 +48,26 @@ class GroundTruth():
 
 if __name__ == '__main__':
     TEST = False
-    # TODO: iterate over hyperparameter candidates smarter
-    candidates = [0]
-    for itr in candidates:
-        print(f'Iteration nr. {itr}')
+
+    hyperparameter_path = Path(__file__).parent / "config/nn_config.yaml"
+    with open(hyperparameter_path, "r") as f:
+        hyperparameters = safe_load(f)
+        if not hyperparameters:
+            Exception("Failed loading hyperparameters\n")
+
+    resolution = 3
+    hyperparameter_candidates = Splitter(resolution, hyperparameters)
+    for itr, params in enumerate(hyperparameter_candidates):
+        print(f'Iteration nr.: {itr}')
         hyperparameter_nr = "hyperparameters_" + str(itr)
 
-        hyperparameter_suffix = "config/hyperparameter_candidates/" + hyperparameter_nr + ".yaml"
-        hyperparameter_path = Path(__file__).parent / hyperparameter_suffix
-        with open(hyperparameter_path, "r") as f:
-            hyperparameters = safe_load(f)
-            if not hyperparameters:
-                Exception("Failed loading config file\n")
-
-        csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_36000.csv"
-        csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_1_7200.csv"
+        csv_path_train = Path(__file__).parent / "generate_data/data/mock_train_data.csv"
+        csv_path_val = Path(__file__).parent / "generate_data/data/mock_val_data.csv"
                 
-        # TRAIN = True
         if not TEST:
             model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
         else:
-            nn_path_suffix = "models/model_" + hyperparameter_nr + "_36000_10" + ".pt"
-            nn_path = Path(__file__).parent / nn_path_suffix
+            nn_path = Path(__file__).parent / "models/mock_model.pt"
             model = NeuralNetwork(layers=hyperparameters['STRUCTURE']['hlszs'], model_path=nn_path)
 
         # ----- PLOTTING ----- #  
@@ -79,7 +78,6 @@ if __name__ == '__main__':
             fig.tight_layout()
             ax.plot(val_MSEs[1:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
             ax.plot(train_losses[1:final_epoch], 'b--', linewidth=2.0, label='Training losses')
-            # ax.plot(test_losses[1:final_epoch], 'r-', linewidth=1.5, label='Test losses')
             ax.axvline(len(val_MSEs[1:final_epoch]) - 5, color='tab:red')
             ax.set_xlabel('epochs')
             ax.set_title(f'Validation performance over epochs. Final MSE: {model.mse:.3g}')
@@ -94,19 +92,16 @@ if __name__ == '__main__':
         
         else:
             # Plotting predictions against ground truth. Calculates test MSE
-            csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_1_36000.csv"
+            csv_path_test = Path(__file__).parent / "generate_data/data/mock_test_data.csv"
         
             gt = GroundTruth(csv_path_test)
             pred = test(model, csv_path_test, hyperparameters)
 
             fig2, axes = plt.subplots(2, 2, sharex=True)
-            # fig2.tight_layout()
-            # if TRAIN:
             fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)
 
             # Plotting ground truth and predicted gas rates
             axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
-            # axes[0,0].set_xlabel('time [s]')
             axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
             axes[0,0].plot(gt.y1, '-', label='true gas rate', color='tab:orange')
             axes[0,0].plot(pred['y1'], label='predicted gas rate', color='tab:red')
@@ -114,7 +109,6 @@ if __name__ == '__main__':
 
             # Plotting ground truth and predicted oil rates
             axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
-            # axes[0,1].set_xlabel('time [s]')
             axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
             axes[0,1].plot(gt.y2, label='true oil rate', color='tab:orange')
             axes[0,1].plot(pred['y2'], '-', label='predicted oil rate', color='tab:red')
@@ -146,8 +140,7 @@ if __name__ == '__main__':
         # TODO: Make more robust
         # Model:
         itr_nr = 11 # The number of times the same main-loop has been run
-        model_path_suffix = "models/model_" + hyperparameter_nr + "_36000_" + str(itr_nr) + ".pt"
-        model_path = Path(__file__).parent / model_path_suffix
+        model_path = Path(__file__).parent / "models/mock_model.pt"
 
         if not exists(model_path): # Safe to save; won't override
             torch.save(model.state_dict(), model_path)
@@ -167,14 +160,14 @@ if __name__ == '__main__':
 
         fig_path_base = Path(__file__).parent
         if not TEST:
-            fig_path_suffix = "figs/" + hyperparameter_nr + "/" + '_test_36000_' + str(itr_nr) + '.eps'
+            fig_path_suffix = "figs/" + hyperparameter_nr + "_test.eps"
             fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
             
-            fig_path_suffix = "figs/" + hyperparameter_nr + "/" + '_test_36000_' + str(itr_nr) + '.png'
+            fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
             fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
         else:
-            fig_path_suffix = "figs/" + hyperparameter_nr + "/" + '_validation_14400_' + str(itr_nr) + '.eps'
+            fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
             fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
             
-            fig_path_suffix = "figs/" + hyperparameter_nr + "/" + '_validation_14400_' + str(itr_nr) + '.png'
+            fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
             fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
