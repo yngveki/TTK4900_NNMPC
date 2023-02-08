@@ -4,7 +4,13 @@
 # iteratively, configurations of the values within, given some 
 # resolution
 
-# TODO: Make Interval iterable with __iter__ and __next__
+class Node():
+
+    def __init__(self, data, prev=None, nxt=None):
+        self.data = data
+        self.prev = prev
+        self.nxt = nxt
+
 class Interval():
     """Defines an interval, which defines a set of values, given some resolution"""
 
@@ -24,59 +30,66 @@ class Interval():
             resolution = diff + 1 # e.g. mu=[8,10], res=5, doesn't make sense; need only test 8, 9 and 10, then
         self.incr = diff / (resolution - 1) # - 1, since we start _at_ begin, and want to end _at_ end
 
-        self.curr = self.begin
-        self._nxt = self.curr + self.incr
+        self.interval = []
+        curr = self.begin
+        for i in range(resolution):
+            self.interval.append(curr)
+            curr += self.incr
+        # self.curr = self.begin
+        # self._nxt = self.curr + self.incr
 
-        self.looped = False
+        # self.looped = False
 
-    @property
-    def nxt(self):
-        return self._nxt
+    # @property
+    # def nxt(self):
+    #     return self._nxt
 
-    @nxt.setter
-    def nxt(self, new_val):
-        if new_val <= self.end:
-            self._nxt = new_val
-        else:
-            self._nxt = None
-        # assert self.nxt + self.incr <= self.end, "Next value cannot supercede given end-value!\n"
-        # self._nxt += increment
+    # @nxt.setter
+    # def nxt(self, new_val):
+    #     if new_val <= self.end:
+    #         self._nxt = new_val
+    #     else:
+    #         self._nxt = None
+    #     # assert self.nxt + self.incr <= self.end, "Next value cannot supercede given end-value!\n"
+    #     # self._nxt += increment
 
-    def iterate(self):
-        if self.nxt is None:
-            self.looped = True
-            return None
+    # def iterate(self):
+    #     if self.nxt is None:
+    #         self.looped = True
+    #         return None
         
-        self.curr = self.nxt
-        self.nxt = self.nxt + self.incr
-        return self.nxt
+    #     self.curr = self.nxt
+    #     self.nxt = self.nxt + self.incr
+    #     return self.nxt
 
-    def reset(self):
-        self.curr = self.begin
-        self.nxt = self.curr + self.incr
+    # def reset(self):
+    #     self.curr = self.begin
+    #     self.nxt = self.curr + self.incr
         
 class Splitter():
     """Iteratively extracts configurations of values within given intervals"""
 
     def __init__(self, resolution, *args, **kwargs):
-        self.curr_iterating = None
-        self.nxt_iterating = None
-        self.configs = None
-        self.iter_limit = 0
+        # self.curr_iterating = None
+        # self.nxt_iterating = None
+        # self.configs = None
+        # self.iter_limit = 0
 
         self.intervals = {}
-        self.keys = []
+        # self.keys = []
         for key, value in kwargs:
             if isinstance(value, list):
-                self.intervals[key] = Interval(value, resolution)
-                self.keys.append(key)
+                # self.intervals[key] = Interval(value, resolution)
+                interval = Interval(value, resolution)
+                self.intervals[key] = Node(interval)
+                # self.keys.append(key)
 
-        if any(self.keys): # List is not empty
-            self.itr = iter(self.keys)
-            self.curr_iterating = next(self.itr) # Current key that we're iterating over
+        # if any(self.keys): # List is not empty
+        #     self.itr = iter(self.keys)
+        #     self.curr_iterating = next(self.itr) # Current key that we're iterating over
 
-            self.configs = self._build_configs()
-            self.iter_limit = len(self.keys)
+        #     self.configs = self._build_configs()
+        #     self.iter_limit = len(self.keys)
 
     # def _build_configs(self):
     #     configs = []
