@@ -4,6 +4,7 @@
 # iteratively, configurations of the values within, given some 
 # resolution
 
+# TODO: Make Interval iterable with __iter__ and __next__
 class Interval():
     """Defines an interval, which defines a set of values, given some resolution"""
 
@@ -49,6 +50,10 @@ class Interval():
         self.curr = self.nxt
         self.nxt = self.nxt + self.incr
         return self.nxt
+
+    def reset(self):
+        self.curr = self.begin
+        self.nxt = self.curr + self.incr
         
 class Splitter():
     """Iteratively extracts configurations of values within given intervals"""
@@ -56,6 +61,8 @@ class Splitter():
     def __init__(self, resolution, *args, **kwargs):
         self.curr_iterating = None
         self.nxt_iterating = None
+        self.configs = None
+        self.iter_limit = 0
 
         self.intervals = {}
         self.keys = []
@@ -68,31 +75,66 @@ class Splitter():
             self.itr = iter(self.keys)
             self.curr_iterating = next(self.itr) # Current key that we're iterating over
 
-    # @property
-    # def nxt_iterating(self):
-    #     return self._nxt_iterating
+            self.configs = self._build_configs()
+            self.iter_limit = len(self.keys)
 
-    # @nxt_iterating.setter
-    # def nxt_iterating(self, new_val):
+    # def _build_configs(self):
+    #     configs = []
+
+    #     def recurse(current, depth):
+    #         if depth != 0:
+    #             for interval
+    #     for key, interval in self.intervals:
+    #         ...
+
+    # def collect_folders(start, depth=-1):
+    #     """ negative depths means unlimited recursion """
+    #     folder_ids = []
+
+    #     # recursive function that collects all the ids in `acc`
+    #     def recurse(current, depth):
+    #         folder_ids.append(current.id)
+    #             if depth != 0:
+    #                 for folder in getChildFolders(current.id):
+    #                     # recursive call for each subfolder
+    #                     recurse(folder, depth-1)
+
+    #     recurse(start, depth) # starts the recursion
+    #     return folder_ids
+
+    # def _iterate(self):
     #     try:
     #         nxt = next(self.itr)
     #     except StopIteration:
     #         nxt = None
-    #     self._nxt_iterating = nxt
+    #     self.nxt_iterating = nxt
 
-    def iterate(self):
-        try:
-            nxt = next(self.itr)
-        except StopIteration:
-            nxt = None
-        self.nxt_iterating = nxt
+    # API for use, such that user may simply say: "I want the next value"
+    # def get_next_config(self):
+    #     #! Exponential runtime wrt resolution and amount of intervals
+    #     configs = []
+    #     for interval in self.intervals
+    #     config = {}
+    #     for idx, key in enumerate(self.keys):
+    #         config[key] = self.intervals[key].curr
+    #         # TODO: Need to 
+    #         self.intervals[key].iterate()
 
-    # TODO: Now you've made a framework for iterating over intervals.
-    # TODO: Now make the API which let's the user simply say "I want the next value"
+    #     return config
 
-    def get_next_config(self):
-        ...
+    def __iter__(self):
+        self.curr_idx = 0
+        return self
 
+    def __next__(self):
+        key = self.keys[self.curr_idx]
+        curr_interval = self.intervals[self.keys[key]]
+
+        if self.curr_idx > self.iter_limit:
+            raise StopIteration
+
+        self.curr_idx += 1
+        return curr_interval 
 
 # ----- For testing ----- #
 if __name__ == "__main__":
@@ -103,6 +145,13 @@ if __name__ == "__main__":
         print(interval.nxt)
         interval.iterate()
 
-    if 'key':
-        print('key')
     splitter = Splitter(res, mu=[8,10], my=[8,12])
+
+#? Some attempt at solving above problem (iterating over configs) recursively. Think I'll trash
+# def rec(self, iter):
+#     try:
+#         res = rec(next(iter))
+#     except StopIteration:
+#         for val in interval:
+
+#         return res
