@@ -4,10 +4,9 @@
 
 import torch
 import torch.nn as nn
-from pathlib import Path
 
 from src.neuralnetwork import NeuralNetwork
-from generate_data.load_stepresponse_data import load_input_data
+from generate_data.load_input_data import load_input_data
 
 class EarlyStopping():
 
@@ -49,11 +48,11 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         optimizer.zero_grad()
 
         # Prepare format of data
-        u1 = torch.Tensor(sample['u1'][:model.mu])
-        u2 = torch.Tensor(sample['u2'][:model.mu])
-        y1 = torch.Tensor(sample['y1'][:model.my])
-        y2 = torch.Tensor(sample['y2'][:model.my])
-        X = torch.cat((u1, u2, y1, y2)) # Concatenating lists for single input-vector
+        u1 = torch.Tensor(sample['u1'])
+        u2 = torch.Tensor(sample['u2'])
+        y1 = torch.Tensor(sample['y1'])
+        y2 = torch.Tensor(sample['y2'])
+        X = torch.cat((u1, u2, y1, y2))
         truth = torch.Tensor(sample['target'])
 
         # Compute prediction and loss
@@ -79,11 +78,10 @@ def validation_loop(dataloader, model, epoch):
     mse_val = 0
     for sample in dataloader.dataset:
         # Prepare format of data
-        # TODO: Is indexing superfluous? is not e.g. sample['u1'] sufficient?
-        u1 = torch.Tensor(sample['u1'][:model.mu])
-        u2 = torch.Tensor(sample['u2'][:model.mu])
-        y1 = torch.Tensor(sample['y1'][:model.my])
-        y2 = torch.Tensor(sample['y2'][:model.my])
+        u1 = torch.Tensor(sample['u1'])
+        u2 = torch.Tensor(sample['u2'])
+        y1 = torch.Tensor(sample['y1'])
+        y2 = torch.Tensor(sample['y2'])
         X = torch.cat((u1, u2, y1, y2))
         truth = torch.Tensor(sample['target'])
 
@@ -94,31 +92,21 @@ def validation_loop(dataloader, model, epoch):
     return mse_val
 
 # ----- TRAINING ----- #
-def train_NN(hyperparameters, csv_path_train, csv_path_val):
+def train(hyperparameters, csv_path_train, csv_path_val):
 
-    mu = hyperparameters['STRUCTURE']['mu']
-    my = hyperparameters['STRUCTURE']['my']
-    batch_size = hyperparameters['TRAINING']['bsz']
-    train_dl = load_input_data(csv_path_train, bsz=batch_size, mu=mu, my=my, shuffle=True)
-                                            
-    n_MV = hyperparameters['STRUCTURE']['n_MV']
-    n_CV = hyperparameters['STRUCTURE']['n_CV']
     mu = hyperparameters['STRUCTURE']['mu']
     my = hyperparameters['STRUCTURE']['my']
     hlszs = hyperparameters['STRUCTURE']['hlszs']
+    learning_rate = hyperparameters['LEARNING']['lr']
+    batch_size = hyperparameters['LEARNING']['bsz']
+    epochs = hyperparameters['LEARNING']['e']
+    patience = hyperparameters['LEARNING']['p']
 
-    model = NeuralNetwork(n_MV=n_MV, n_CV=n_CV, mu=mu, my=my, hlszs=hlszs)
-
-    learning_rate = hyperparameters['TRAINING']['lr']
-    batch_size = hyperparameters['TRAINING']['bsz']
-    epochs = hyperparameters['TRAINING']['e']
-
-    loss_fn = nn.MSELoss() # MSELoss since we're regressing; calculate error in cont. approx
-
+    model = NeuralNetwork(hlszs=hlszs)
+    loss_fn = nn.MSELoss() # MSE as loss func. for a regression problem
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     train_dl = load_input_data(csv_path_train, bsz=batch_size, mu=mu, my=my, shuffle=True)
-
     val_dl = load_input_data(csv_path_val, bsz=batch_size, mu=mu, my=my, shuffle=True)
     
     # ----- TRAINING ----- #
@@ -126,7 +114,7 @@ def train_NN(hyperparameters, csv_path_train, csv_path_val):
     val_MSEs = [0] * epochs
     time = [t for t in range(epochs)]
 
-    es = EarlyStopping()
+    es = EarlyStopping(p=patience)
 
     t = 0
     done = False
@@ -147,4 +135,3 @@ def train_NN(hyperparameters, csv_path_train, csv_path_val):
 
 
     return model, train_losses, val_MSEs, time, t
-    # return model, train_losses, val_MSEs, test_losses, time, t
