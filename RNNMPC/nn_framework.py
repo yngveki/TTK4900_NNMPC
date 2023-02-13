@@ -47,7 +47,7 @@ class GroundTruth():
 
 
 if __name__ == '__main__':
-    TEST = False
+    TEST = True
 
     hyperparameter_path = Path(__file__).parent / "config/nn_config.yaml"
     with open(hyperparameter_path, "r") as f:
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     if not TEST:
         # ----- TRAINING AND PLOTTING ----- #  
-        csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_10000.csv"
+        csv_path_train = Path(__file__).parent / "generate_data/data/step_choke_50_2_10000.csv"
         csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
             
         model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     else:
         # ----- PREDICTION AND PLOTTING ----- #  
         csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_2000.csv"
-        nn_path = Path(__file__).parent / "models/mock_model.pt"
+        nn_path = Path(__file__).parent / "models/mock_model3.pt"
     
         gt = GroundTruth(csv_path_test)
         pred, model = test(nn_path, csv_path_test, hyperparameters)
@@ -172,7 +172,7 @@ if __name__ == '__main__':
         manager.window.showMaximized()
 
         plt.show(block=False)
-        plt.pause(15)
+        plt.pause(30)
         plt.close()
 
         # ----- SAVING FIGS ----- #    

@@ -63,7 +63,7 @@ class SRDataset(Dataset):
 
     def __repr__(self):
         "Represents the class more pretty in debugger"
-        return "Step Response dataset"
+        return f"Step Response dataset, length: {len(self)}"
 
     def plot_sr(self, idx=0, rand=False, delta_t=10):
         """Shows step response nr. idx. Random step response if rand=True"""
