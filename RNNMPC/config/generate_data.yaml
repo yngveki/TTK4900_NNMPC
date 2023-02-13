@@ -4,4 +4,4 @@ delta_t: 10
 start_time: 0
 warm_start_t: 1000
 step_time: 200 # At what time the step should occur on the input
-final_time: 36000 # For how long the total simulation will last
+final_time: 2000 # For how long the total simulation will last

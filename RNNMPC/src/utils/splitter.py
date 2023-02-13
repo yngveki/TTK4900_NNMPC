@@ -4,6 +4,8 @@
 # iteratively, configurations of the values within, given some 
 # resolution
 
+import warnings
+
 class Node():
 
     def __init__(self, data, prev=None, nxt=None):
@@ -14,15 +16,17 @@ class Node():
 class Interval():
     """Defines an interval, which defines a set of values, given some resolution"""
 
-    def __init__(self, interval, resolution):
+    def __init__(self, key, interval, resolution):
         """
         Initializes an interval
 
         Args:
+            :param key: a string to associate the interval to some specific variable
             :param interval: a 2-long list, containing start and end values for interval
             :param resolution: the amount of values the interval should be split into
         """
 
+        self.key = key
         self.begin = interval[0]
         self.end = interval[-1]
         diff = self.end - self.begin
@@ -30,10 +34,10 @@ class Interval():
             resolution = diff + 1 # e.g. mu=[8,10], res=5, doesn't make sense; need only test 8, 9 and 10, then
         self.incr = diff / (resolution - 1) # - 1, since we start _at_ begin, and want to end _at_ end
 
-        self.interval = []
+        self.values = []
         curr = self.begin
         for i in range(resolution):
-            self.interval.append(curr)
+            self.values.append(curr)
             curr += self.incr
         # self.curr = self.begin
         # self._nxt = self.curr + self.incr
@@ -69,18 +73,21 @@ class Interval():
 class Splitter():
     """Iteratively extracts configurations of values within given intervals"""
 
-    def __init__(self, resolution, *args, **kwargs):
+    def __init__(self, resolution, **kwargs):
+        warnings.warn("""Splitter is not fully implemented, and spits out only 
+                         first possible configuration of given intervals""")
         # self.curr_iterating = None
         # self.nxt_iterating = None
         # self.configs = None
         # self.iter_limit = 0
 
         self.intervals = {}
+        self.config = []
         # self.keys = []
-        for key, value in kwargs:
+        for key, value in kwargs.items():
             if isinstance(value, list):
                 # self.intervals[key] = Interval(value, resolution)
-                interval = Interval(value, resolution)
+                interval = Interval(key, value, resolution)
                 self.intervals[key] = Node(interval)
                 # self.keys.append(key)
 
@@ -90,6 +97,10 @@ class Splitter():
 
         #     self.configs = self._build_configs()
         #     self.iter_limit = len(self.keys)
+
+        self.config = [interval.begin for interval in self.intervals]
+
+        return self.config
 
     # def _build_configs(self):
     #     configs = []

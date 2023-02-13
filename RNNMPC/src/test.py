@@ -5,15 +5,22 @@
 import torch
 import torch.nn as nn
 
+from src.neuralnetwork import NeuralNetwork
 from generate_data.load_input_data import load_input_data
 
 # ----- PREDICTING A SEQUENCE ----- #
-def test(model, csv_path, hyperparameters):
+def test(model_path, csv_path, hyperparameters):
     
     mu = hyperparameters['STRUCTURE']['mu']
     my = hyperparameters['STRUCTURE']['my']
-    batch_size = hyperparameters['TRAINING']['bsz']
+    hlszs = hyperparameters['STRUCTURE']['hlszs']
+    batch_size = hyperparameters['LEARNING']['bsz']
 
+    layers = []
+    layers.append(2 * (mu + 1) + 2 * (my + 1)) # Input layer
+    layers += hlszs                            # Hidden layers
+    layers.append(2)                           # Output layer
+    model = NeuralNetwork(layers=layers, model_path=model_path)
     loss_fn = nn.MSELoss() # MSELoss since we're regressing
 
     test_dl = load_input_data(csv_path, bsz=batch_size, mu=mu, my=my)
@@ -44,4 +51,4 @@ def test(model, csv_path, hyperparameters):
 
     model.log_MSE(test_loss)
 
-    return predicted
+    return predicted, model

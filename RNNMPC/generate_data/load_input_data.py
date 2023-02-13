@@ -10,6 +10,12 @@ from torch.utils.data import Dataset, DataLoader
 class SRDataset(Dataset):
     """SR == Step Response"""
     def __init__(self, csv_path, mu=1, my=1):
+        """
+        Args
+            :param csv_path: path to data location
+            :param mu: amount of historical actuation data per sample. This excludes current!
+            :param my: amount of historical output data per sample. This excludes current!
+        """
 
         df = pd.read_csv(csv_path)
 
@@ -30,10 +36,10 @@ class SRDataset(Dataset):
         num_samples = data_length - largest_m - 1 # We want the last sample to also have a next, for label's sake
         sr = []
         for n in range(num_samples):
-            u1 = u1_full[n:n + mu]
-            u2 = u2_full[n:n + mu]
-            y1 = y1_full[n:n + my]
-            y2 = y2_full[n:n + my]
+            u1 = u1_full[n:n + mu + 1] # history and current
+            u2 = u2_full[n:n + mu + 1] # history and current
+            y1 = y1_full[n:n + my + 1] # history and current
+            y2 = y2_full[n:n + my + 1] # history and current
             k = [n + t for t in range(largest_m)]
             sample = {'u1': u1, 
                       'u2': u2, 
@@ -95,7 +101,7 @@ def load_input_data(csv_path, bsz=64, mu=1, my=1, shuffle=False):
     # import warnings
     # warnings.filterwarnings("ignore")
 
-    sr_dataset = SRDataset(csv_path, mu=3, my=5)
+    sr_dataset = SRDataset(csv_path, mu=mu, my=my)
 
     return DataLoader(sr_dataset, batch_size=bsz, shuffle=shuffle, num_workers=0)
 

@@ -11,14 +11,6 @@ import csv
 from os.path import exists
 from yaml import safe_load
 
-def _check_status(status_do_step):
-    # Asserts whether a simulation step has been successful
-    #
-    # Input:
-    # - status_do_step:     Status of a 1-step simulation
-
-    assert status_do_step < 1, f"FMI not OK, status code: {status_do_step} \n FMI_OK = 0 \n FMI_WARNING = 1 \n FMI_DISCARD = 2 \n FMI_ERROR = 3 \n FMI_FATAL = 4 \n FMI_PENDING = 5"
-
 def init_model(model_path, start_time, final_time, Uk=[[50],[0]], delta_t=10, warm_start_t=0, warm_start=False):
     # Initiates a FMU model at the given model_path
     #
@@ -38,8 +30,6 @@ def init_model(model_path, start_time, final_time, Uk=[[50],[0]], delta_t=10, wa
     model.set_boolean([536871484], [True])
 
     model.initialize(start_time, final_time, True) #Initialize the slave
-    # model.set_real([82,83], [Uk[0], Uk[1]])
-    # model.set_real([3,4], [Uk[0], Uk[1]])
 
     y1 = []
     y2 = []
@@ -132,7 +122,7 @@ def normalize(series, min=None, max=None):
 
 
 if __name__ == '__main__':
-    for main_run_nr in range(0, 2):
+    for main_run_nr in range(0, 1):
         # ----- SETUP ----- #
         config_path = Path(__file__).parent / "../config/generate_data.yaml"
         with open(config_path, "r") as f:
@@ -219,7 +209,7 @@ if __name__ == '__main__':
         y1_normalized = normalize(y1)
         y2_normalized = normalize(y2)
         # ----- WRITE TO FILE ----- #
-        header = ["time_" + str(int(timestamp)) for timestamp in t]
+        header = ["t_" + str(int(timestamp)) for timestamp in t]
         rel_path = "data/" + "normalized_u1_" + str(choke) + "_u2_" + str(GL) + "_stairs_" + str(main_run_nr) + "_" + str(final_time - warm_start_t) + ".csv"
         csv_path = Path(__file__).parent / rel_path
         if not exists(csv_path):    # Safe to save; nothing can be overwritten

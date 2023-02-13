@@ -55,90 +55,63 @@ if __name__ == '__main__':
         if not hyperparameters:
             Exception("Failed loading hyperparameters\n")
 
-    resolution = 3
-    hyperparameter_candidates = Splitter(resolution, hyperparameters)
-    for itr, params in enumerate(hyperparameter_candidates):
-        print(f'Iteration nr.: {itr}')
-        hyperparameter_nr = "hyperparameters_" + str(itr)
+    # resolution = 3
+    # hyperparameter_iterator = Splitter(resolution, hyperparameters)
+    # for itr, params in enumerate(hyperparameter_iterator):
+    #     print(f'Iteration nr.: {itr}')
+    hyperparameter_nr = "hyperparameters_" + str(0)
 
-        csv_path_train = Path(__file__).parent / "generate_data/data/mock_train_data.csv"
-        csv_path_val = Path(__file__).parent / "generate_data/data/mock_val_data.csv"
-                
-        if not TEST:
-            model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
-        else:
-            nn_path = Path(__file__).parent / "models/mock_model.pt"
-            model = NeuralNetwork(layers=hyperparameters['STRUCTURE']['hlszs'], model_path=nn_path)
+# TODO: Make external loop to iterate over hyperparameter candidates
+    # if not TEST:
+    #     csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_10000.csv"
+    #     csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
+            
+    #     model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
 
-        # ----- PLOTTING ----- #  
-        if not TEST:
-            # Plotting training against validation error
-            fig, ax = plt.subplots()
+    # else:
+        # # TODO: Optimize NeuralNetwork so that this ugly overhead is superfluous
+        # layers = []
+        # layers.append(2 * (hyperparameters['STRUCTURE']['mu'] + 1) + \
+        #               2 * (hyperparameters['STRUCTURE']['my'] + 1))
+        # layers += hyperparameters['STRUCTURE']['hlszs']
+        # layers.append(2)
+        # model = NeuralNetwork(layers=layers, model_path=nn_path)
 
-            fig.tight_layout()
-            ax.plot(val_MSEs[1:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
-            ax.plot(train_losses[1:final_epoch], 'b--', linewidth=2.0, label='Training losses')
-            ax.axvline(len(val_MSEs[1:final_epoch]) - 5, color='tab:red')
-            ax.set_xlabel('epochs')
-            ax.set_title(f'Validation performance over epochs. Final MSE: {model.mse:.3g}')
-            ax.legend(loc='center right', prop={'size': 15})
+    if not TEST:
+        # ----- TRAINING AND PLOTTING ----- #  
+        csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_10000.csv"
+        csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
+            
+        model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
 
-            manager = plt.get_current_fig_manager()
-            manager.window.showMaximized()
+        p = hyperparameters['LEARNING']['p'] + 1 # To account for zero-indexing
+        # Plotting training against validation error
+        fig, ax = plt.subplots()
 
-            plt.show(block=False)
-            plt.pause(10)
-            plt.close()
+        fig.tight_layout()
+        ax.plot(val_MSEs[1:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
+        ax.plot(train_losses[1:final_epoch], 'b--', linewidth=2.0, label='Training losses')
+        ax.axvline(len(val_MSEs[1:final_epoch]) - p, color='tab:red')
+        ax.set_xlabel('epochs')
+        ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
+        ax.legend(loc='center right', prop={'size': 15})
+
+        manager = plt.get_current_fig_manager()
+        manager.window.showMaximized()
+
+        plt.show(block=False)
+        plt.pause(10)
+        plt.close()
         
-        else:
-            # Plotting predictions against ground truth. Calculates test MSE
-            csv_path_test = Path(__file__).parent / "generate_data/data/mock_test_data.csv"
+        # ----- SAVING FIGS AND TRAINED MODEL ----- #    
+        fig_path_base = Path(__file__).parent
+    # if not TEST:
+        fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
+        fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
         
-            gt = GroundTruth(csv_path_test)
-            pred = test(model, csv_path_test, hyperparameters)
-
-            fig2, axes = plt.subplots(2, 2, sharex=True)
-            fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)
-
-            # Plotting ground truth and predicted gas rates
-            axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
-            axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-            axes[0,0].plot(gt.y1, '-', label='true gas rate', color='tab:orange')
-            axes[0,0].plot(pred['y1'], label='predicted gas rate', color='tab:red')
-            axes[0,0].legend(loc='best', prop={'size': 15})
-
-            # Plotting ground truth and predicted oil rates
-            axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
-            axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-            axes[0,1].plot(gt.y2, label='true oil rate', color='tab:orange')
-            axes[0,1].plot(pred['y2'], '-', label='predicted oil rate', color='tab:red')
-            axes[0,1].legend(loc='best', prop={'size': 15})
-
-            # Plotting history of choke input
-            axes[1,0].set_title('Input: choke', fontsize=20)
-            axes[1,0].set_xlabel('time [s]', fontsize=15)
-            axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-            axes[1,0].plot(gt.u1, label='choke', color='blue')
-            axes[1,0].legend(loc='best', prop={'size': 15})
-
-            # Plotting history of gas lift rate input
-            axes[1,1].set_title('Input: gas lift rate', fontsize=20)
-            axes[1,1].set_xlabel('time [s]', fontsize=15)
-            axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
-            axes[1,1].plot(gt.u2, label='gas lift rate', color='blue')
-            axes[1,1].legend(loc='best', prop={'size': 15})
-
-            manager = plt.get_current_fig_manager()
-            manager.window.showMaximized()
-
-            plt.show(block=False)
-            plt.pause(15)
-            plt.close()
-
+        fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
+        fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
         
-        # ----- SAVING ----- #
-        # TODO: Make more robust
-        # Model:
         itr_nr = 11 # The number of times the same main-loop has been run
         model_path = Path(__file__).parent / "models/mock_model.pt"
 
@@ -155,19 +128,94 @@ if __name__ == '__main__':
 
             else:
                 print("File was not saved.")
+    
+    else:
+        # ----- PREDICTION AND PLOTTING ----- #  
+        csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_2000.csv"
+        nn_path = Path(__file__).parent / "models/mock_model.pt"
+    
+        gt = GroundTruth(csv_path_test)
+        pred, model = test(nn_path, csv_path_test, hyperparameters)
 
-        # Figs:
+        fig2, axes = plt.subplots(2, 2, sharex=True)
+        fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)
 
+        # Plotting ground truth and predicted gas rates
+        axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
+        axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
+        axes[0,0].plot(gt.y1, '-', label='true gas rate', color='tab:orange')
+        axes[0,0].plot(pred['y1'], label='predicted gas rate', color='tab:red')
+        axes[0,0].legend(loc='best', prop={'size': 15})
+
+        # Plotting ground truth and predicted oil rates
+        axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
+        axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
+        axes[0,1].plot(gt.y2, label='true oil rate', color='tab:orange')
+        axes[0,1].plot(pred['y2'], '-', label='predicted oil rate', color='tab:red')
+        axes[0,1].legend(loc='best', prop={'size': 15})
+
+        # Plotting history of choke input
+        axes[1,0].set_title('Input: choke', fontsize=20)
+        axes[1,0].set_xlabel('time [s]', fontsize=15)
+        axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
+        axes[1,0].plot(gt.u1, label='choke', color='blue')
+        axes[1,0].legend(loc='best', prop={'size': 15})
+
+        # Plotting history of gas lift rate input
+        axes[1,1].set_title('Input: gas lift rate', fontsize=20)
+        axes[1,1].set_xlabel('time [s]', fontsize=15)
+        axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
+        axes[1,1].plot(gt.u2, label='gas lift rate', color='blue')
+        axes[1,1].legend(loc='best', prop={'size': 15})
+
+        manager = plt.get_current_fig_manager()
+        manager.window.showMaximized()
+
+        plt.show(block=False)
+        plt.pause(15)
+        plt.close()
+
+        # ----- SAVING FIGS ----- #    
         fig_path_base = Path(__file__).parent
-        if not TEST:
-            fig_path_suffix = "figs/" + hyperparameter_nr + "_test.eps"
-            fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-            
-            fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
-            fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-        else:
-            fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
-            fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-            
-            fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
-            fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+        fig_path_suffix = "figs/" + hyperparameter_nr + "_test.eps"
+        fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+        
+        fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
+        fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+
+    
+    # ----- SAVING ----- #
+    # TODO: Make more robust
+    # Model:
+    # itr_nr = 11 # The number of times the same main-loop has been run
+    # model_path = Path(__file__).parent / "models/mock_model.pt"
+
+    # if not exists(model_path): # Safe to save; won't override
+    #     torch.save(model.state_dict(), model_path)
+        
+    # else:
+    #     decision = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save): ")
+    #     if decision != '':
+    #         if decision != 'y':
+    #             model_path = Path(__file__).parent / "models/" / decision
+
+    #         torch.save(model.state_dict(), model_path)
+
+    #     else:
+    #         print("File was not saved.")
+
+    # Figs:
+
+    # fig_path_base = Path(__file__).parent
+    # if not TEST:
+    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
+    #     fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+        
+    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
+    #     fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+    # else:
+    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_test.eps"
+    #     fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+        
+    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
+    #     fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')

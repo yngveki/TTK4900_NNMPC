@@ -29,7 +29,7 @@ class EarlyStopping():
             self.counter = 0
             self.best_model.load_state_dict(model.state_dict())
 
-        elif self.best_loss - val_loss < self.min_delta:
+        elif self.best_loss - val_loss <= self.min_delta:
             self.counter += 1
             if self.counter >= self.patience:
                 if self.restore_best_weights:
@@ -102,7 +102,11 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     epochs = hyperparameters['LEARNING']['e']
     patience = hyperparameters['LEARNING']['p']
 
-    model = NeuralNetwork(hlszs=hlszs)
+    layers = []
+    layers.append(2 * (mu + 1) + 2 * (my + 1)) # Input layer
+    layers += hlszs                            # Hidden layers
+    layers.append(2)                           # Output layer
+    model = NeuralNetwork(layers=layers)
     loss_fn = nn.MSELoss() # MSE as loss func. for a regression problem
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -129,7 +133,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
         
         t += 1
 
-    model.log_MSE(val_MSEs[t-1])
+    model.log_MSE(es.best_loss)
 
     print("Done!")
 

@@ -26,7 +26,7 @@ class NeuralNetwork(nn.Module):
         
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        assert layers != None, "Your need to provide sizes for the layers!"
+        assert layers != None, "You need to provide sizes for the layers!"
         assert len(layers) >= 3, "You need to define at least an input, hidden and output layer"
         self.layers = layers
 
