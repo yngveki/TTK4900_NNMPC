@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import pandas as pd
+import numpy as np
 
 class Reference:
     """
@@ -200,6 +201,7 @@ class ReferenceTimeseries(References):
         """
         item = None
         for ref in self.refs:
+            # Avoids illegal comparison operation below
             if ref.nxt is None:
                 item = ref
                 break
@@ -211,20 +213,23 @@ class ReferenceTimeseries(References):
         return item
 
 class Timeseries(References):
+    """Hacky way of using existing framework to make long timeseries from csv-file"""
 
     def __init__(self, ref_path, length, delta_t, time=0):
 
         self.delta_t = delta_t
         self.length = length # (self.refs[-1].time - self.refs[0].time) // delta_t
-        self.timeseries = [0] * self.length
+        timeseries = [0] * self.length
 
         super().__init__(ref_path, time)
 
-        self.timeseries[0] = self.curr_ref
+        timeseries[0] = self.curr_ref
 
         t = self.curr_time
         for i in range(1, self.length):
-            self.timeseries[i] = self[t + (i * self.delta_t)]
+            timeseries[i] = self[t + (i * self.delta_t)]
+
+        self.timeseries = timeseries
 
     def strip(self):
         for idx, ref in enumerate(self.timeseries):
@@ -240,10 +245,6 @@ class Timeseries(References):
         self.timeseries = prep + self.timeseries
 
     def __len__(self):
-        """
-        Returns how many steps into the future a series of reference
-        values should reach
-        """
         return self.length
 
     def __str__(self):
@@ -264,6 +265,7 @@ class Timeseries(References):
         """
         item = None
         for ref in self.refs:
+            # Avoids illegal comparison operation below
             if ref.nxt is None:
                 item = ref
                 break

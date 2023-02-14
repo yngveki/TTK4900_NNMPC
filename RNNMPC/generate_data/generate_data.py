@@ -3,6 +3,11 @@
 # For further reference on dealing with the FMU:
 # https://jmodelica.org/pyfmi/tutorial.html#
 
+import sys
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 from pyfmi import load_fmu
 import numpy as np
 from pathlib import Path
@@ -11,8 +16,7 @@ import csv
 from os.path import exists
 from yaml import safe_load
 
-# TODO: Fix import
-from src.utils.references import Timeseries
+from src.utils.timeseries import Timeseries
 
 def init_model(model_path, start_time, final_time, Uk=[[50],[0]], delta_t=10, warm_start_t=0, warm_start=False):
     # Initiates a FMU model at the given model_path
@@ -156,7 +160,7 @@ if __name__ == '__main__':
     GL_bounds = [0,10000] # 0 is logical, but 5000 is real boundary (in reality step between 0-5000)
 
     steps_path = Path(__file__).parent / "steps/steps100k.csv"
-    input_profile = Timeseries(steps_path, length=10000, delta_t=10, time=warm_start_t)
+    input_profile = Timeseries(steps_path, delta_t=10)
     input_profile.strip()
     input_profile.prepend(length=warm_start_t // delta_t, val=[choke, GL])
     input_profile.transpose() # Make from 2 cols to 2 rows
@@ -178,12 +182,12 @@ if __name__ == '__main__':
     #                               staircase(init=GL, lb=5000, ub=GL_bounds[1], increment=200, interval=6, num=(final_time - start_time) // delta_t)])
     #     save_name = signal + "_choke" + str(choke) + "_GL" + str(GL) + "_" + str(final_time - warm_start_t) + ".csv"
     
-    save_name = "steps100k_output.csv"
+    # save_name = "steps100k_output.csv"
 
-    model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
-    model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
-                            Uk=input_profile, warm_start_t=warm_start_t, 
-                            warm_start=True)
+    # model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
+    # model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
+    #                         Uk=input_profile, warm_start_t=warm_start_t, 
+    #                         warm_start=True)
 
 
     # ----- SIMULATING ----- #
