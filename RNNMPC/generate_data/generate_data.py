@@ -71,7 +71,6 @@ def simulate_singlewell_step(model, time, warm_start_t, delta_t, Uk, time_series
 
     # Perform 1-step simulation
     time_offset = warm_start_t # * delta_t
-    # model.do_step(time + time_offset, delta_t) # Perform 1-step simulation of delta_t from time
     model.do_step(time, delta_t) # Perform 1-step simulation of delta_t from time
 
     # Get output
@@ -136,9 +135,6 @@ def normalize(series, min=None, max=None):
 
 
 if __name__ == '__main__':
-    # for main_run_nr in range(0, 1):
-    signal = 'step' # alternative: 'stair'
-    step_type = 'choke' # alternative: 'GL'
 
     # ----- SETUP ----- #
     config_path = Path(__file__).parent / "../config/generate_data.yaml"
@@ -147,48 +143,21 @@ if __name__ == '__main__':
         if not config:
             Exception("Failed loading config file\n")
 
-    start_time = config['start_time']
     warm_start_t = config['warm_start_t']
-    step_time = warm_start_t + config['step_time'] # At what time the step should occur on the input
-    # final_time = warm_start_t + config['final_time'] # For how long the total simulation will last
     delta_t = config['delta_t']
-    choke = 0 # range: [0, 100]   [%]
-    choke_step = 0
-    choke_bounds = [0,100]
-    GL = 0  # range: [0, 10000] [m^3/hr]
-    GL_step = 2500
-    GL_bounds = [0,10000] # 0 is logical, but 5000 is real boundary (in reality step between 0-5000)
-
     steps_path = Path(__file__).parent / "steps/steps40k.csv"
     input_profile = Timeseries(steps_path, delta_t=10)
-    input_profile.prepend(val=[choke, GL], length=warm_start_t // delta_t)
+    start_time = input_profile.begin
+    final_time = input_profile.end
 
-    final_time = input_profile.length * delta_t
+    warm_start_vals = [0,0] # Let system settle with 0 for both choke and gl
+    input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
 
-    # if signal == 'step':
-    #     if step_type == 'choke':
-    #         input_profile = np.array([step(start_time, final_time, step_time, delta_t=delta_t, 
-    #                                         start_val=choke, step_val=choke_step),
-    #                                     flatline(start_time, final_time, step_time, delta_t=delta_t, flat_val=GL)])
-    #         save_name = signal + "_" + step_type + "_" + str(choke) + "_" + str(choke_step) + "_" + str(final_time - warm_start_t) + ".csv"
-    #     elif step_type == 'GL':
-    #         input_profile = np.array([flatline(start_time, final_time, step_time, delta_t=delta_t, start_val=choke, end_val=choke),
-    #                                     step(start_time, final_time, step_time, delta_t=delta_t, 
-    #                                         start_val=GL, end_val=GL_step)])
-    #         save_name = signal + "_" + step_type + "_" + str(GL) + "_" + str(GL_step) + "_" + str(final_time - warm_start_t) + ".csv"
-
-    # else:
-    #     input_profile = np.array([staircase(init=choke, lb=choke_bounds[0], ub=choke_bounds[1], increment=2, interval=6, num=(final_time - start_time) // delta_t),
-    #                               staircase(init=GL, lb=5000, ub=GL_bounds[1], increment=200, interval=6, num=(final_time - start_time) // delta_t)])
-    #     save_name = signal + "_choke" + str(choke) + "_GL" + str(GL) + "_" + str(final_time - warm_start_t) + ".csv"
-    
     save_name = "steps40k_output.csv"
-
     model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
     model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
                             Uk=input_profile, warm_start_t=warm_start_t, 
                             warm_start=True)
-
 
     # ----- SIMULATING ----- #
     time = warm_start_t # As long as we've come after init
@@ -220,13 +189,11 @@ if __name__ == '__main__':
 
         axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
         axs[0,0].legend()
-        # axs[0,0].axvline(step_time, color='tab:red')
         axs[0,0].axvline(warm_start_t, color='tab:green')
         axs[1,0].plot(t, u1, label='choke')
         axs[1,0].legend()
         axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
         axs[0,1].legend()
-        # axs[0,1].axvline(step_time, color='tab:red')
         axs[0,1].axvline(warm_start_t, color='tab:green')
         axs[1,1].plot(t, u2, label='GL rate')
         axs[1,1].legend()
@@ -249,14 +216,14 @@ if __name__ == '__main__':
 
     plt.show()
 
-
+    choke_bounds = [0,100]
+    GL_bounds = [0,10000]
     u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
     u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
     y1_normalized = normalize(y1)
     y2_normalized = normalize(y2)
     # ----- WRITE TO FILE ----- #
     header = ["t_" + str(int(timestamp)) for timestamp in t]
-    # rel_path = "data/" + signal + "normalized_u1_" + str(choke) + "_u2_" + str(GL) + "_stairs_" + str(main_run_nr) + "_" + str(final_time - warm_start_t) + ".csv"
     csv_path = Path(__file__).parent / "data/" / save_name
     if not exists(csv_path):    # Safe to save; nothing can be overwritten
         with open(csv_path, 'w', newline='') as f:

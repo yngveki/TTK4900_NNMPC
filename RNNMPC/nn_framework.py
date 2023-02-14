@@ -55,28 +55,9 @@ if __name__ == '__main__':
         if not hyperparameters:
             Exception("Failed loading hyperparameters\n")
 
-    # resolution = 3
-    # hyperparameter_iterator = Splitter(resolution, hyperparameters)
-    # for itr, params in enumerate(hyperparameter_iterator):
-    #     print(f'Iteration nr.: {itr}')
     hyperparameter_nr = "hyperparameters_" + str(0)
 
 # TODO: Make external loop to iterate over hyperparameter candidates
-    # if not TEST:
-    #     csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_10000.csv"
-    #     csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
-            
-    #     model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
-
-    # else:
-        # # TODO: Optimize NeuralNetwork so that this ugly overhead is superfluous
-        # layers = []
-        # layers.append(2 * (hyperparameters['STRUCTURE']['mu'] + 1) + \
-        #               2 * (hyperparameters['STRUCTURE']['my'] + 1))
-        # layers += hyperparameters['STRUCTURE']['hlszs']
-        # layers.append(2)
-        # model = NeuralNetwork(layers=layers, model_path=nn_path)
-
     if not TEST:
         # ----- TRAINING AND PLOTTING ----- #  
         csv_path_train = Path(__file__).parent / "generate_data/data/steps100k_output.csv"
@@ -85,6 +66,7 @@ if __name__ == '__main__':
         model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
 
         p = hyperparameters['LEARNING']['p'] + 1 # To account for zero-indexing
+        
         # Plotting training against validation error
         fig, ax = plt.subplots()
 
@@ -105,7 +87,6 @@ if __name__ == '__main__':
         
         # ----- SAVING FIGS AND TRAINED MODEL ----- #    
         fig_path_base = Path(__file__).parent
-    # if not TEST:
         fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
         fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
         
@@ -182,40 +163,3 @@ if __name__ == '__main__':
         
         fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
         fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-
-    
-    # ----- SAVING ----- #
-    # TODO: Make more robust
-    # Model:
-    # itr_nr = 11 # The number of times the same main-loop has been run
-    # model_path = Path(__file__).parent / "models/mock_model.pt"
-
-    # if not exists(model_path): # Safe to save; won't override
-    #     torch.save(model.state_dict(), model_path)
-        
-    # else:
-    #     decision = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save): ")
-    #     if decision != '':
-    #         if decision != 'y':
-    #             model_path = Path(__file__).parent / "models/" / decision
-
-    #         torch.save(model.state_dict(), model_path)
-
-    #     else:
-    #         print("File was not saved.")
-
-    # Figs:
-
-    # fig_path_base = Path(__file__).parent
-    # if not TEST:
-    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
-    #     fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-        
-    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
-    #     fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-    # else:
-    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_test.eps"
-    #     fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-        
-    #     fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
-    #     fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')

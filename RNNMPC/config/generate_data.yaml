@@ -1,7 +1,4 @@
 # Config file for generating data from the SingleWell model
 #
 delta_t: 10
-start_time: 0
 warm_start_t: 10000
-step_time: 200 # At what time the step should occur on the input
-final_time: 100000 # For how long the total simulation will last

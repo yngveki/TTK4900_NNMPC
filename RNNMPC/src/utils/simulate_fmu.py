@@ -73,7 +73,7 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     # Returns: the two CVs of interest from the model. Optionally also the updated time series.
 
     time_offset = 10000 #Dette er fordi i init_func kjører vi modellen i 2000sek for å få stasjonære verdier
-    ####### VIKTIG Å PASSE PÅ TIME_OFFSET!!!!!!!!!!!!!!!!!!!! ##################
+
     # Apply input
     model.set_real([3,4], [Uk[0], Uk[1]]) #check inputs ##############BYTTE INPUT INDEXER PGA NY FMU
 

@@ -97,10 +97,7 @@ class SRDataset(Dataset):
 
 # ----- Actual function ----- #
 def load_input_data(csv_path, bsz=64, mu=1, my=1, shuffle=False):
-    # # Ignore warnings
-    # import warnings
-    # warnings.filterwarnings("ignore")
-
+    
     sr_dataset = SRDataset(csv_path, mu=mu, my=my)
 
     return DataLoader(sr_dataset, batch_size=bsz, shuffle=shuffle, num_workers=0)
