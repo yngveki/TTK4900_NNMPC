@@ -5,8 +5,8 @@ SYSTEM_PARAMETERS:
   n_CV: 2
 
 TUNING_PARAMETERS:
-  Hu: 200 # 80 gir helt ok resultater
-  Hp: 250 # 100 gir helt ok resultater
+  Hu: 80 # 200 # 80 gir helt ok resultater
+  Hp: 100 # 250 # 100 gir helt ok resultater
   Hw: 1
 
   P_bar: [0.1, 1]
@@ -29,4 +29,5 @@ SET_POINTS:
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  final_time: 20000 #20000
+  warm_start_t: 1000
+  final_time: 2000 #20000

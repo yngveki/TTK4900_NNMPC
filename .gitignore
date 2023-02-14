@@ -131,3 +131,6 @@ dmypy.json
 # Misc personally added stuff
 *demo*
 *.zip
+*.npy
+*.vscode
+*txt*

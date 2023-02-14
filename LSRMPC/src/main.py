@@ -17,13 +17,13 @@ if __name__ == "__main__":
     mpc = MPC(config_path, S_paths, ref_path)
 
     # Ensure FMU is in a defined state
-    mpc.warm_start(fmu_path, warm_start_t=1000)
+    mpc.warm_start(fmu_path)
 
     timed_loop = True
     if timed_loop: stopwatch = Timer()
     if timed_loop: stopwatch.start()
     run = 1
-    total_runs = mpc.final_time // mpc.delta_t
+    total_runs = (mpc.final_time - mpc.warm_start_t) // mpc.delta_t
 
     while mpc.time < mpc.final_time:
         if run % 10 == 0: print(f'Run #{run} / {total_runs}')
@@ -47,8 +47,9 @@ if __name__ == "__main__":
         run += 1
 
     # Save data, so plotting is possible later, without running the full simulation
-    data_path = Path(__file__).parent / "../data/mpc_runs/"
-    mpc.save_data(data_path)
+    if input("Do you want to save MPC-data (it might override existing data)? [y/N]") == 'y':
+        data_path = Path(__file__).parent / "../data/mpc_runs/"
+        mpc.save_data(data_path)
     
     # Plot full simulation
     plot_LSRMPC(mpc)

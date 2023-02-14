@@ -57,9 +57,10 @@ class MPC:
 
         # -- time-keeping -- #
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.final_time = configs['RUNNING_PARAMETERS']['final_time']
-        self.time = 0
-        self.start_time = self.time
+        self.warm_start_t = configs['RUNNING_PARAMETERS']['warm_start_t']
+        self.final_time = configs['RUNNING_PARAMETERS']['final_time'] + self.warm_start_t
+        self.start_time = 0
+        self.time = self.start_time + self.warm_start_t
         num_steps = self.final_time // self.delta_t
         
         # -- reference -- #
@@ -128,7 +129,7 @@ class MPC:
         self.bias_oil = [0] * num_steps
         self.t = [0] * num_steps
 
-    def warm_start(self, fmu_path, warm_start_t=1000):
+    def warm_start(self, fmu_path):
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
@@ -136,8 +137,7 @@ class MPC:
                                                         self.start_time, 
                                                         self.final_time, # Needed for initialization, but different from warm start time
                                                         self.delta_t, 
-                                                        self.Hp,
-                                                        warm_start_t)
+                                                        self.warm_start_t)
         self.y_prev[0] = self.y_sim[-1][0]
         self.y_prev[1] = self.y_sim[-1][1]
         self.y_hat[0] = 0

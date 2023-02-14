@@ -17,7 +17,7 @@ def _check_status(status_do_step):
     print("Skjedd noe galt")
     #assert status_do_step < 1, f"FMI not OK, status code: {status_do_step} \n FMI_OK = 0 \n FMI_WARNING = 1 \n FMI_DISCARD = 2 \n FMI_ERROR = 3 \n FMI_FATAL = 4 \n FMI_PENDING = 5"
 
-def init_model(model_path, start_time, final_time, delta_t, Hp, warm_start_t=1000):
+def init_model(model_path, start_time, final_time, delta_t, warm_start_t=1000, vals=[50,0]):
     # Initiates a FMU model at the given model_path
     #
     # Input:
@@ -27,8 +27,6 @@ def init_model(model_path, start_time, final_time, delta_t, Hp, warm_start_t=100
     #
     # Returns: Properly initiated model
 
-    ##### Har lag til at man kjører simulering i 1000sek når man initialiserer for å få stasjonære verdier
-
     time = start_time
     model = load_fmu(model_path, log_level=7) #loglevel 7: log everything
 
@@ -36,15 +34,13 @@ def init_model(model_path, start_time, final_time, delta_t, Hp, warm_start_t=100
     model.set_boolean([536871484], [True])
 
     model.initialize(start_time, final_time, True) #Initialize the slave
-    model.set_real([82,83], [50, 0]) #BARE TESTER AT VI STARTER MED HØYERE INPUT SLIK SOM VI GJØR I SIMULRINGSSCRIPTET
-    ################ SLETT LINJEN OVER IGJEN OM DET IKKE FUNKER!!! ###### må kasnkje ta hensyn til dette i main?
+
     u1 = []
     u2 = []
-
     y1 = []
     y2 = []
     for i in range (warm_start_t): #satt denne fra 200 til 500, lengre simulering før vi begynner MPC
-        model.set_real([3,4], [50, 0]) #HAR BYTTET FMU TIL Å VÆRE LIK DEN JEG BRUKTE FOR Å GENERERE S MATRISENE, DERFOR BYTTE INPUT VAR_REF(FRA 82,83 TIL 3,4)
+        model.set_real([3,4], vals) #HAR BYTTET FMU TIL Å VÆRE LIK DEN JEG BRUKTE FOR Å GENERERE S MATRISENE, DERFOR BYTTE INPUT VAR_REF(FRA 82,83 TIL 3,4)
         model.do_step(time, delta_t)
         time += delta_t
         u1.append(model.get('u[1]'))
@@ -52,19 +48,13 @@ def init_model(model_path, start_time, final_time, delta_t, Hp, warm_start_t=100
         y1.append(float(model.get('y[1]')))
         y2.append(float(model.get('y[2]')))
 
-
-    #reshape u1 and u2 to Hp
-    # u1 = u1[len(u1)-Hp:]
-    # u2 = u2[len(u2)-Hp:]
+    # TODO: Verify units
     u1 = np.array(u1)
     u2 = np.array(u2)
     u_sim = np.hstack([u1,u2]) #u_sim er en vektor 80x2 
 
-    # y1 = y1[len(y1)-Hp:]
-    # y2 = y2[len(y2)-Hp:]
     y1 = np.array(y1)
     y2 = np.array(y2)
-    #y1 = np.divide(y1, 24)
     y1 = np.reshape(y1, (len(y1), 1))
     y2 = np.reshape(y2, (len(y2), 1)) 
     y_sim = np.hstack([y1,y2]) #y_sim er en vektor 80x2 
@@ -89,7 +79,8 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     model.set_real([3,4], [Uk[0], Uk[1]]) #check inputs ##############BYTTE INPUT INDEXER PGA NY FMU
 
     # Perform 1-step simulation
-    status_step = model.do_step(time+time_offset, delta_t) #Do step delta_t from current time, maybe add status_step
+    # status_step = model.do_step(time+time_offset, delta_t) #Do step delta_t from current time, maybe add status_step
+    status_step = model.do_step(time, delta_t) #Do step delta_t from current time, maybe add status_step
     #_check_status(status_step)
 
     # Get output
