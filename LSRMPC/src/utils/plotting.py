@@ -39,19 +39,20 @@ def plot_LSRMPC(mpc=None):
 
     To avoid plotting the resulting spikes in the beginning, a subsection is cut off.
     """
-    delta_t = mpc.delta_t if mpc is not None else 10
-    warm_start_t = mpc.warm_start_t if mpc is not None else 2000
-    time_shift = mpc.warm_start_t // mpc.delta_t
-    t = t[time_shift:] - time_shift * 10 # Magic number because importing mpc.delta_t fails when mpc == None
-    gas_rate_per_hr_vec = gas_rate_per_hr_vec[time_shift:]
-    gas_rate_ref_vec = gas_rate_ref_vec[time_shift:]
-    oil_rate_per_hr_vec = oil_rate_per_hr_vec[time_shift:]
-    oil_rate_ref_vec = oil_rate_ref_vec[time_shift:]
-    choke_input = choke_input[time_shift:]
-    gas_lift_input = gas_lift_input[time_shift:]
-    choke_actual = choke_actual[time_shift:]
-    bias_gas = bias_gas[time_shift:]
-    bias_oil = bias_oil[time_shift:]
+    # Redundant to perform shifting when warm_start_t is not included in plotted data
+    # delta_t = mpc.delta_t if mpc is not None else 10
+    # warm_start_t = mpc.warm_start_t if mpc is not None else 2000
+    # time_shift = mpc.warm_start_t // mpc.delta_t
+    # t = t[time_shift:] - time_shift * 10 # Magic number because importing mpc.delta_t fails when mpc == None
+    # gas_rate_per_hr_vec = gas_rate_per_hr_vec[time_shift:]
+    # gas_rate_ref_vec = gas_rate_ref_vec[time_shift:]
+    # oil_rate_per_hr_vec = oil_rate_per_hr_vec[time_shift:]
+    # oil_rate_ref_vec = oil_rate_ref_vec[time_shift:]
+    # choke_input = choke_input[time_shift:]
+    # gas_lift_input = gas_lift_input[time_shift:]
+    # choke_actual = choke_actual[time_shift:]
+    # bias_gas = bias_gas[time_shift:]
+    # bias_oil = bias_oil[time_shift:]
 
 
     #Filter

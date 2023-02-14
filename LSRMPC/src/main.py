@@ -47,7 +47,7 @@ if __name__ == "__main__":
         run += 1
 
     # Save data, so plotting is possible later, without running the full simulation
-    if input("Do you want to save MPC-data (it might override existing data)? [y/N]") == 'y':
+    if input("Do you want to save MPC-data (it might override existing data)? [y/N]: ") == 'y':
         data_path = Path(__file__).parent / "../data/mpc_runs/"
         mpc.save_data(data_path)
     

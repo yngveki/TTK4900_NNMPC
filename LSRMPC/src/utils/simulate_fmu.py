@@ -39,8 +39,8 @@ def init_model(model_path, start_time, final_time, delta_t, warm_start_t=1000, v
     u2 = []
     y1 = []
     y2 = []
-    for i in range (warm_start_t): #satt denne fra 200 til 500, lengre simulering før vi begynner MPC
-        model.set_real([3,4], vals) #HAR BYTTET FMU TIL Å VÆRE LIK DEN JEG BRUKTE FOR Å GENERERE S MATRISENE, DERFOR BYTTE INPUT VAR_REF(FRA 82,83 TIL 3,4)
+    for i in range (warm_start_t // delta_t):
+        model.set_real([3,4], vals)
         model.do_step(time, delta_t)
         time += delta_t
         u1.append(model.get('u[1]'))
@@ -73,31 +73,19 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     #
     # Returns: the two CVs of interest from the model. Optionally also the updated time series.
 
-    time_offset = 10000 #Dette er fordi i init_func kjører vi modellen i 2000sek for å få stasjonære verdier
-    ####### VIKTIG Å PASSE PÅ TIME_OFFSET!!!!!!!!!!!!!!!!!!!! ##################
     # Apply input
     model.set_real([3,4], [Uk[0], Uk[1]]) #check inputs ##############BYTTE INPUT INDEXER PGA NY FMU
 
     # Perform 1-step simulation
-    # status_step = model.do_step(time+time_offset, delta_t) #Do step delta_t from current time, maybe add status_step
-    status_step = model.do_step(time, delta_t) #Do step delta_t from current time, maybe add status_step
-    #_check_status(status_step)
+    _ = model.do_step(time, delta_t) #Do step delta_t from current time, maybe add status_step
 
+    # TODO: Verify units
     # Get output
-    gas_rate = float(model.get('y[1]'))
-    oil_rate = float(model.get('y[2]'))
+    gas_rate = float(model.get('y[1]')) # _Should_ be m3/hr
+    oil_rate = float(model.get('y[2]')) # _Should_ be m3/hr
     u1 = float(model.get('u[1]'))
     u2 = float(model.get('u[2]'))
     choke_opening = model.get('choke.opening')
     gas_lift_current= float(model.get('y[4]'))
-    #oil_rate_per_hr = np.divide(oil_rate, 24)                   #Convert from m3/day to m3/hr
-    #gas_rate_km3_per_hr = np.divide(gas_rate,24)                #Convert from km3/day to km3/hr
-    #gas_rate_per_hr = np.multiply(gas_rate_km3_per_hr, 1000)    #Convert from km3/hr to m3/hr
 
-    
-    if time_series:
-        #return [oil_rate_per_hr, gas_rate_per_hr, u1, u2], time_series.append(time)
-        return [gas_rate, oil_rate, u1, u2], time_series.append(time)
-    else:
-        #return [oil_rate_per_hr, gas_rate_per_hr, u1, u2]
-        return [gas_rate, oil_rate, u1, u2, choke_opening, gas_lift_current]
+    return [gas_rate, oil_rate, u1, u2, choke_opening, gas_lift_current]

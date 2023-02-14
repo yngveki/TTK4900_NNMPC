@@ -29,5 +29,5 @@ SET_POINTS:
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  warm_start_t: 1000
-  final_time: 2000 #20000
+  warm_start_t: 10000
+  final_time: 20000 #20000

@@ -61,7 +61,7 @@ class MPC:
         self.final_time = configs['RUNNING_PARAMETERS']['final_time'] + self.warm_start_t
         self.start_time = 0
         self.time = self.start_time + self.warm_start_t
-        num_steps = self.final_time // self.delta_t
+        num_steps = (self.final_time - self.warm_start_t) // self.delta_t
         
         # -- reference -- #
         self.refs = References(ref_path)
@@ -253,7 +253,7 @@ class MPC:
         self.y_sim[-1, 1] = self.y_prev[1]
         
         # --- Update plotting-data --- #
-        curr_step = self.time // self.delta_t
+        curr_step = (self.time - self.warm_start_t) // self.delta_t
         self.gas_rate_per_hr_vec[curr_step] = copy.deepcopy(self.y_prev[0])
         self.oil_rate_per_hr_vec[curr_step] = copy.deepcopy(self.y_prev[1])
         self.gas_rate_ref_vec[curr_step] = copy.deepcopy(self.T[0])
