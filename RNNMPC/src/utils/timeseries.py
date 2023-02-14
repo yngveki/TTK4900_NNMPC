@@ -49,6 +49,7 @@ class Timeseries():
 
         prep = np.array([val] * length)
         self.timeseries = np.insert(self.timeseries, 0, prep, axis=1)
+        self.length += length
         return self.timeseries
 
     def plot(self):

@@ -150,20 +150,20 @@ if __name__ == '__main__':
     start_time = config['start_time']
     warm_start_t = config['warm_start_t']
     step_time = warm_start_t + config['step_time'] # At what time the step should occur on the input
-    final_time = warm_start_t + config['final_time'] # For how long the total simulation will last
+    # final_time = warm_start_t + config['final_time'] # For how long the total simulation will last
     delta_t = config['delta_t']
-    choke = 10 # range: [0, 100]   [%]
+    choke = 0 # range: [0, 100]   [%]
     choke_step = 0
     choke_bounds = [0,100]
-    GL = 5000  # range: [0, 10000] [m^3/hr]
+    GL = 0  # range: [0, 10000] [m^3/hr]
     GL_step = 2500
     GL_bounds = [0,10000] # 0 is logical, but 5000 is real boundary (in reality step between 0-5000)
 
-    steps_path = Path(__file__).parent / "steps/steps100k.csv"
+    steps_path = Path(__file__).parent / "steps/steps40k.csv"
     input_profile = Timeseries(steps_path, delta_t=10)
-    input_profile.strip()
-    input_profile.prepend(length=warm_start_t // delta_t, val=[choke, GL])
-    input_profile.transpose() # Make from 2 cols to 2 rows
+    input_profile.prepend(val=[choke, GL], length=warm_start_t // delta_t)
+
+    final_time = input_profile.length * delta_t
 
     # if signal == 'step':
     #     if step_type == 'choke':
@@ -182,12 +182,12 @@ if __name__ == '__main__':
     #                               staircase(init=GL, lb=5000, ub=GL_bounds[1], increment=200, interval=6, num=(final_time - start_time) // delta_t)])
     #     save_name = signal + "_choke" + str(choke) + "_GL" + str(GL) + "_" + str(final_time - warm_start_t) + ".csv"
     
-    # save_name = "steps100k_output.csv"
+    save_name = "steps40k_output.csv"
 
-    # model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
-    # model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
-    #                         Uk=input_profile, warm_start_t=warm_start_t, 
-    #                         warm_start=True)
+    model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
+    model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
+                            Uk=input_profile, warm_start_t=warm_start_t, 
+                            warm_start=True)
 
 
     # ----- SIMULATING ----- #
@@ -220,13 +220,13 @@ if __name__ == '__main__':
 
         axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
         axs[0,0].legend()
-        axs[0,0].axvline(step_time, color='tab:red')
+        # axs[0,0].axvline(step_time, color='tab:red')
         axs[0,0].axvline(warm_start_t, color='tab:green')
         axs[1,0].plot(t, u1, label='choke')
         axs[1,0].legend()
         axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
         axs[0,1].legend()
-        axs[0,1].axvline(step_time, color='tab:red')
+        # axs[0,1].axvline(step_time, color='tab:red')
         axs[0,1].axvline(warm_start_t, color='tab:green')
         axs[1,1].plot(t, u2, label='GL rate')
         axs[1,1].legend()

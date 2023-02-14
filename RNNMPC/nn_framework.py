@@ -79,8 +79,8 @@ if __name__ == '__main__':
 
     if not TEST:
         # ----- TRAINING AND PLOTTING ----- #  
-        csv_path_train = Path(__file__).parent / "generate_data/data/step_choke_50_2_10000.csv"
-        csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
+        csv_path_train = Path(__file__).parent / "generate_data/data/steps100k_output.csv"
+        csv_path_val = Path(__file__).parent / "generate_data/data/steps40k_output.csv"
             
         model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
 
@@ -131,8 +131,8 @@ if __name__ == '__main__':
     
     else:
         # ----- PREDICTION AND PLOTTING ----- #  
-        csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_2000.csv"
-        nn_path = Path(__file__).parent / "models/mock_model3.pt"
+        csv_path_test = Path(__file__).parent / "generate_data/data/steps20k_output.csv"
+        nn_path = Path(__file__).parent / "models/model_steps100k.pt"
     
         gt = GroundTruth(csv_path_test)
         pred, model = test(nn_path, csv_path_test, hyperparameters)
