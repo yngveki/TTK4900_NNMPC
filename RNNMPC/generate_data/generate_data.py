@@ -134,6 +134,8 @@ def normalize(series, min=None, max=None):
     return normalized
 
 
+# TODO: 
+# 1) outlier removal (e.g. initial peaks)
 if __name__ == '__main__':
 
     # ----- SETUP ----- #
@@ -153,7 +155,7 @@ if __name__ == '__main__':
     warm_start_vals = [0,0] # Let system settle with 0 for both choke and gl
     input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
 
-    save_name = "steps40k_output.csv"
+    save_name = "steps40k_output"
     model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
     model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
                             Uk=input_profile, warm_start_t=warm_start_t, 
@@ -213,8 +215,10 @@ if __name__ == '__main__':
 
     fig.suptitle('Step response')
     fig.tight_layout()
-
-    plt.show()
+    plt.show(block=False)
+    plt.pause(30)
+    plt.close()
+    fig.savefig(Path(__file__).parent / "data/" / save_name + ".png", bbox_inches='tight')
 
     choke_bounds = [0,100]
     GL_bounds = [0,10000]
@@ -224,7 +228,7 @@ if __name__ == '__main__':
     y2_normalized = normalize(y2)
     # ----- WRITE TO FILE ----- #
     header = ["t_" + str(int(timestamp)) for timestamp in t]
-    csv_path = Path(__file__).parent / "data/" / save_name
+    csv_path = Path(__file__).parent / "data/" / save_name + ".csv"
     if not exists(csv_path):    # Safe to save; nothing can be overwritten
         with open(csv_path, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -252,4 +256,3 @@ if __name__ == '__main__':
             print(f"File written to \'{csv_path}\'")
         else:
             print("File was not saved.")
-        

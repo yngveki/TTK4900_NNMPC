@@ -7,6 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 
+# TODO:
+# 1) Dataset should be able to receive multiple paths (maybe by means of *args and an assertion that they are all strings?),
+#    such that many different input profiles can be merged into the same training session
 class SRDataset(Dataset):
     """SR == Step Response"""
     def __init__(self, csv_path, mu=1, my=1):
@@ -19,27 +22,27 @@ class SRDataset(Dataset):
 
         df = pd.read_csv(csv_path)
 
-        u1_full = np.asarray(df.iloc[0,:])
-        u2_full = np.asarray(df.iloc[1,:])
-        y1_full = np.asarray(df.iloc[2,:])
-        y2_full = np.asarray(df.iloc[3,:])
+        self.u1_full = np.asarray(df.iloc[0,:])
+        self.u2_full = np.asarray(df.iloc[1,:])
+        self.y1_full = np.asarray(df.iloc[2,:])
+        self.y2_full = np.asarray(df.iloc[3,:])
 
-        if all((len(u1_full) != len(u2_full), 
-                len(u1_full) != len(y1_full), 
-                len(u1_full) != len(y2_full))):
+        if all((len(self.u1_full) != len(self.u2_full), 
+                len(self.u1_full) != len(self.y1_full), 
+                len(self.u1_full) != len(self.y2_full))):
             Exception('All data sequences must be equally long!\n')
-        data_length = len(u1_full)
+        self.data_length = len(self.u1_full)
 
         self.mu = mu
         self.my = my
         largest_m = np.max((mu, my))
-        num_samples = data_length - largest_m - 1 # We want the last sample to also have a next, for label's sake
+        num_samples = self.data_length - largest_m - 1 # We want the last sample to also have a next, for label's sake
         sr = []
         for n in range(num_samples):
-            u1 = u1_full[n:n + mu + 1] # history and current
-            u2 = u2_full[n:n + mu + 1] # history and current
-            y1 = y1_full[n:n + my + 1] # history and current
-            y2 = y2_full[n:n + my + 1] # history and current
+            u1 = self.u1_full[n:n + mu + 1] # history and current
+            u2 = self.u2_full[n:n + mu + 1] # history and current
+            y1 = self.y1_full[n:n + my + 1] # history and current
+            y2 = self.y2_full[n:n + my + 1] # history and current
             k = [n + t for t in range(largest_m)]
             sample = {'u1': u1, 
                       'u2': u2, 
@@ -48,7 +51,7 @@ class SRDataset(Dataset):
                       'k': k, 
                       'mu': mu, 
                       'my': my, 
-                      'target': [y1_full[n + my - 1], y2_full[n + my - 1]]}
+                      'target': [self.y1_full[n + my - 1], self.y2_full[n + my - 1]]}
             sr.append(sample)
 
         self.SR = sr
@@ -94,6 +97,23 @@ class SRDataset(Dataset):
 
         plt.show()
 
+    def plot_full(self, delta_t=10):
+
+        fig, axs = plt.subplots(2, 2)
+        t = np.linspace(0, self.data_length * delta_t, num=self.data_length)
+        axs[0,0].plot(t, self.y1_full, '-', label='gas rate', color='tab:orange')
+        axs[0,0].legend()
+        axs[1,0].plot(t, self.u1_full, '-', label='choke')
+        axs[1,0].legend()
+        axs[0,1].plot(t, self.y2_full, '-', label='oil rate', color='tab:orange')
+        axs[0,1].legend()
+        axs[1,1].plot(t, self.u2_full, '-', label='GL rate')
+        axs[1,1].legend()
+
+        fig.suptitle('Step response')
+        fig.tight_layout()
+
+        plt.show()
 
 # ----- Actual function ----- #
 def load_input_data(csv_path, bsz=64, mu=1, my=1, shuffle=False):
@@ -107,6 +127,7 @@ def load_input_data(csv_path, bsz=64, mu=1, my=1, shuffle=False):
 if __name__ == "__main__":
 
     from pathlib import Path
-    csv_path = Path(__file__).parent / "data/normalized_u1_50_u2_7500_stairs_0_36000.csv"
+    csv_path = Path(__file__).parent / "data/step_choke_0_2_2000.csv"
 
-    load_input_data(csv_path=csv_path)
+    sr = SRDataset(csv_path=csv_path)
+    sr.plot_full()
