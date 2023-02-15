@@ -40,6 +40,7 @@ class Timeseries():
                 timeseries[(point.time // delta_t) + i] = [point.choke, point.gl]
 
         self.timeseries = np.array(timeseries).T
+        self.delta_t = delta_t
 
     def prepend(self, val, length):
         """Takes in [choke, gl] which will be prepended length times to self.timeseries"""
@@ -49,7 +50,9 @@ class Timeseries():
 
         prep = np.array([val] * length)
         self.timeseries = np.insert(self.timeseries, 0, prep, axis=1)
-        self.length += length
+        self.length = len(self)
+        self.begin += length * self.delta_t
+        self.end += length * self.delta_t
         return self.timeseries
 
     def plot(self):
@@ -79,3 +82,7 @@ class Timeseries():
 
     def __getitem__(self, key):
         return self.timeseries[key]
+
+    def __len__(self):
+        assert len(self.timeseries[0]) == len(self.timeseries[1]), "Timeseries must be equally long for both inputs"
+        return len(self.timeseries[0])

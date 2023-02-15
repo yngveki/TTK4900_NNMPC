@@ -133,9 +133,11 @@ def normalize(series, min=None, max=None):
 
     return normalized
 
+def clip_beginning(series, clip_length=100):
+    return series[clip_length:]
 
-# TODO: 
-# 1) outlier removal (e.g. initial peaks)
+
+# TODO: Any thoughts on data treatment?
 if __name__ == '__main__':
 
     # ----- SETUP ----- #
@@ -147,7 +149,8 @@ if __name__ == '__main__':
 
     warm_start_t = config['warm_start_t']
     delta_t = config['delta_t']
-    steps_path = Path(__file__).parent / "steps/steps40k.csv"
+    filename = 'steps20k'
+    steps_path = Path(__file__).parent / "steps/" / ''.join((filename, '.csv'))
     input_profile = Timeseries(steps_path, delta_t=10)
     start_time = input_profile.begin
     final_time = input_profile.end
@@ -155,9 +158,9 @@ if __name__ == '__main__':
     warm_start_vals = [0,0] # Let system settle with 0 for both choke and gl
     input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
 
-    save_name = "steps40k_output"
+    save_name = ''.join((filename, '_output_clipped'))
     model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
-    model, y1_init, y2_init = init_model(model_path, start_time, final_time, 
+    model, y1_init, y2_init = init_model(model_path, start_time, input_profile.end, 
                             Uk=input_profile, warm_start_t=warm_start_t, 
                             warm_start=True)
 
@@ -167,7 +170,7 @@ if __name__ == '__main__':
     itr = 0
     y1 = []
     y2 = []
-    while time < final_time:
+    while time < input_profile.end:
         inpt = input_profile[:, warm_offset + itr]
         y1k, y2k = simulate_singlewell_step(model, time, warm_start_t, delta_t, inpt)
         y1.append(y1k)
@@ -183,11 +186,11 @@ if __name__ == '__main__':
     fig, axs = plt.subplots(2, 2)
     plot_full=True
     if plot_full:
-        t = np.linspace(start=0, stop=final_time - 1, num=final_time // delta_t)
-        y1 = y1_init + y1
-        y2 = y2_init + y2
-        u1 = input_profile[0, :]
-        u2 = input_profile[1, :]
+        t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=100)
+        y1 = clip_beginning(y1_init + y1, clip_length=100)
+        y2 = clip_beginning(y2_init + y2, clip_length=100)
+        u1 = clip_beginning(input_profile[0, :], clip_length=100)
+        u2 = clip_beginning(input_profile[1, :], clip_length=100)
 
         axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
         axs[0,0].legend()
@@ -200,7 +203,7 @@ if __name__ == '__main__':
         axs[1,1].plot(t, u2, label='GL rate')
         axs[1,1].legend()
     else:   
-        t = np.linspace(start=warm_start_t, stop=final_time - 1, num=(final_time - warm_start_t) // delta_t)
+        t = np.linspace(start=warm_start_t, stop=input_profile.end - 1, num=(input_profile.end - warm_start_t) // delta_t)
         u1 = input_profile[0, warm_start_t // delta_t:]
         u2 = input_profile[1, warm_start_t // delta_t:]
 
@@ -216,9 +219,8 @@ if __name__ == '__main__':
     fig.suptitle('Step response')
     fig.tight_layout()
     plt.show(block=False)
-    plt.pause(30)
+    plt.pause(15)
     plt.close()
-    fig.savefig(Path(__file__).parent / "data/" / save_name + ".png", bbox_inches='tight')
 
     choke_bounds = [0,100]
     GL_bounds = [0,10000]
@@ -228,7 +230,7 @@ if __name__ == '__main__':
     y2_normalized = normalize(y2)
     # ----- WRITE TO FILE ----- #
     header = ["t_" + str(int(timestamp)) for timestamp in t]
-    csv_path = Path(__file__).parent / "data/" / save_name + ".csv"
+    csv_path = Path(__file__).parent / "data" / ''.join((save_name, ".csv"))
     if not exists(csv_path):    # Safe to save; nothing can be overwritten
         with open(csv_path, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -238,12 +240,14 @@ if __name__ == '__main__':
             writer.writerow(u2_normalized)
             writer.writerow(y1_normalized)
             writer.writerow(y2_normalized)
+        
+        fig.savefig(Path(__file__).parent / "data/" / ''.join((save_name, ".png")), bbox_inches='tight')
 
     else:
-        decision = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts): ")
+        decision = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
         if decision != '':
             if decision != 'y':
-                csv_path = Path(__file__).parent / "data/" + decision
+                csv_path = Path(__file__).parent / "data/" / ''.join((decision, '.csv'))
             with open(csv_path, 'w', newline='') as f:
                 writer = csv.writer(f)
 
@@ -254,5 +258,7 @@ if __name__ == '__main__':
                 writer.writerow(y2_normalized)
 
             print(f"File written to \'{csv_path}\'")
+
+            fig.savefig(Path(__file__).parent / "data/" / ''.join((decision, ".png")), bbox_inches='tight')
         else:
             print("File was not saved.")
