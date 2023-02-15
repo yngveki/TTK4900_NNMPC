@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import casadi as ca
+import ml_casadi.torch as mc
 import numpy as np
 from yaml import safe_load
 
@@ -66,9 +67,6 @@ class RNNMPC:
         self.config['max_iter'] = configs['SOLVER_PARAMETERS']['max_iter']
 
         # Timekeeping
-        # self.config['delta_t'] = configs['RUNNING_PARAMETERS']['delta_t']
-        # self.config['final_t'] = configs['RUNNING_PARAMETERS']['final_t']
-        # self.config['t'] = 0
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
         self.final_t = configs['RUNNING_PARAMETERS']['final_t']
         self.t = 0
@@ -161,6 +159,16 @@ class RNNMPC:
         U[:,mu] = uk
 
         constraints.append(Y[:,my] == yk) # (1b)
+
+        nn = mc.nn.MultiLayerPerceptron(2, 3, 1, 1, 'Tanh')
+
+        ## Export the model as Casadi Function
+        casadi_sym_inp = cs.MX.sym('inp', 2)
+        casadi_sym_out = model2(casadi_sym_inp)
+        casadi_func = cs.Function('model2',
+                                [casadi_sym_inp],
+                                [casadi_sym_out])
+
         f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
         for i in range(Hp):   
             # (1c)
