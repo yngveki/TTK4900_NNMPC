@@ -68,8 +68,8 @@ class NeuralNetwork(nn.Module):
 
     def save(self, path):
         """
-        Uncritically saves model to the given path. Whether a model already exists
-        at given path has to be done at higher level.
+        Uncritically saves model to the given path. Checking whether a model 
+        already exists at given path has to be done at higher level.
 
         Args:
             :param path: the given path at which to save self.state_dict.
@@ -91,9 +91,17 @@ class NeuralNetwork(nn.Module):
     def extract_coefficients(self):
         """
         Returns weights and biases for the current model as dicts
+
+        weights.shape = (this_layer_sz, next_layer_sz)
+        bias.shape = (next_layer_sz,)
         """
+        weights = []
+        biases = []
+        for module in self.children():
+            if isinstance(module, nn.ModuleList):
+                for layer in module.children():
+                    if isinstance(layer, nn.Linear):
+                        weights.append(layer.state_dict()['weight'].numpy().T)
+                        biases.append(layer.state_dict()['bias'].numpy())
 
-        weights = {}
-        biases = {}
-
-        return NotImplementedError
+        return weights, biases

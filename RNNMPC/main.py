@@ -3,32 +3,32 @@
 from pathlib import Path
 
 from src.MPC import RNNMPC
-# from src.utils.plotting import plot_LSRMPC
 from src.utils.custom_timing import Timer
 
 if __name__ == "__main__":
 
-    model_path = Path(__file__).parent / "models/model0.pt"
+    model_path = Path(__file__).parent / "models/model_steps100k.pt"
     fmu_path = Path(__file__).parent / "fmu/fmu_endret_deadband.fmu"
     ref_path = Path(__file__).parent / "config/refs/refs0.csv"
     mpc_config_path = Path(__file__).parent / "config/mpc_config.yaml"
     nn_config_path = Path(__file__).parent / "config/nn_config.yaml"
 
     # Initialize the controller
-    mpc = RNNMPC(nn_path=None,  #! Replace with trained model
+    mpc = RNNMPC(nn_path=model_path,
                  mpc_config_path=mpc_config_path,
                  nn_config_path=nn_config_path,
                  ref_path=ref_path)
 
     # Ensure FMU is in a defined state
-    mpc.warm_start(fmu_path, warm_start_t=1000) # TODO: Figure out adequate value
+    mpc.warm_start(fmu_path, warm_start_t=5000)
 
     timed_loop = True
     if timed_loop: stopwatch = Timer()
+    if timed_loop: stopwatch.start()
     run = 1
-    total_runs = mpc.final_time // mpc.delta_t
+    total_runs = mpc.final_t // mpc.delta_t
 
-    while mpc.time < mpc.final_time:
+    while mpc.t < mpc.final_t:
         if run % 10 == 0: print(f'Run #{run} / {total_runs}')
 
         if timed_loop: stopwatch.lap(silent=True)

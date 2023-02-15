@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import casadi as ca
+import numpy as np
 from yaml import safe_load
 
 from src.utils.simulate_fmu import init_model, simulate_singlewell_step
@@ -46,8 +47,8 @@ class RNNMPC:
         self.config['Hp'] = configs['TUNING_PARAMETERS']['Hp']
 
         # Weights
-        self.config['Q'] = configs['TUNING_PARAMETERS']['Q']
-        self.config['P'] = configs['TUNING_PARAMETERS']['P']
+        self.config['Q'] = np.diag(configs['TUNING_PARAMETERS']['Q'])
+        self.config['R'] = np.diag(configs['TUNING_PARAMETERS']['R'])
         self.config['rho'] = configs['TUNING_PARAMETERS']['rho']
 
         # Constraints
@@ -60,15 +61,22 @@ class RNNMPC:
         self.config['elb'] = configs['TUNING_PARAMETERS']['elb']
         self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
 
+        # Solver parameters
+        self.config['expand'] = configs['SOLVER_PARAMETERS']['expand']
+        self.config['max_iter'] = configs['SOLVER_PARAMETERS']['max_iter']
+
         # Timekeeping
-        self.config['delta_t'] = configs['RUNNING_PARAMETERS']['delta_t']
-        self.config['final_t'] = configs['RUNNING_PARAMETERS']['final_t']
-        self.config['t'] = 0
+        # self.config['delta_t'] = configs['RUNNING_PARAMETERS']['delta_t']
+        # self.config['final_t'] = configs['RUNNING_PARAMETERS']['final_t']
+        # self.config['t'] = 0
+        self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
+        self.final_t = configs['RUNNING_PARAMETERS']['final_t']
+        self.t = 0
 
         # -- Set up references -- #
         self.refs = ReferenceTimeseries(ref_path, 
                                         self.config['Hp'], 
-                                        self.config['delta_t'],
+                                        self.delta_t,
                                         time=0)
 
         # -- Load neural network model -- #   
@@ -77,14 +85,14 @@ class RNNMPC:
         self.config['my'] = configs['STRUCTURE']['my']    
         # Load model
         layers = []
-        layers.append(self.config['mu'] * self.config['n_MV'] + self.config['my'] * self.config['n_CV'])
+        layers.append(self.config['n_MV'] * (self.config['mu'] + 1) + \
+                      self.config['n_CV'] * (self.config['my'] + 1))
         layers += configs['STRUCTURE']['hlszs']
         layers.append(self.config['n_CV'])
 
-        # TODO: Could remove overhead if able to only extract weights and biases; that's all we really need
         self.model = NeuralNetwork(layers=layers, model_path=nn_path)
 
-        # Extract weights and biases # TODO: Verify that they are lists of ndarrays
+        # Extract weights and biases
         self.weights, self.biases = self.model.extract_coefficients()
 
         # -- Set up framework for OCP using Opti from CasADi -- #
@@ -92,8 +100,8 @@ class RNNMPC:
 
         self.update_OCP()
 
-        p_opts = {"expand":self.config['SOLVER_PARAMETERS']['expand']}    
-        s_opts = {"max_iter": self.config['SOLVER_PARAMETERS']['max_iter']}
+        p_opts = {"expand":self.config['expand']}    
+        s_opts = {"max_iter": self.config['max_iter']}
         self.opti.solver('ipopt', p_opts, s_opts)
 
     def warm_start(self, fmu_path, warm_start_t=1000):
@@ -103,9 +111,9 @@ class RNNMPC:
         self.fmu, \
         self.simulated_u['init'], \
         self.simulated_y['init'] = init_model(fmu_path, 
-                                            start_time = self.config['t'], 
-                                            final_time = self.config['final_t'], # Needed for initialization, but different from warm start time
-                                            delta_t = self.config['delta_t'],
+                                            start_time=self.t, 
+                                            final_time=self.final_t, # Needed for initialization, but different from warm start time
+                                            delta_t=self.delta_t,
                                             warm_start_t=warm_start_t)
 
     def update_OCP(self):
@@ -113,10 +121,11 @@ class RNNMPC:
         Hu = self.config['Hu']
         my = self.config['my']
         mu = self.config['mu']
+        n_slack = len(self.config['rho'])
 
         Y = self.opti.variable(self.config['n_CV'],self.config['Hp']+1+my)
         DU = self.opti.variable(self.config['n_MV'],Hu)
-        epsy = self.opti.variable(2)
+        epsy = self.opti.variable(n_slack)
 
         U = self.opti.variable(self.config['n_MV'],Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
         Y_ref = self.refs.refs_as_lists()
@@ -124,20 +133,16 @@ class RNNMPC:
         # (1a)
         cost = 0
         for i in range(Hp):
-            cost += (Y[:,my+i] - Y_ref[i]).T @ \
-                    self.config['Q'] @ \
-                    (Y[:,my+i] - Y_ref[i])
+            cost += (Y[:,my+i] - Y_ref[i]).T @ self.config['Q'] @ (Y[:,my+i] - Y_ref[i])
         for i in range(Hu):
             DU[:,i].T @ self.config['R'] @ DU[:,i]
-        cost += self.config['rho'].T @ epsy 
+        for i in range(n_slack):
+            cost += self.config['rho'][i] * epsy[i]
         self.opti.minimize(cost)
 
         # Define constraints, respecting recursion in (1c) and (1g)
         constraints = []
-        f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
-
-        constraints.append(Y[:,my] == yk) # (1b)
-
+        
         # Initializing overhead for (1c)
         # Expand so Y and U also contain historical values
         # Note that this has implications for indexing:
@@ -155,6 +160,8 @@ class RNNMPC:
             U[:,i] = uk
         U[:,mu] = uk
 
+        constraints.append(Y[:,my] == yk) # (1b)
+        f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
         for i in range(Hp):   
             # (1c)
             x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
@@ -198,8 +205,8 @@ class RNNMPC:
         gas_rate_k, oil_rate_k, \
         choke_act_k, gas_lift_act_k, \
         _, _ = simulate_singlewell_step(self.model, 
-                                        self.config['t'], 
-                                        self.config['final_t'], 
+                                        self.t, 
+                                        self.final_t, 
                                         self.uk) # measurement from FMU, i.e. result from previous actuation
 
         self.yk = [gas_rate_k, oil_rate_k]
@@ -223,7 +230,7 @@ class RNNMPC:
         with open(file_path, "r") as f:
             return safe_load(f)
 
-    def _build_MLP(weights, biases):
+    def _build_MLP(self, weights, biases):
         assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
         assert len(weights) >= 2, "Must include at least input layer, hidden layer and output layer!"
         
