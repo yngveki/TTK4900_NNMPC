@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
+import sys
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 import casadi as ca
-import ml_casadi.torch as mc
 import numpy as np
 from yaml import safe_load
 
 from src.utils.simulate_fmu import init_model, simulate_singlewell_step
 from src.neuralnetwork import NeuralNetwork
 from src.utils.references import ReferenceTimeseries
+import ml_casadi.torch as mc
 
 class RNNMPC:
 
@@ -85,13 +89,18 @@ class RNNMPC:
         layers = []
         layers.append(self.config['n_MV'] * (self.config['mu'] + 1) + \
                       self.config['n_CV'] * (self.config['my'] + 1))
+        self.input_layer = layers[-1]
+
         layers += configs['STRUCTURE']['hlszs']
+        self.hidden_layers = layers[-1]
+
         layers.append(self.config['n_CV'])
+        self.output_layer = layers[-1]
 
         self.model = NeuralNetwork(layers=layers, model_path=nn_path)
-
-        # Extract weights and biases
         self.weights, self.biases = self.model.extract_coefficients()
+        self.f_MLP = self._build_MLP(self.weights, self.biases)
+        # self.f_MLP = self._build_MLP(layers, nn_path)
 
         # -- Set up framework for OCP using Opti from CasADi -- #
         self.opti = ca.Opti()
@@ -160,21 +169,12 @@ class RNNMPC:
 
         constraints.append(Y[:,my] == yk) # (1b)
 
-        nn = mc.nn.MultiLayerPerceptron(2, 3, 1, 1, 'Tanh')
-
-        ## Export the model as Casadi Function
-        casadi_sym_inp = cs.MX.sym('inp', 2)
-        casadi_sym_out = model2(casadi_sym_inp)
-        casadi_func = cs.Function('model2',
-                                [casadi_sym_inp],
-                                [casadi_sym_out])
-
-        f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
+        # f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
         for i in range(Hp):   
             # (1c)
             x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
             x = ca.reshape(x, x.numel(), 1)
-            constraints.append(Y[:,my + 1 + i] == f_MLP(MLP_in=x)['MLP_out']) 
+            constraints.append(Y[:,my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out']) 
 
             # (1d)
             constraints.append(self.opti.bounded(self.config['ylb'] - epsy,\
@@ -237,6 +237,18 @@ class RNNMPC:
         
         with open(file_path, "r") as f:
             return safe_load(f)
+
+    # def _build_MLP(self, layers, path):
+    #     nn = mc.nn.CasadiNeuralNetwork(layers)
+    #     nn.load(path)
+
+    #     casadi_sym_inp = ca.MX.sym('inp', layers[0])
+    #     casadi_sym_out = nn(casadi_sym_inp)
+    #     return ca.Function('model2',
+    #                             [casadi_sym_inp],
+    #                             [casadi_sym_out],
+    #                             ['MLP_in'],
+    #                             ['MLP_out'])
 
     def _build_MLP(self, weights, biases):
         assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
