@@ -7,7 +7,7 @@ from src.utils.custom_timing import Timer
 
 if __name__ == "__main__":
 
-    model_path = Path(__file__).parent / "models/model_steps100k.pt"
+    model_path = Path(__file__).parent / "models/model_prosjektoppgave_4.pt"
     fmu_path = Path(__file__).parent / "fmu/fmu_endret_deadband.fmu"
     ref_path = Path(__file__).parent / "config/refs/refs0.csv"
     mpc_config_path = Path(__file__).parent / "config/mpc_config.yaml"
@@ -21,7 +21,6 @@ if __name__ == "__main__":
 
     # Ensure FMU is in a defined state
     mpc.warm_start(fmu_path, warm_start_t=5000)
-
     timed_loop = True
     if timed_loop: stopwatch = Timer()
     if timed_loop: stopwatch.start()
@@ -29,17 +28,17 @@ if __name__ == "__main__":
     total_runs = mpc.final_t // mpc.delta_t
 
     while mpc.t < mpc.final_t:
-        if run % 10 == 0: print(f'Run #{run} / {total_runs}')
+        print(f'Run #{run} / {total_runs}')
 
-        if timed_loop: stopwatch.lap(silent=True)
+        if timed_loop: stopwatch.lap(silent=False)
         mpc.update_OCP()
 
         # Solve OCP for this timestep
-        if timed_loop: stopwatch.lap(silent=True)
+        if timed_loop: stopwatch.lap(silent=False)
         mpc.solve_OCP()
 
         # Simulate one step for the system
-        if timed_loop: stopwatch.lap(silent=True)
+        if timed_loop: stopwatch.lap(silent=False)
         mpc.iterate_system()
 
         if timed_loop: stopwatch.total_time()

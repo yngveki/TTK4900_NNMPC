@@ -1,7 +1,7 @@
 STRUCTURE: 
-  mu: 100          # history of inputs considered
-  my: 100          # history of outputs considered
-  hlszs: [16,16,16]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
+  mu: 1          # history of inputs considered
+  my: 3          # history of outputs considered
+  hlszs: [32]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
 
 LEARNING:
   bsz: 100        # batch size

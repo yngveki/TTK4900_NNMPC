@@ -3,7 +3,7 @@
 import torch
 from pathlib import Path
 from os.path import exists
-from yaml import safe_load
+from yaml import safe_load, dump
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -48,6 +48,13 @@ class GroundTruth():
 
 if __name__ == '__main__':
     TEST = True
+    nr = 4
+    csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_36000.csv"
+    csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_10000.csv"
+    csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
+    model_name = "model_prosjektoppgave_" + str(nr)
+    model_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
+    yaml_save_path = Path(__file__).parent / "".join(("models/corresponding_config/", model_name, ".yaml"))
 
     hyperparameter_path = Path(__file__).parent / "config/nn_config.yaml"
     with open(hyperparameter_path, "r") as f:
@@ -55,14 +62,11 @@ if __name__ == '__main__':
         if not hyperparameters:
             Exception("Failed loading hyperparameters\n")
 
-    hyperparameter_nr = "hyperparameters_" + str(0)
+    hyperparameter_nr = "hyperparameters_" + str(nr)
 
 # TODO: Make external loop to iterate over hyperparameter candidates
     if not TEST:
-        # ----- TRAINING AND PLOTTING ----- #  
-        csv_path_train = Path(__file__).parent / "generate_data/data/steps100k_output.csv"
-        csv_path_val = Path(__file__).parent / "generate_data/data/steps40k_output.csv"
-            
+        # ----- TRAINING AND PLOTTING ----- #              
         model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
 
         p = hyperparameters['LEARNING']['p'] + 1 # To account for zero-indexing
@@ -92,31 +96,35 @@ if __name__ == '__main__':
         
         fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
         fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-        
-        itr_nr = 11 # The number of times the same main-loop has been run
-        model_path = Path(__file__).parent / "models/mock_model.pt"
 
         if not exists(model_path): # Safe to save; won't override
             torch.save(model.state_dict(), model_path)
+
+            # Also save config file to have a record of what config was used to generate what model
+            with open(yaml_save_path, "w", encoding = "utf-8") as yaml_file:
+                deuce = dump(hyperparameters, default_flow_style = False, allow_unicode = True, encoding = None)
+                yaml_file.write(deuce)
             
         else:
-            decision = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save): ")
+            decision = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
             if decision != '':
                 if decision != 'y':
-                    model_path = Path(__file__).parent / "models/" / decision
+                    model_path = Path(__file__).parent / "".join(("models/", decision, ".pt"))
 
                 torch.save(model.state_dict(), model_path)
 
+                # Also save config file to have a record of what config was used to generate what model
+                with open(yaml_save_path, "w", encoding = "utf-8") as yaml_file:
+                    deuce = dump(hyperparameters, default_flow_style = False, allow_unicode = True, encoding = None)
+                    yaml_file.write(deuce)
+
             else:
-                print("File was not saved.")
+                print("Model was not saved.")
     
     else:
-        # ----- PREDICTION AND PLOTTING ----- #  
-        csv_path_test = Path(__file__).parent / "generate_data/data/steps20k_output.csv"
-        nn_path = Path(__file__).parent / "models/model_steps100k.pt"
-    
+        # ----- PREDICTION AND PLOTTING ----- #      
         gt = GroundTruth(csv_path_test)
-        pred, model = test(nn_path, csv_path_test, hyperparameters)
+        pred, model = test(model_path, csv_path_test, hyperparameters)
 
         fig2, axes = plt.subplots(2, 2, sharex=True)
         fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)

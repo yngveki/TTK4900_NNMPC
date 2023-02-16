@@ -11,7 +11,8 @@ from yaml import safe_load
 from src.utils.simulate_fmu import init_model, simulate_singlewell_step
 from src.neuralnetwork import NeuralNetwork
 from src.utils.references import ReferenceTimeseries
-import ml_casadi.torch as mc
+from src.utils.custom_timing import Timer
+# import ml_casadi.torch as mc
 
 class RNNMPC:
 
@@ -169,7 +170,6 @@ class RNNMPC:
 
         constraints.append(Y[:,my] == yk) # (1b)
 
-        # f_MLP = self._build_MLP(self.weights, self.biases) # TODO: Replace with ml-casadi's framework
         for i in range(Hp):   
             # (1c)
             x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
@@ -203,7 +203,7 @@ class RNNMPC:
         self.opti.subject_to(constraints)
 
     def solve_OCP(self):
-        sol = self.opti.solve()
+        sol = self.opti.solve() # Takes a very long time!
         res = sol.value(self.opti.x)
         states = res['x'].full().flatten()
 

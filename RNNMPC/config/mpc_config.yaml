@@ -6,7 +6,7 @@ SYSTEM_PARAMETERS:
 
 SOLVER_PARAMETERS:
   expand: True
-  max_iter: 100
+  max_iter: 10
 
 TUNING_PARAMETERS:
   #! Horizon values are tentative and should be tuned properly

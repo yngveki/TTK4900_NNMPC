@@ -1,0 +1,10 @@
+LEARNING:
+  bsz: 100
+  e: 500
+  lr: 0.001
+  p: 5
+STRUCTURE:
+  hlszs:
+  - 32
+  mu: 1
+  my: 3
