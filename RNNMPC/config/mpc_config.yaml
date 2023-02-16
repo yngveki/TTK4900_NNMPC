@@ -1,16 +1,16 @@
 SYSTEM_PARAMETERS: 
   n_MV: 2
   n_CV: 2
-  mu: 10
-  my: 10
+  mu: 1
+  my: 3
 
 SOLVER_PARAMETERS:
   expand: True
-  max_iter: 10
+  max_iter: 1000
 
 TUNING_PARAMETERS:
   #! Horizon values are tentative and should be tuned properly
-  # Horizons
+  # Horizons (current OCP-formulation demands these be equal)
   Hu: 50
   Hp: 50
 

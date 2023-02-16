@@ -98,8 +98,8 @@ class RNNMPC:
         layers.append(self.config['n_CV'])
         self.output_layer = layers[-1]
 
-        self.model = NeuralNetwork(layers=layers, model_path=nn_path)
-        self.weights, self.biases = self.model.extract_coefficients()
+        self.nn = NeuralNetwork(layers=layers, model_path=nn_path)
+        self.weights, self.biases = self.nn.extract_coefficients()
         self.f_MLP = self._build_MLP(self.weights, self.biases)
         # self.f_MLP = self._build_MLP(layers, nn_path)
 
@@ -135,7 +135,7 @@ class RNNMPC:
         DU = self.opti.variable(self.config['n_MV'],Hu)
         epsy = self.opti.variable(n_slack)
 
-        U = self.opti.variable(self.config['n_MV'],Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
+        self.U = self.opti.variable(self.config['n_MV'],Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
         Y_ref = self.refs.refs_as_lists()
 
         # (1a)
@@ -143,7 +143,7 @@ class RNNMPC:
         for i in range(Hp):
             cost += (Y[:,my+i] - Y_ref[i]).T @ self.config['Q'] @ (Y[:,my+i] - Y_ref[i])
         for i in range(Hu):
-            DU[:,i].T @ self.config['R'] @ DU[:,i]
+            cost += DU[:,i].T @ self.config['R'] @ DU[:,i]
         for i in range(n_slack):
             cost += self.config['rho'][i] * epsy[i]
         self.opti.minimize(cost)
@@ -158,19 +158,21 @@ class RNNMPC:
         #                 u_{k+i}            -> [mu + 1 + i]             -> [mu + 1 + i] (nåværende)
         #   -> From (1c): y_{k+i:k+i-my}     -> [my+i-my : my+i]         -> [i : my + 1 + i] (fra og med k+i-my, til _og med_ k+i; nåværende pluss historie)
         if self.yk is None:
-            yk = 0
+            self.yk = [0,0] # TODO: Valid start value?
         if self.uk is None:
-            uk = 0
+            self.uk = [10,2000] # TODO: Valid start value?
         
         for i in range(my):
-            Y[:,i] = yk
+            Y[:,i] = self.yk
         for i in range(mu):
-            U[:,i] = uk
-        U[:,mu] = uk
+            self.U[:,i] = self.uk
+        self.U[:,mu] = self.uk
 
+        """
         constraints.append(Y[:,my] == yk) # (1b)
-
+        """
         for i in range(Hp):   
+            """
             # (1c)
             x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
             x = ca.reshape(x, x.numel(), 1)
@@ -186,33 +188,33 @@ class RNNMPC:
             constraints.append(self.opti.bounded(self.config['dulb'],\
                                             DU[:,i],\
                                             self.config['duub']))
+        """
 
             # (1f)
             constraints.append(self.opti.bounded(self.config['ulb'],\
-                                            U[:,mu + i],\
+                                            self.U[:,mu + i],\
                                             self.config['uub'])) 
 
             # (1g)                                        
-            constraints.append(U[:,mu + i] == U[:,mu + i - 1] + DU[:,i]) 
+            constraints.append(self.U[:,mu + i] == self.U[:,mu + i - 1] + DU[:,i]) 
         
         # (1h)
-        constraints.append(self.opti.bounded(self.config['elb'],\
-                                        epsy,\
-                                        self.config['eub'])) 
-            
-        self.opti.subject_to(constraints)
+        constraints.append(epsy >= self.config['elb']) # Don't need upper bound
+        # constraints.append(self.opti.bounded(self.config['elb'],\
+        #                                 epsy,\
+        #                                 self.config['eub']))
+
+        self.opti.subject_to(constraints) 
 
     def solve_OCP(self):
-        sol = self.opti.solve() # Takes a very long time!
-        res = sol.value(self.opti.x)
-        states = res['x'].full().flatten()
-
-        self.uk = states[:self.n_MV] # TODO: verify
+        # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
+        sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
+        self.uk = sol.value(self.U)[:,0]     
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
         choke_act_k, gas_lift_act_k, \
-        _, _ = simulate_singlewell_step(self.model, 
+        _, _ = simulate_singlewell_step(self.fmu, 
                                         self.t, 
                                         self.final_t, 
                                         self.uk) # measurement from FMU, i.e. result from previous actuation
