@@ -39,7 +39,7 @@ def init_model(model_path, start_time, final_time, delta_t, warm_start_t=1000):
 
     y1 = []
     y2 = []
-    for i in range (warm_start_t): #satt denne fra 200 til 500, lengre simulering før vi begynner MPC
+    for i in range (warm_start_t // delta_t): #satt denne fra 200 til 500, lengre simulering før vi begynner MPC
         model.set_real([3,4], [50, 0]) #HAR BYTTET FMU TIL Å VÆRE LIK DEN JEG BRUKTE FOR Å GENERERE S MATRISENE, DERFOR BYTTE INPUT VAR_REF(FRA 82,83 TIL 3,4)
         model.do_step(time, delta_t)
         time += delta_t

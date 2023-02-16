@@ -82,8 +82,6 @@ def plot_LSRMPC(mpc=None):
     plt.ylabel('Gas rate [m3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
 
-
-
     plt.subplot(2,1,2)
     plt.plot(t, oil_rate_per_hr_vec, label = 'Oil rate', linewidth = 4)
     plt.plot(t, oil_rate_ref_vec, label = 'Reference signal', linewidth = 4, linestyle = "dashed")
@@ -92,7 +90,6 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Oil rate [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-
 
     figure = plt.figure(2)
     plt.clf()
@@ -104,9 +101,6 @@ def plot_LSRMPC(mpc=None):
     plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
     plt.ylabel('Choke input [%]', fontdict=None, labelpad=None, fontsize=14)
     plt.legend(fontsize = 'x-large', loc='lower right')
-
-
-
 
     plt.subplot(212)
     plt.plot(t, gas_lift_input, label = 'Gas-lift rate', linewidth = 4)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.MPC import RNNMPC
 from src.utils.custom_timing import Timer
-
+from src.utils.plotting import plot_RNNMPC
 if __name__ == "__main__":
 
     model_path = Path(__file__).parent / "models/model_prosjektoppgave_4.pt"
@@ -45,3 +45,8 @@ if __name__ == "__main__":
         run += 1
     
     mpc.merge_sim_data()
+    mpc.save_data(data_path=Path(__file__).parent / "data/")
+
+    # TODO: Either prepend references, such that they're plotted from after warm_start_t
+    # TODO: or plot _without_ warm_start
+    plot_RNNMPC(mpc)

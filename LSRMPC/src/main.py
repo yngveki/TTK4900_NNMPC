@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     timed_loop = True
     if timed_loop: stopwatch = Timer()
-    # if timed_loop: stopwatch.start()
+    if timed_loop: stopwatch.start()
     run = 1
     total_runs = mpc.final_time // mpc.delta_t
 
@@ -52,6 +52,4 @@ if __name__ == "__main__":
     
     # Plot full simulation
     plot_LSRMPC(mpc)
-
-# TODO: Make timing-suite decoratable
     

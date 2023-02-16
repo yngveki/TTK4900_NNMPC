@@ -32,8 +32,6 @@ class Timer:
 
     # TODO: Make into a decorator
     def lap(self, silent=False):
-        if self._start_time is not None:
-            raise TimerError(f"Timer is running. Use .stop() to stop it")
         elapsed_time = time.perf_counter() - self._start_time
         self._total_time += elapsed_time
         self._start_time = None

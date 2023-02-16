@@ -29,14 +29,16 @@ class RNNMPC:
         self.fmu = None
 
         self.simulated_u = {}
-        self.simulated_u['init'] = [] # Will keep data from warm_start
-        self.simulated_u['sim'] = []  # Will keep data from control loop
-        self.simulated_u['full'] = [] # Concatenates the two above
+        self.simulated_u['init'] = {'choke': [], 'gas lift': []} # Will keep data from warm_start
+        self.simulated_u['sim'] = {'choke': [], 'gas lift': []}  # Will keep data from control loop
+        self.simulated_u['full'] = {'choke': [], 'gas lift': []} # Concatenates the two above
         self.simulated_y = {}
-        self.simulated_y['init'] = [] # Will keep data from warm_start
-        self.simulated_y['sim'] = []  # Will keep data from control loop
-        self.simulated_y['full'] = [] # Concatenates the two above
-
+        self.simulated_y['init'] = {'gas rate': [], 'oil rate': []} # Will keep data from warm_start
+        self.simulated_y['sim'] = {'gas rate': [], 'oil rate': []}  # Will keep data from control loop
+        self.simulated_y['full'] = {'gas rate': [], 'oil rate': []} # Concatenates the two above
+        self.full_refs = {}
+        self.full_refs['gas rate'] = []
+        self.full_refs['oil rate'] = []
         self.yk = None
         self.uk = None
 
@@ -116,13 +118,16 @@ class RNNMPC:
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
-        self.fmu, \
-        self.simulated_u['init'], \
-        self.simulated_y['init'] = init_model(fmu_path, 
-                                            start_time=self.t, 
-                                            final_time=self.final_t, # Needed for initialization, but different from warm start time
-                                            delta_t=self.delta_t,
-                                            warm_start_t=warm_start_t)
+        self.fmu, init_u, init_y = init_model(fmu_path, 
+                                                start_time=self.t, 
+                                                final_time=self.final_t, # Needed for initialization, but different from warm start time
+                                                delta_t=self.delta_t,
+                                                warm_start_t=warm_start_t)
+        
+        self.simulated_u['init']['choke'] = init_u[:,0].tolist()
+        self.simulated_u['init']['gas lift'] = init_u[:,1].tolist()
+        self.simulated_y['init']['gas rate'] = init_y[:,0].tolist()
+        self.simulated_y['init']['oil rate'] = init_y[:,1].tolist()
 
     def update_OCP(self):
         Hp = self.config['Hp']
@@ -136,12 +141,12 @@ class RNNMPC:
         epsy = self.opti.variable(n_slack)
 
         self.U = self.opti.variable(self.config['n_MV'],Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
-        Y_ref = self.refs.refs_as_lists()
+        self.Y_ref = self.refs.refs_as_lists()
 
         # (1a)
         cost = 0
         for i in range(Hp):
-            cost += (Y[:,my+i] - Y_ref[i]).T @ self.config['Q'] @ (Y[:,my+i] - Y_ref[i])
+            cost += (Y[:,my+i] - self.Y_ref[i]).T @ self.config['Q'] @ (Y[:,my+i] - self.Y_ref[i])
         for i in range(Hu):
             cost += DU[:,i].T @ self.config['R'] @ DU[:,i]
         for i in range(n_slack):
@@ -207,6 +212,7 @@ class RNNMPC:
         self.opti.subject_to(constraints) 
 
     def solve_OCP(self):
+        #! Jacobians become bigger and bigger, and solving takes longer and longer!
         # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
         sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
         self.uk = sol.value(self.U)[:,0]     
@@ -220,16 +226,30 @@ class RNNMPC:
                                         self.uk) # measurement from FMU, i.e. result from previous actuation
 
         self.yk = [gas_rate_k, oil_rate_k]
-        self.simulated_y['sim'].append([gas_rate_k, oil_rate_k])
-        self.simulated_u['sim'].append([choke_act_k, gas_lift_act_k])   
+        self.simulated_u['sim']['choke'].append(choke_act_k)
+        self.simulated_u['sim']['gas lift'].append(gas_lift_act_k)
+        self.simulated_y['sim']['gas rate'].append(gas_rate_k)
+        self.simulated_y['sim']['oil rate'].append(oil_rate_k)
+        self.full_refs['gas rate'].append(self.Y_ref[0][0])
+        self.full_refs['oil rate'].append(self.Y_ref[0][1])
+        
+        self.t += self.delta_t
 
     def merge_sim_data(self):
         """
         Convenience function to make the full timeseries more convenient
         """
-        # TODO: If this is done at init, will the ['full'] array update dynamically? -> TEST
-        self.simulated_u['full'] = self.simulated_u['init'] + self.simulated_u['sim']
-        self.simulated_y['full'] = self.simulated_y['init'] + self.simulated_y['sim']                                                                        
+        self.simulated_y['full']['gas rate'] = self.simulated_y['init']['gas rate'] + self.simulated_y['sim']['gas rate']
+        self.simulated_y['full']['oil rate'] = self.simulated_y['init']['oil rate'] + self.simulated_y['sim']['oil rate']
+        self.simulated_u['full']['choke'] = self.simulated_u['init']['choke'] + self.simulated_u['sim']['choke']
+        self.simulated_u['full']['gas lift'] = self.simulated_u['init']['gas lift'] + self.simulated_u['sim']['gas lift']
+
+    def save_data(self, data_path):
+        np.save(data_path / 't.npy', np.linspace(0, self.final_t, num=self.final_t // self.delta_t))
+        np.save(data_path / 'gas_rate.npy', self.simulated_y['full']['gas rate'])
+        np.save(data_path / 'oil_rate.npy', self.simulated_y['full']['oil rate'])
+        np.save(data_path / 'choke.npy', self.simulated_u['full']['choke'])
+        np.save(data_path / 'gas_lift.npy', self.simulated_u['full']['gas lift'])
     
     # --- Private funcs --- #
     def _read_yaml(self, file_path):
