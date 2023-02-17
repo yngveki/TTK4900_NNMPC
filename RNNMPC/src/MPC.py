@@ -111,7 +111,7 @@ class RNNMPC:
         # -- Set up framework for OCP using Opti from CasADi -- #
         self.opti = ca.Opti()
 
-        self.update_OCP()
+        self.declare_OCP()
 
         # p_opts = {'expand':self.config['expand'], } # CasADi plugin options   
         # s_opts = {'max_iter': self.config['max_iter'], 'tol': 10e6} # Solver options
@@ -133,29 +133,31 @@ class RNNMPC:
         self.simulated_y['init']['gas rate'] = init_y[:,0].tolist()
         self.simulated_y['init']['oil rate'] = init_y[:,1].tolist()
 
+    def declare_OCP(self):
+        self.Hp = self.config['Hp']
+        self.Hu = self.config['Hu']
+        assert self.Hu == self.Hp, "Given the current OCP-formulation, control and prediction horizons must be the same!"
+        self.my = self.config['my']
+        self.mu = self.config['mu']
+        self.n_slack = len(self.config['rho'])
+
+        self.Y = self.opti.variable(self.config['n_CV'],self.config['Hp']+1+self.my)
+        self.DU = self.opti.variable(self.config['n_MV'],self.Hu)
+        self.epsy = self.opti.variable(self.n_slack)
+
+        self.U = self.opti.variable(self.config['n_MV'],self.Hu+self.mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
+
     def update_OCP(self):
-        Hp = self.config['Hp']
-        Hu = self.config['Hu']
-        assert Hu == Hp, "Given the current OCP-formulation, control and prediction horizons must be the same!"
-        my = self.config['my']
-        mu = self.config['mu']
-        n_slack = len(self.config['rho'])
-
-        Y = self.opti.variable(self.config['n_CV'],self.config['Hp']+1+my)
-        DU = self.opti.variable(self.config['n_MV'],Hu)
-        epsy = self.opti.variable(n_slack)
-
-        self.U = self.opti.variable(self.config['n_MV'],Hu+mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
         self.Y_ref = self.refs.refs_as_lists()
 
         # (1a)
         cost = 0
-        for i in range(Hp):
-            cost += (Y[:,my+i] - self.Y_ref[i]).T @ self.config['Q'] @ (Y[:,my+i] - self.Y_ref[i])
-        for i in range(Hu):
-            cost += DU[:,i].T @ self.config['R'] @ DU[:,i]
-        for i in range(n_slack):
-            cost += self.config['rho'][i] * epsy[i]
+        for i in range(self.Hp):
+            cost += (self.Y[:,self.my+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+i] - self.Y_ref[i])
+        for i in range(self.Hu):
+            cost += self.DU[:,i].T @ self.config['R'] @ self.DU[:,i]
+        for i in range(self.n_slack):
+            cost += self.config['rho'][i] * self.epsy[i]
         self.opti.minimize(cost)
 
         # Define constraints, respecting recursion in (1c) and (1g)
@@ -172,50 +174,53 @@ class RNNMPC:
         if self.uk is None:
             self.uk = [10,2000] # TODO: Valid start value?
         
-        for i in range(my):
-            Y[:,i] = self.yk
-        for i in range(mu):
+        for i in range(self.my):
+            self.Y[:,i] = self.yk
+        for i in range(self.mu):
             self.U[:,i] = self.uk
-        self.U[:,mu] = self.uk
+        self.U[:,self.mu] = self.uk
 
         
-        constraints.append(Y[:,my] == self.yk) # (1b)
+        constraints.append(self.Y[:,self.my] == self.yk) # (1b)
         
-        for i in range(Hp):
-            """   
+        for i in range(self.Hp):
+               
             # (1c)
-            x = ca.horzcat(self.U[:,i:mu + i + 1], Y[:,i:my + i + 1])
+            x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
             x = ca.reshape(x, x.numel(), 1)
-            constraints.append(Y[:,my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out']) 
-            """
+            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out']) 
+        
             # (1d)
-            constraints.append(self.opti.bounded(self.config['ylb'] - epsy,\
-                                            Y[:,my + 1 + i],\
-                                            self.config['yub'] + epsy)) 
-        for i in range(Hu):
+            constraints.append(self.opti.bounded(self.config['ylb'] - self.epsy,\
+                                            self.Y[:,self.my + 1 + i],\
+                                            self.config['yub'] + self.epsy)) 
+        for i in range(self.Hu):
             # (1e)
             constraints.append(self.opti.bounded(self.config['dulb'],\
-                                            DU[:,i],\
+                                            self.DU[:,i],\
                                             self.config['duub']))
 
             # (1f)
             constraints.append(self.opti.bounded(self.config['ulb'],\
-                                            self.U[:,mu + i],\
+                                            self.U[:,self.mu + i],\
                                             self.config['uub'])) 
 
             # (1g)                                        
-            constraints.append(self.U[:,mu + i] == self.U[:,mu + i - 1] + DU[:,i]) 
+            constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
         # (1h)
-        constraints.append(epsy >= self.config['elb']) # Don't need upper bound
+        constraints.append(self.epsy >= self.config['elb']) # Don't need upper bound
 
-        self.opti.subject_to(constraints) 
+        self.opti.subject_to() # Reset constraints to avoid additivity
+        self.opti.subject_to(constraints)
 
     def solve_OCP(self):
-        #! Jacobians become bigger and bigger, and solving takes longer and longer!
         # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
         sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
-        self.uk = sol.value(self.U)[:,0]     
+        self.uk = sol.value(self.U)[:,0]
+        print(f'self.Y: {sol.value(self.Y)}')
+        print(f'self.U: {sol.value(self.U)}')
+        print(f'self.DU: {sol.value(self.DU)}')
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
