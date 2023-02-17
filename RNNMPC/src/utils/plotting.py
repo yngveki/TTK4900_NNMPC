@@ -10,6 +10,13 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
     
     See LSRMPC/src/plotting.py for """
     if mpc is None:
+        """The idea is to take in some path to the data, verify that
+        there is indeed data there, then read that data into variables that
+        may be used for plotting.
+        
+        This implies that the data fetched directly from the mpc-object have
+        to be confined also to the same variables that the data within this
+        if-clause use, e.g. choke, gas_lift, gas_rate, oil_rate and t"""
         return NotImplementedError
     
     num = len(mpc.simulated_u['full']['choke'])
@@ -57,10 +64,8 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
         if suffixes is None: suffixes = ['.png', '.eps']  
         if not exists(save_path): # Safe to save; won't override
             for suffix in suffixes:
-                # save_path = save_path.with_suffix(suffix)
                 save_path = save_path.parent / (save_path.stem + suffix)
                 fig.savefig(save_path, bbox_inches='tight')
-                # fig.savefig(save_path.parent / (save_path.name + extra_suffix), bbox_inches='tight')
 
         else:
             name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")

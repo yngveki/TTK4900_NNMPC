@@ -134,6 +134,7 @@ class RNNMPC:
     def update_OCP(self):
         Hp = self.config['Hp']
         Hu = self.config['Hu']
+        assert Hu == Hp, "Given the current OCP-formulation, control and prediction horizons must be the same!"
         my = self.config['my']
         mu = self.config['mu']
         n_slack = len(self.config['rho'])
@@ -207,9 +208,6 @@ class RNNMPC:
         
         # (1h)
         constraints.append(epsy >= self.config['elb']) # Don't need upper bound
-        # constraints.append(self.opti.bounded(self.config['elb'],\
-        #                                 epsy,\
-        #                                 self.config['eub']))
 
         self.opti.subject_to(constraints) 
 
