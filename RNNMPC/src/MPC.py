@@ -69,9 +69,11 @@ class RNNMPC:
         self.config['elb'] = configs['TUNING_PARAMETERS']['elb']
         self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
 
-        # Solver parameters
-        self.config['expand'] = configs['SOLVER_PARAMETERS']['expand']
-        self.config['max_iter'] = configs['SOLVER_PARAMETERS']['max_iter']
+        # Solver options
+        # self.config['expand'] = configs['SOLVER_OPTIONS']['expand']
+        # self.config['max_iter'] = configs['SOLVER_OPTIONS']['max_iter']
+        p_opts = configs['PLUGIN_OPTIONS']
+        s_opts = configs['SOLVER_OPTIONS']
 
         # Timekeeping
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
@@ -111,15 +113,15 @@ class RNNMPC:
 
         self.update_OCP()
 
-        p_opts = {"expand":self.config['expand']}    
-        s_opts = {"max_iter": self.config['max_iter']}
+        # p_opts = {'expand':self.config['expand'], } # CasADi plugin options   
+        # s_opts = {'max_iter': self.config['max_iter'], 'tol': 10e6} # Solver options
         self.opti.solver('ipopt', p_opts, s_opts)
 
     def warm_start(self, fmu_path):
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
-        # Time is updated after warm_start_t into self.t
+        # Time is updated after to warm_start_t into self.t
         self.fmu, init_u, init_y, self.t = init_model(fmu_path, 
                                                       self.t, 
                                                       self.final_t, # Needed for initialization, but different from warm start time
@@ -176,27 +178,25 @@ class RNNMPC:
             self.U[:,i] = self.uk
         self.U[:,mu] = self.uk
 
-        """
-        constraints.append(Y[:,my] == yk) # (1b)
-        """
-        for i in range(Hp):   
-            """
+        
+        constraints.append(Y[:,my] == self.yk) # (1b)
+        
+        for i in range(Hp):
+            """   
             # (1c)
-            x = ca.horzcat(U[:,i:mu + i + 1], Y[:,i:my + i + 1])
+            x = ca.horzcat(self.U[:,i:mu + i + 1], Y[:,i:my + i + 1])
             x = ca.reshape(x, x.numel(), 1)
             constraints.append(Y[:,my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out']) 
-
+            """
             # (1d)
             constraints.append(self.opti.bounded(self.config['ylb'] - epsy,\
                                             Y[:,my + 1 + i],\
                                             self.config['yub'] + epsy)) 
-
         for i in range(Hu):
             # (1e)
             constraints.append(self.opti.bounded(self.config['dulb'],\
                                             DU[:,i],\
                                             self.config['duub']))
-        """
 
             # (1f)
             constraints.append(self.opti.bounded(self.config['ulb'],\

@@ -4,9 +4,14 @@ SYSTEM_PARAMETERS:
   mu: 1
   my: 3
 
-SOLVER_PARAMETERS:
+PLUGIN_OPTIONS: 
   expand: True
-  max_iter: 1000
+  
+SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
+  max_iter: 10000
+  tol: 1000000 # 1e6
+  acceptable_tol: 1000000
+  acceptable_iter: 1000000
 
 TUNING_PARAMETERS:
   #! Horizon values are tentative and should be tuned properly
@@ -32,5 +37,5 @@ TUNING_PARAMETERS:
 
 RUNNING_PARAMETERS:
   delta_t: 10
-  warm_start_t: 5000
+  warm_start_t: 2000
   final_t: 200
