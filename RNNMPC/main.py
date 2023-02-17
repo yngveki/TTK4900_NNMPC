@@ -12,6 +12,7 @@ if __name__ == "__main__":
     ref_path = Path(__file__).parent / "config/refs/refs0.csv"
     mpc_config_path = Path(__file__).parent / "config/mpc_config.yaml"
     nn_config_path = Path(__file__).parent / "config/nn_config.yaml"
+    fig_save_path = Path(__file__).parent / "figs/mpc/test_fig.png"
 
     # Initialize the controller
     mpc = RNNMPC(nn_path=model_path,
@@ -49,4 +50,4 @@ if __name__ == "__main__":
 
     # TODO: Either prepend references, such that they're plotted from after warm_start_t
     # TODO: or plot _without_ warm_start
-    plot_RNNMPC(mpc)
+    plot_RNNMPC(mpc=mpc, save_path=fig_save_path)
