@@ -21,14 +21,14 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
     axes[0,0].set_title('Measured gas rate v. reference gas rate', fontsize=20)
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
     axes[0,0].plot(t, mpc.simulated_y['full']['gas rate'], '-', label='true gas rate', color='tab:orange')
-    axes[0,0].plot(t[-mpc.final_t // mpc.delta_t:], mpc.full_refs['gas rate'], label='reference gas rate', color='tab:red')
+    axes[0,0].plot(t[-len(mpc.full_refs['gas rate']):], mpc.full_refs['gas rate'], label='reference gas rate', color='tab:red')
     axes[0,0].legend(loc='best', prop={'size': 15})
 
     # Plotting ground truth and predicted oil rates
     axes[0,1].set_title('Measured oil rate v. reference oil rate', fontsize=20)
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
     axes[0,1].plot(t, mpc.simulated_y['full']['oil rate'], label='true oil rate', color='tab:orange')
-    axes[0,1].plot(t[-mpc.final_t // mpc.delta_t:], mpc.full_refs['oil rate'], '-', label='reference oil rate', color='tab:red')
+    axes[0,1].plot(t[-len(mpc.full_refs['oil rate']):], mpc.full_refs['oil rate'], '-', label='reference oil rate', color='tab:red')
     axes[0,1].legend(loc='best', prop={'size': 15})
 
     # Plotting history of choke input

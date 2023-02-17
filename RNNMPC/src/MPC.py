@@ -75,7 +75,8 @@ class RNNMPC:
 
         # Timekeeping
         self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.final_t = configs['RUNNING_PARAMETERS']['final_t']
+        self.warm_start_t = configs['RUNNING_PARAMETERS']['warm_start_t']
+        self.final_t = configs['RUNNING_PARAMETERS']['final_t'] + self.warm_start_t
         self.t = 0
 
         # -- Set up references -- #
@@ -114,15 +115,16 @@ class RNNMPC:
         s_opts = {"max_iter": self.config['max_iter']}
         self.opti.solver('ipopt', p_opts, s_opts)
 
-    def warm_start(self, fmu_path, warm_start_t=1000):
+    def warm_start(self, fmu_path):
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
-        self.fmu, init_u, init_y = init_model(fmu_path, 
-                                                start_time=self.t, 
-                                                final_time=self.final_t, # Needed for initialization, but different from warm start time
-                                                delta_t=self.delta_t,
-                                                warm_start_t=warm_start_t)
+        # Time is updated after warm_start_t into self.t
+        self.fmu, init_u, init_y, self.t = init_model(fmu_path, 
+                                                      self.t, 
+                                                      self.final_t, # Needed for initialization, but different from warm start time
+                                                      self.delta_t,
+                                                      self.warm_start_t)
         
         self.simulated_u['init']['choke'] = init_u[:,0].tolist()
         self.simulated_u['init']['gas lift'] = init_u[:,1].tolist()
@@ -222,7 +224,7 @@ class RNNMPC:
         choke_act_k, gas_lift_act_k, \
         _, _ = simulate_singlewell_step(self.fmu, 
                                         self.t, 
-                                        self.final_t, 
+                                        self.delta_t, 
                                         self.uk) # measurement from FMU, i.e. result from previous actuation
 
         self.yk = [gas_rate_k, oil_rate_k]

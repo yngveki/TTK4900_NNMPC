@@ -21,12 +21,12 @@ if __name__ == "__main__":
                  ref_path=ref_path)
 
     # Ensure FMU is in a defined state
-    mpc.warm_start(fmu_path, warm_start_t=5000)
+    mpc.warm_start(fmu_path)
     timed_loop = True
     if timed_loop: stopwatch = Timer()
     if timed_loop: stopwatch.start()
     run = 1
-    total_runs = mpc.final_t // mpc.delta_t
+    total_runs = (mpc.final_t - mpc.warm_start_t) // mpc.delta_t
 
     while mpc.t < mpc.final_t:
         print(f'Run #{run} / {total_runs}')
@@ -48,6 +48,4 @@ if __name__ == "__main__":
     mpc.merge_sim_data()
     mpc.save_data(data_path=Path(__file__).parent / "data/")
 
-    # TODO: Either prepend references, such that they're plotted from after warm_start_t
-    # TODO: or plot _without_ warm_start
     plot_RNNMPC(mpc=mpc, save_path=fig_save_path)
