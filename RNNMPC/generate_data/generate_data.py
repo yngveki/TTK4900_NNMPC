@@ -42,8 +42,9 @@ def init_model(model_path, start_time, final_time, Uk=[[50],[0]], delta_t=10, wa
     y2 = []
 
     if warm_start:
-        for i in range(warm_start_t // delta_t): 
-            model.set_real([3,4], [Uk[0, i], Uk[1, i]])
+        assert isinstance(Uk, list), "Uk must be a list containing 2 elements only like so: Uk = [choke, gas lift]"
+        for i in range(warm_start_t // delta_t):
+            model.set_real([3,4], Uk)
             model.do_step(time, delta_t)
 
             time += delta_t
@@ -136,8 +137,7 @@ def normalize(series, min=None, max=None):
 def clip_beginning(series, clip_length=100):
     return series[clip_length:]
 
-
-# TODO: Any thoughts on data treatment?
+# ----- SCRIPT RUN ----- #
 if __name__ == '__main__':
 
     # ----- SETUP ----- #
@@ -149,19 +149,19 @@ if __name__ == '__main__':
 
     warm_start_t = config['warm_start_t']
     delta_t = config['delta_t']
-    filename = 'steps20k'
-    steps_path = Path(__file__).parent / "steps/" / ''.join((filename, '.csv'))
-    input_profile = Timeseries(steps_path, delta_t=10)
+    filename = 'step_choke_90_100'
+    filepath = Path(__file__).parent / "steps/" / ''.join((filename, '.csv'))
+    input_profile = Timeseries(filepath, delta_t=10)
     start_time = input_profile.begin
     final_time = input_profile.end
 
-    warm_start_vals = [0,0] # Let system settle with 0 for both choke and gl
+    warm_start_vals = input_profile.init_vals # Let system settle with desired initial value for data sequence
     input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
 
     save_name = ''.join((filename, '_output_clipped'))
     model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
     model, y1_init, y2_init = init_model(model_path, start_time, input_profile.end, 
-                            Uk=input_profile, warm_start_t=warm_start_t, 
+                            Uk=warm_start_vals, warm_start_t=warm_start_t, 
                             warm_start=True)
 
     # ----- SIMULATING ----- #
@@ -186,35 +186,37 @@ if __name__ == '__main__':
     fig, axs = plt.subplots(2, 2)
     plot_full=True
     if plot_full:
-        t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=100)
-        y1 = clip_beginning(y1_init + y1, clip_length=100)
-        y2 = clip_beginning(y2_init + y2, clip_length=100)
-        u1 = clip_beginning(input_profile[0, :], clip_length=100)
-        u2 = clip_beginning(input_profile[1, :], clip_length=100)
+        # clip_length = 0
+        clip_length = warm_start_t // delta_t
+        t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=clip_length)
+        y1 = clip_beginning(y1_init + y1, clip_length=clip_length)
+        y2 = clip_beginning(y2_init + y2, clip_length=clip_length)
+        u1 = clip_beginning(input_profile[0, :], clip_length=clip_length)
+        u2 = clip_beginning(input_profile[1, :], clip_length=clip_length)
 
         axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
-        axs[0,0].legend()
+        axs[0,0].legend(loc='best')
         axs[0,0].axvline(warm_start_t, color='tab:green')
         axs[1,0].plot(t, u1, label='choke')
-        axs[1,0].legend()
+        axs[1,0].legend(loc='best')
         axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
-        axs[0,1].legend()
+        axs[0,1].legend(loc='best')
         axs[0,1].axvline(warm_start_t, color='tab:green')
         axs[1,1].plot(t, u2, label='GL rate')
-        axs[1,1].legend()
+        axs[1,1].legend(loc='best')
     else:   
         t = np.linspace(start=warm_start_t, stop=input_profile.end - 1, num=(input_profile.end - warm_start_t) // delta_t)
         u1 = input_profile[0, warm_start_t // delta_t:]
         u2 = input_profile[1, warm_start_t // delta_t:]
 
         axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
-        axs[0,0].legend()
+        axs[0,0].legend(loc='best')
         axs[1,0].plot(t, u1, label='choke')
-        axs[1,0].legend()
+        axs[1,0].legend(loc='best')
         axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
-        axs[0,1].legend()
+        axs[0,1].legend(loc='best')
         axs[1,1].plot(t, u2, label='GL rate')
-        axs[1,1].legend()
+        axs[1,1].legend(loc='best')
 
     fig.suptitle('Step response')
     fig.tight_layout()
@@ -230,7 +232,7 @@ if __name__ == '__main__':
     y2_normalized = normalize(y2)
     # ----- WRITE TO FILE ----- #
     header = ["t_" + str(int(timestamp)) for timestamp in t]
-    csv_path = Path(__file__).parent / "data" / ''.join((save_name, ".csv"))
+    csv_path = Path(__file__).parent / "data/steps" / ''.join((save_name, ".csv"))
     if not exists(csv_path):    # Safe to save; nothing can be overwritten
         with open(csv_path, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -241,13 +243,14 @@ if __name__ == '__main__':
             writer.writerow(y1_normalized)
             writer.writerow(y2_normalized)
         
-        fig.savefig(Path(__file__).parent / "data/" / ''.join((save_name, ".png")), bbox_inches='tight')
+        fig.savefig(Path(__file__).parent / "data/steps" / ''.join((save_name, ".png")), bbox_inches='tight')
+        fig.savefig(Path(__file__).parent / "data/steps" / ''.join((save_name, ".eps")), bbox_inches='tight')
 
     else:
-        decision = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
-        if decision != '':
-            if decision != 'y':
-                csv_path = Path(__file__).parent / "data/" / ''.join((decision, '.csv'))
+        name = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
+        if name != '': # Do _not_ abort save
+            if name != 'y': # Do _not_ overwrite
+                csv_path = Path(__file__).parent / "data/steps" / ''.join((name, '.csv'))
             with open(csv_path, 'w', newline='') as f:
                 writer = csv.writer(f)
 
@@ -259,6 +262,7 @@ if __name__ == '__main__':
 
             print(f"File written to \'{csv_path}\'")
 
-            fig.savefig(Path(__file__).parent / "data/" / ''.join((decision, ".png")), bbox_inches='tight')
+            fig.savefig(Path(__file__).parent / "data/steps" / ''.join((csv_path.stem, ".png")), bbox_inches='tight')
+            fig.savefig(Path(__file__).parent / "data/steps" / ''.join((csv_path.stem, ".eps")), bbox_inches='tight')
         else:
             print("File was not saved.")

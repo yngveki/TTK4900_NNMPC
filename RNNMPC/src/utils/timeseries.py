@@ -42,6 +42,8 @@ class Timeseries():
         self.timeseries = np.array(timeseries).T
         self.delta_t = delta_t
 
+        self.init_vals = self.timeseries[:,0].tolist()
+
     def prepend(self, val, length):
         """Takes in [choke, gl] which will be prepended length times to self.timeseries"""
         
