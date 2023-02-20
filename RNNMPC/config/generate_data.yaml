@@ -2,3 +2,4 @@
 #
 delta_t: 10
 warm_start_t: 10000
+resolution: 166
