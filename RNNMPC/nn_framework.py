@@ -54,21 +54,20 @@ with open(hyperparameter_path, "r") as f:
     hyperparameters = safe_load(f)
 
 suffixes = ['.png', '.eps'] # Save formats for figures
-model_nr = 5
+model_nr = 1
+model_name = "model_masteroppgave_" + str(model_nr)
 
 # -- TRAINING -- #
 # TODO: Make external loop to iterate over hyperparameter candidates
 if __name__ == '__main__' and not TEST:
     # -- SETUP -- #
-    csv_path_train = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv"
-    csv_path_val = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
-    model_name = "model_prosjektoppgave_" + str(model_nr)
+    csv_path_train = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_10000_steps_output_clipped.csv"
+    csv_path_val = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv"
     model_save_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
     yaml_save_path = Path(__file__).parent / "".join(("models/corresponding_config/", model_name, ".yaml"))
 
     # Saving which files were used for training and validation for traceability purposes
-    # hyperparameters['FILES']['train_file'] = csv_path_train
-    # hyperparameters['FILES']['val_file'] = csv_path_val
+    hyperparameters['FILES'] = {'train_file': csv_path_train.__str__(), 'val_file': csv_path_val.__str__()}
 
     # -- TRAINING -- #              
     model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
@@ -140,7 +139,6 @@ if __name__ == '__main__' and not TEST:
 if __name__ == '__main__' and TEST:
     # -- SETUP -- #
     csv_path_test = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
-    model_name = 'model_prosjektoppgave_' + str(model_nr)
     model_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
     
     # -- PREDICTION -- #      

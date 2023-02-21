@@ -7,7 +7,7 @@ from src.utils.custom_timing import Timer
 from src.utils.plotting import plot_RNNMPC
 if __name__ == "__main__":
 
-    model_path = Path(__file__).parent / "models/model_prosjektoppgave_4.pt"
+    model_path = Path(__file__).parent / "models/model_prosjektoppgave_6.pt"
     fmu_path = Path(__file__).parent / "fmu/fmu_endret_deadband.fmu"
     ref_path = Path(__file__).parent / "config/refs/refs0.csv"
     mpc_config_path = Path(__file__).parent / "config/mpc_config.yaml"
