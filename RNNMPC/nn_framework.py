@@ -99,7 +99,7 @@ if __name__ == '__main__' and not TEST:
         if name != '': # _not_ aborting
             if name != 'y': # do _not_ want to override
                 model_save_path = Path(__file__).parent / ('models/' + name + '.pt')
-                yaml_save_path = Path(__file__).parent / ('models/corresponding_config/' + model_name + '.yaml')
+                yaml_save_path = Path(__file__).parent / ('models/corresponding_config/' + name + '.yaml')
 
         else:
             model_save_path = None
