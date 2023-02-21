@@ -45,129 +45,163 @@ class GroundTruth():
 
         return len(self.u1)
 
+# ----- SCRIPT BEGINS ----- #
+TEST = True
 
-if __name__ == '__main__':
-    TEST = True
-    nr = 4
-    csv_path_train = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_36000.csv"
-    csv_path_val = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_10000.csv"
-    csv_path_test = Path(__file__).parent / "generate_data/data/normalized_u1_50_u2_7500_stairs_0_5000.csv"
-    model_name = "model_prosjektoppgave_" + str(nr)
-    model_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
+hyperparameter_name = 'config/nn_config.yaml'
+hyperparameter_path = Path(__file__).parent / hyperparameter_name
+with open(hyperparameter_path, "r") as f:
+    hyperparameters = safe_load(f)
+
+suffixes = ['.png', '.eps'] # Save formats for figures
+model_nr = 5
+
+# -- TRAINING -- #
+# TODO: Make external loop to iterate over hyperparameter candidates
+if __name__ == '__main__' and not TEST:
+    # -- SETUP -- #
+    csv_path_train = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv"
+    csv_path_val = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
+    model_name = "model_prosjektoppgave_" + str(model_nr)
+    model_save_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
     yaml_save_path = Path(__file__).parent / "".join(("models/corresponding_config/", model_name, ".yaml"))
 
-    hyperparameter_path = Path(__file__).parent / "config/nn_config.yaml"
-    with open(hyperparameter_path, "r") as f:
-        hyperparameters = safe_load(f)
-        if not hyperparameters:
-            Exception("Failed loading hyperparameters\n")
+    # Saving which files were used for training and validation for traceability purposes
+    # hyperparameters['FILES']['train_file'] = csv_path_train
+    # hyperparameters['FILES']['val_file'] = csv_path_val
 
-    hyperparameter_nr = "hyperparameters_" + str(nr)
+    # -- TRAINING -- #              
+    model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
 
-# TODO: Make external loop to iterate over hyperparameter candidates
-    if not TEST:
-        # ----- TRAINING AND PLOTTING ----- #              
-        model, train_losses, val_MSEs, time, final_epoch = train(hyperparameters, csv_path_train, csv_path_val)
+    # -- PLOTTING -- #
+    p = hyperparameters['LEARNING']['p'] + 1 # To account for zero-indexing
+    fig, ax = plt.subplots()
 
-        p = hyperparameters['LEARNING']['p'] + 1 # To account for zero-indexing
-        
-        # Plotting training against validation error
-        fig, ax = plt.subplots()
+    # Plotting training against validation error
+    fig.tight_layout()
+    ax.plot(val_MSEs[1:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
+    ax.plot(train_losses[1:final_epoch], 'b--', linewidth=2.0, label='Training losses')
+    ax.axvline(len(val_MSEs[1:final_epoch]) - p, color='tab:red')
+    ax.set_xlabel('epochs')
+    ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
+    ax.legend(loc='center right', prop={'size': 15})
 
-        fig.tight_layout()
-        ax.plot(val_MSEs[1:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
-        ax.plot(train_losses[1:final_epoch], 'b--', linewidth=2.0, label='Training losses')
-        ax.axvline(len(val_MSEs[1:final_epoch]) - p, color='tab:red')
-        ax.set_xlabel('epochs')
-        ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
-        ax.legend(loc='center right', prop={'size': 15})
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
 
-        manager = plt.get_current_fig_manager()
-        manager.window.showMaximized()
-
-        plt.show(block=False)
-        plt.pause(10)
-        plt.close()
-        
-        # ----- SAVING FIGS AND TRAINED MODEL ----- #    
-        fig_path_base = Path(__file__).parent
-        fig_path_suffix = "figs/" + hyperparameter_nr + "_val.eps"
-        fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-        
-        fig_path_suffix = "figs/" + hyperparameter_nr + "_val.png"
-        fig.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
-
-        if not exists(model_path): # Safe to save; won't override
-            torch.save(model.state_dict(), model_path)
-
-            # Also save config file to have a record of what config was used to generate what model
-            with open(yaml_save_path, "w", encoding = "utf-8") as yaml_file:
-                deuce = dump(hyperparameters, default_flow_style = False, allow_unicode = True, encoding = None)
-                yaml_file.write(deuce)
-            
-        else:
-            decision = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
-            if decision != '':
-                if decision != 'y':
-                    model_path = Path(__file__).parent / "".join(("models/", decision, ".pt"))
-
-                torch.save(model.state_dict(), model_path)
-
-                # Also save config file to have a record of what config was used to generate what model
-                with open(yaml_save_path, "w", encoding = "utf-8") as yaml_file:
-                    deuce = dump(hyperparameters, default_flow_style = False, allow_unicode = True, encoding = None)
-                    yaml_file.write(deuce)
-
-            else:
-                print("Model was not saved.")
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
     
+    # -- SAVING TRAINED MODEL -- #
+    if exists(model_save_path):
+        name = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+        if name != '': # _not_ aborting
+            if name != 'y': # do _not_ want to override
+                model_save_path = Path(__file__).parent / ('models/' + name + '.pt')
+                yaml_save_path = Path(__file__).parent / ('models/corresponding_config/' + model_name + '.yaml')
+
+        else:
+            model_save_path = None
+            yaml_save_path = None
+    
+    if model_save_path is not None and yaml_save_path is not None:
+        # Save model and corresponding config file used to generate that specific model
+        torch.save(model.state_dict(), model_save_path)
+        with open(yaml_save_path, "w", encoding = "utf-8") as yaml_file:
+            yaml_file.write(dump(hyperparameters, default_flow_style = False, allow_unicode = True, encoding = None))
     else:
-        # ----- PREDICTION AND PLOTTING ----- #      
-        gt = GroundTruth(csv_path_test)
-        pred, model = test(model_path, csv_path_test, hyperparameters)
+        print('Model was not saved')
+        print(f'Status:\n\tmodel_save_path: {model_save_path}\n\tyaml_save_path: {yaml_save_path}')
 
-        fig2, axes = plt.subplots(2, 2, sharex=True)
-        fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)
+    
 
-        # Plotting ground truth and predicted gas rates
-        axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
-        axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-        axes[0,0].plot(gt.y1, '-', label='true gas rate', color='tab:orange')
-        axes[0,0].plot(pred['y1'], label='predicted gas rate', color='tab:red')
-        axes[0,0].legend(loc='best', prop={'size': 15})
+    # -- SAVING FIGS -- #    
+    save_path = Path(__file__).parent / ('figs/' + model_name + '_' + hyperparameter_path.stem + '_trainval')
 
-        # Plotting ground truth and predicted oil rates
-        axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
-        axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-        axes[0,1].plot(gt.y2, label='true oil rate', color='tab:orange')
-        axes[0,1].plot(pred['y2'], '-', label='predicted oil rate', color='tab:red')
-        axes[0,1].legend(loc='best', prop={'size': 15})
+    if      exists(save_path.parent / (save_path.stem + '.png')) \
+        or  exists(save_path.parent / (save_path.stem + '.eps')):
+        name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+        if name != '': # _not_ aborting
+            if name != 'y': # do _not_ want to override
+                save_path = save_path.parent / name
 
-        # Plotting history of choke input
-        axes[1,0].set_title('Input: choke', fontsize=20)
-        axes[1,0].set_xlabel('time [s]', fontsize=15)
-        axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-        axes[1,0].plot(gt.u1, label='choke', color='blue')
-        axes[1,0].legend(loc='best', prop={'size': 15})
-
-        # Plotting history of gas lift rate input
-        axes[1,1].set_title('Input: gas lift rate', fontsize=20)
-        axes[1,1].set_xlabel('time [s]', fontsize=15)
-        axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
-        axes[1,1].plot(gt.u2, label='gas lift rate', color='blue')
-        axes[1,1].legend(loc='best', prop={'size': 15})
-
-        manager = plt.get_current_fig_manager()
-        manager.window.showMaximized()
-
-        plt.show(block=False)
-        plt.pause(30)
-        plt.close()
-
-        # ----- SAVING FIGS ----- #    
-        fig_path_base = Path(__file__).parent
-        fig_path_suffix = "figs/" + hyperparameter_nr + "_test.eps"
-        fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+        else:
+            save_path = None
         
-        fig_path_suffix = "figs/" + hyperparameter_nr + "_test.png"
-        fig2.savefig(fig_path_base / fig_path_suffix, bbox_inches='tight')
+    if save_path is not None:
+        for suffix in suffixes:
+            save_path = save_path.parent / (save_path.stem + suffix)
+            fig.savefig(save_path, bbox_inches='tight')
+    else:
+        print("Model was not saved.")
+
+# -- TESTING -- #
+if __name__ == '__main__' and TEST:
+    # -- SETUP -- #
+    csv_path_test = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
+    model_name = 'model_prosjektoppgave_' + str(model_nr)
+    model_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
+    
+    # -- PREDICTION -- #      
+    gt = GroundTruth(csv_path_test)
+    pred, model = test(model_path, csv_path_test, hyperparameters)
+
+    # -- PLOTTING -- #
+    fig2, axes = plt.subplots(2, 2, sharex=True)
+    fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)
+
+    # Plotting ground truth and predicted gas rates
+    axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
+    axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
+    axes[0,0].plot(gt.y1, '-', label='true gas rate', color='tab:orange')
+    axes[0,0].plot(pred['y1'], label='predicted gas rate', color='tab:red')
+    axes[0,0].legend(loc='best', prop={'size': 15})
+
+    # Plotting ground truth and predicted oil rates
+    axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
+    axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
+    axes[0,1].plot(gt.y2, label='true oil rate', color='tab:orange')
+    axes[0,1].plot(pred['y2'], '-', label='predicted oil rate', color='tab:red')
+    axes[0,1].legend(loc='best', prop={'size': 15})
+
+    # Plotting history of choke input
+    axes[1,0].set_title('Input: choke', fontsize=20)
+    axes[1,0].set_xlabel('time [s]', fontsize=15)
+    axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
+    axes[1,0].plot(gt.u1, label='choke', color='blue')
+    axes[1,0].legend(loc='best', prop={'size': 15})
+
+    # Plotting history of gas lift rate input
+    axes[1,1].set_title('Input: gas lift rate', fontsize=20)
+    axes[1,1].set_xlabel('time [s]', fontsize=15)
+    axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
+    axes[1,1].plot(gt.u2, label='gas lift rate', color='blue')
+    axes[1,1].legend(loc='best', prop={'size': 15})
+
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
+
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+    # ----- SAVING FIGS ----- #        
+    save_path = Path(__file__).parent / ('figs/' + model_name + '_' + hyperparameter_path.stem + '_test')
+
+    if      exists(save_path.parent / (save_path.stem + '.png')) \
+        or  exists(save_path.parent / (save_path.stem + '.eps')):
+        name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+        if name != '': # _not_ aborting
+            if name != 'y': # do _not_ want to override
+                save_path = save_path.parent / name
+
+        else:
+            save_path = None
+        
+    if save_path is not None:
+        for suffix in suffixes:
+            save_path = save_path.parent / (save_path.stem + suffix)
+            fig2.savefig(save_path, bbox_inches='tight')
+    else:
+        print("Test of model was not saved.")

@@ -30,14 +30,13 @@ class Timeseries():
         # Interpolate between points
         self.begin = points[0].time
         self.end = points[-1].time
-        self.length = (self.end - self.begin) // delta_t
+        self.length = int((self.end - self.begin) // delta_t)
         timeseries = [0] * self.length
 
         for point in points:
-            num_points = point.dist // delta_t if point.dist is not None else 0
+            num_points = int(point.dist // delta_t) if point.dist is not None else 0
             for i in range(num_points):
-                idx = (point.time // delta_t) + i
-                timeseries[(point.time // delta_t) + i] = [point.choke, point.gl]
+                timeseries[int((point.time // delta_t)) + i] = [point.choke, point.gl]
 
         self.timeseries = np.array(timeseries).T
         self.delta_t = delta_t

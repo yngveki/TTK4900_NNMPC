@@ -80,42 +80,6 @@ def simulate_singlewell_step(model, time, warm_start_t, delta_t, Uk, time_series
     
     return gas_rate, oil_rate
 
-def step(start_time, stop_time, step_time, delta_t=1, start_val=0, step_val=1):
-    start = start_time // delta_t
-    stop = stop_time // delta_t
-    step = step_time // delta_t
-    timeline = np.linspace(start, stop + 1, num=stop-start)
-    input_profile = start_val + step_val * np.heaviside(timeline - step, 1)
-
-    return input_profile
-
-def staircase(init=0, lb=0, ub=100, increment=1, interval=1, num=50):
-    assert init >= lb and init <= ub, f'init must be within legal range!\n'
-
-    signal = [0] * num
-    signal[0] = init
-    for t, sig in enumerate(signal):
-        if t == 0:
-            continue
-
-        if (t % interval != 0):
-            signal[t] = signal[t-1]
-        else:        
-            do_inc = np.random.choice([True, False])
-            
-            if do_inc:
-                signal[t] = np.min((signal[t-1] + increment, ub)) 
-            else:
-                signal[t] = np.max((signal[t-1] - increment, lb))
-
-    return signal
-
-def flatline(start_time, stop_time, step_time, delta_t=1, flat_val=1):
-    """
-    Convenience wrapper of the step-function to create a flat-line of adequate sizes
-    """
-    return step(start_time, stop_time, step_time, delta_t=delta_t, start_val=flat_val, step_val=0)
-
 def normalize(series, min=None, max=None):
     normalized = []
     if min == None:
@@ -149,93 +113,108 @@ if __name__ == '__main__':
 
     warm_start_t = config['warm_start_t']
     delta_t = config['delta_t']
-    resolution = -config['resolution']
+    resolution = config['resolution']
     
-    # -- Iterate over all csvs
-    for i in range(10000,2000,resolution):
-        filename = 'step_GL_' + str(i) + '_' + str(i + resolution)
-        filepath = Path(__file__).parent / "steps_GL/" / ''.join((filename, '.csv'))
-        input_profile = Timeseries(filepath, delta_t=10)
-        start_time = input_profile.begin
-        final_time = input_profile.end
+    filename = 'staircases_1000_steps'
+    filepath = Path(__file__).parent / "inputs/staircases" / ''.join((filename, '.csv'))
+    input_profile = Timeseries(filepath, delta_t=10)
+    start_time = input_profile.begin
+    final_time = input_profile.end
 
-        warm_start_vals = input_profile.init_vals # Let system settle with desired initial value for data sequence
-        input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
+    warm_start_vals = input_profile.init_vals # Let system settle with desired initial value for data sequence
+    input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
 
-        save_name = ''.join((filename, '_output_clipped'))
-        model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
-        model, y1, y2 = init_model(model_path, start_time, input_profile.end, 
-                                Uk=warm_start_vals, warm_start_t=warm_start_t, 
-                                warm_start=True)
+    save_name = ''.join((filename, '_output_clipped'))
+    model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
+    model, y1, y2 = init_model(model_path, start_time, input_profile.end, 
+                            Uk=warm_start_vals, warm_start_t=warm_start_t, 
+                            warm_start=True)
 
-        # ----- SIMULATING ----- #
-        time = warm_start_t # As long as we've come after init
-        warm_offset = warm_start_t // delta_t
-        itr = 0
-        while time < input_profile.end:
-            inpt = input_profile[:, warm_offset + itr]
-            y1k, y2k = simulate_singlewell_step(model, time, warm_start_t, delta_t, inpt)
-            y1.append(y1k)
-            y2.append(y2k)
-            print(f'itr nr. {itr}\n')
+    # ----- SIMULATING ----- #
+    time = warm_start_t # As long as we've come after init
+    warm_offset = warm_start_t // delta_t
+    itr = 0
+    while time < input_profile.end:
+        inpt = input_profile[:, warm_offset + itr]
+        y1k, y2k = simulate_singlewell_step(model, time, warm_start_t, delta_t, inpt)
+        y1.append(y1k)
+        y2.append(y2k)
+        if itr % 10 == 0: print(f'itr nr. {itr}\n')
 
-            time += delta_t
-            itr += 1
+        time += delta_t
+        itr += 1
 
 
-        # ----- PLOTTING ----- #
+    # ----- PLOTTING ----- #
 
-        fig, axs = plt.subplots(2, 2)
-        plot_full=True
-        if plot_full:
-            # clip_length = 0
-            clip_length = warm_start_t // delta_t
-            t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=clip_length)
-            y1 = clip_beginning(y1, clip_length=clip_length)
-            y2 = clip_beginning(y2, clip_length=clip_length)
-            u1 = clip_beginning(input_profile[0, :], clip_length=clip_length)
-            u2 = clip_beginning(input_profile[1, :], clip_length=clip_length)
+    fig, axs = plt.subplots(2, 2)
+    plot_full=True
+    if plot_full:
+        # clip_length = 0
+        clip_length = warm_start_t // delta_t
+        t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=clip_length)
+        y1 = clip_beginning(y1, clip_length=clip_length)
+        y2 = clip_beginning(y2, clip_length=clip_length)
+        u1 = clip_beginning(input_profile[0, :], clip_length=clip_length)
+        u2 = clip_beginning(input_profile[1, :], clip_length=clip_length)
 
-            axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
-            axs[0,0].legend(loc='best')
-            axs[0,0].axvline(warm_start_t, color='tab:green')
-            axs[1,0].plot(t, u1, label='choke')
-            axs[1,0].legend(loc='best')
-            axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
-            axs[0,1].legend(loc='best')
-            axs[0,1].axvline(warm_start_t, color='tab:green')
-            axs[1,1].plot(t, u2, label='GL rate')
-            axs[1,1].legend(loc='best')
-        else:   
-            t = np.linspace(start=warm_start_t, stop=input_profile.end - 1, num=(input_profile.end - warm_start_t) // delta_t)
-            u1 = input_profile[0, warm_start_t // delta_t:]
-            u2 = input_profile[1, warm_start_t // delta_t:]
+        axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
+        axs[0,0].legend(loc='best')
+        axs[0,0].axvline(warm_start_t, color='tab:green')
+        axs[1,0].plot(t, u1, label='choke')
+        axs[1,0].legend(loc='best')
+        axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
+        axs[0,1].legend(loc='best')
+        axs[0,1].axvline(warm_start_t, color='tab:green')
+        axs[1,1].plot(t, u2, label='GL rate')
+        axs[1,1].legend(loc='best')
+    else:   
+        t = np.linspace(start=warm_start_t, stop=input_profile.end - 1, num=(input_profile.end - warm_start_t) // delta_t)
+        u1 = input_profile[0, warm_start_t // delta_t:]
+        u2 = input_profile[1, warm_start_t // delta_t:]
 
-            axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
-            axs[0,0].legend(loc='best')
-            axs[1,0].plot(t, u1, label='choke')
-            axs[1,0].legend(loc='best')
-            axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
-            axs[0,1].legend(loc='best')
-            axs[1,1].plot(t, u2, label='GL rate')
-            axs[1,1].legend(loc='best')
+        axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
+        axs[0,0].legend(loc='best')
+        axs[1,0].plot(t, u1, label='choke')
+        axs[1,0].legend(loc='best')
+        axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
+        axs[0,1].legend(loc='best')
+        axs[1,1].plot(t, u2, label='GL rate')
+        axs[1,1].legend(loc='best')
 
-        fig.suptitle('Step response')
-        fig.tight_layout()
-        plt.show(block=False)
-        plt.pause(2)
-        plt.close()
+    fig.suptitle('Step response')
+    fig.tight_layout()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
-        choke_bounds = [0,100]
-        GL_bounds = [0,10000]
-        u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
-        u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
-        y1_normalized = normalize(y1)
-        y2_normalized = normalize(y2)
-        # ----- WRITE TO FILE ----- #
-        header = ["t_" + str(int(timestamp)) for timestamp in t]
-        csv_path = Path(__file__).parent / "data/steps_GL/csv" / ''.join((save_name, ".csv"))
-        if not exists(csv_path):    # Safe to save; nothing can be overwritten
+    choke_bounds = [0,100]
+    GL_bounds = [0,10000]
+    u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
+    u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
+    y1_normalized = normalize(y1)
+    y2_normalized = normalize(y2)
+    # ----- WRITE TO FILE ----- #
+    header = ["t_" + str(int(timestamp)) for timestamp in t]
+    csv_path = Path(__file__).parent / "outputs/staircases/csv" / ''.join((save_name, ".csv"))
+    if not exists(csv_path):    # Safe to save; nothing can be overwritten
+        with open(csv_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+
+            writer.writerow(header)
+            writer.writerow(u1_normalized)
+            writer.writerow(u2_normalized)
+            writer.writerow(y1_normalized)
+            writer.writerow(y2_normalized)
+        
+        fig.savefig(Path(__file__).parent / "outputs/staircases/png" / ''.join((save_name, ".png")), bbox_inches='tight')
+        fig.savefig(Path(__file__).parent / "outputs/staircases/eps" / ''.join((save_name, ".eps")), bbox_inches='tight')
+
+    else:
+        name = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
+        if name != '': # Do _not_ abort save
+            if name != 'y': # Do _not_ overwrite
+                csv_path = Path(__file__).parent / "outputs/staircases/csv" / ''.join((name, '.csv'))
             with open(csv_path, 'w', newline='') as f:
                 writer = csv.writer(f)
 
@@ -244,27 +223,10 @@ if __name__ == '__main__':
                 writer.writerow(u2_normalized)
                 writer.writerow(y1_normalized)
                 writer.writerow(y2_normalized)
-            
-            fig.savefig(Path(__file__).parent / "data/steps_GL/png" / ''.join((save_name, ".png")), bbox_inches='tight')
-            fig.savefig(Path(__file__).parent / "data/steps_GL/eps" / ''.join((save_name, ".eps")), bbox_inches='tight')
 
+            print(f"File written to \'{csv_path}\'")
+
+            fig.savefig(Path(__file__).parent / "outputs/staircases/png" / ''.join((csv_path.stem, ".png")), bbox_inches='tight')
+            fig.savefig(Path(__file__).parent / "outputs/staircases/eps" / ''.join((csv_path.stem, ".eps")), bbox_inches='tight')
         else:
-            name = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
-            if name != '': # Do _not_ abort save
-                if name != 'y': # Do _not_ overwrite
-                    csv_path = Path(__file__).parent / "data/steps_GL/csv" / ''.join((name, '.csv'))
-                with open(csv_path, 'w', newline='') as f:
-                    writer = csv.writer(f)
-
-                    writer.writerow(header)
-                    writer.writerow(u1_normalized)
-                    writer.writerow(u2_normalized)
-                    writer.writerow(y1_normalized)
-                    writer.writerow(y2_normalized)
-
-                print(f"File written to \'{csv_path}\'")
-
-                fig.savefig(Path(__file__).parent / "data/steps_GL/png" / ''.join((csv_path.stem, ".png")), bbox_inches='tight')
-                fig.savefig(Path(__file__).parent / "data/steps_GL/eps" / ''.join((csv_path.stem, ".eps")), bbox_inches='tight')
-            else:
-                print("File was not saved.")
+            print("File was not saved.")
