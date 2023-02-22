@@ -47,7 +47,7 @@ class GroundTruth():
         return len(self.u1)
 
 # ----- SCRIPT BEGINS ----- #
-TEST = False
+TEST = True
 
 hyperparameter_name = 'config/nn_config.yaml'
 hyperparameter_path = Path(__file__).parent / hyperparameter_name
