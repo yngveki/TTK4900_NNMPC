@@ -1,0 +1,9 @@
+choke_bounds:
+- 30
+- 70
+increment: 2
+init: 50
+num_steps: 7000
+waiting_limits:
+- 1
+- 5

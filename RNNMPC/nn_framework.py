@@ -47,7 +47,7 @@ class GroundTruth():
         return len(self.u1)
 
 # ----- SCRIPT BEGINS ----- #
-TEST = True
+TEST = False
 
 hyperparameter_name = 'config/nn_config.yaml'
 hyperparameter_path = Path(__file__).parent / hyperparameter_name
@@ -56,14 +56,14 @@ with open(hyperparameter_path, "r") as f:
 
 suffixes = ['.png', '.eps'] # Save formats for figures
 model_nr = 0
-model_name = "testing_saving" #+ str(model_nr)
+model_name = "model_masteroppgave_" + str(model_nr)
 
 # -- TRAINING -- #
 # TODO: Make external loop to iterate over hyperparameter candidates
 if __name__ == '__main__' and not TEST:
     # -- SETUP -- #
-    csv_path_train = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv"
-    csv_path_val = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
+    csv_path_train = Path(__file__).parent / "generate_data/outputs/random_choke/csv/random_choke_4_output_clipped.csv"
+    csv_path_val = Path(__file__).parent / "generate_data/outputs/random_choke/csv/random_choke_1_output_clipped.csv"
 
     # Saving which files were used for training and validation for traceability purposes
     hyperparameters['FILES'] = {'train_file': csv_path_train.__str__(), 'val_file': csv_path_val.__str__()}
@@ -148,7 +148,7 @@ if __name__ == '__main__' and not TEST:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     # -- SETUP -- #
-    csv_path_test = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_10_steps_output_clipped.csv"
+    csv_path_test = Path(__file__).parent / "generate_data/outputs/random_choke/csv/random_choke_0_output_clipped.csv"
     model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
     
     # -- PREDICTION -- #      
@@ -220,7 +220,7 @@ if __name__ == '__main__' and TEST:
             fig2.savefig(save_path, bbox_inches='tight')
         
         txt_file = open(save_path.parent / (save_path.stem + '.txt'), 'a')
-        txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at: ' + str(csv_path_test) + '\n')
+        txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at:\n\t' + str(csv_path_test) + '\n')
         txt_file.close()
 
     else:

@@ -12,7 +12,7 @@ from pathlib import Path
 from matplotlib.pylab import plt
 import csv
 from os.path import exists
-from yaml import safe_load
+from yaml import dump
 
 from src.utils.timeseries import Timeseries
 
@@ -78,9 +78,7 @@ def general_csv(data, time=0, delta_t=10, interval=10):
 
     assert isinstance(data, list), 'data must be a list of input for choke and GL'
     data_transposed = np.array(data).T
-    for entry in data_transposed: # list(zip(.)) to transpose simple Python list without np or pd
-        t1 = entry[0]
-        t2 = entry[1]
+    for entry in data_transposed:
         sequence.append([time, entry[0], entry[1]])
         time += delta_t * interval
 
@@ -131,8 +129,95 @@ def flatline(start_time, stop_time, step_time, delta_t=1, flat_val=1):
     """
     return step(start_time, stop_time, step_time, delta_t=delta_t, start_val=flat_val, step_val=0)
         
+def ramp_choke(min=0, max=100, resolution=2):
+    """
+    1) Kun choke - null gassløft, ramp choke opp fra 0% til 100% og ned til 0% med 2% sprang, der du venter 5 min mellom hver endring.
+    
+    args:
+        :param min: minimum actuation for choke
+        :param max: maximum actuation for choke
+        :param resolution: how much choke changes for each step
+
+    Note! Must be fed through "general_csv" with delta_t=10 and interval=30 to satisfy format for above specification!
+    """
+    choke = [i for i in range(min, max, resolution)] + [i for i in range(max, min - 1, (-resolution))] # include 0 as final value
+
+    GL = [0] * (1 + 2 * (max - min) // resolution)
+    return [choke, GL]
+
+def random_choke(init=30, choke_bounds=[30,70], waiting_limits=[10,50], increment=2, num_steps=1000):
+    """
+    2) Kun choke - null gassløft, ramp choke opp og ned litt tilfeldig i typisk arbeidsområde 30-70%, varier hvor lenge du venter mellom hvert 2% sprang.
+    
+    args:
+        :param init: initial value for choke
+        :param choke_bounds: legal bounds for values for choke
+        :param waiting_limits: bounds for random waiting time [timesteps]
+        :param increment: how much choke changes for each step
+        :param num_steps: how many steps should be performed during the simulation (_not_ how many timesteps)
+
+    Note! Current implementation yields a simulation that is exactly num_steps amount of timesteps, since the random increments
+          are not furthered to general_csv() later!
+    """
+    assert init >= choke_bounds[0] and init <= choke_bounds[1], f'init must be within legal range!\n'
+
+    choke = [0] * num_steps
+    choke[0] = init
+    interval = np.random.randint(waiting_limits[0], waiting_limits[1])
+    wait = interval - 1 # Since t == 0 causes one skipped decrement
+    for t in range(len(choke)):
+        if t == 0:
+            continue
+
+        if t % 100 == 0:
+            print(f'iter: {t}')
+
+        if wait == 0:
+            do_inc = np.random.choice([True, False])
+            
+            if do_inc: # Increment
+                choke[t] = np.min((choke[t-1] + increment, choke_bounds[1]))
+            else:      # Decrement
+                choke[t] = np.max((choke[t-1] - increment, choke_bounds[0]))
+
+            interval = np.random.randint(waiting_limits[0], waiting_limits[1])
+            wait = interval 
+        else:
+            choke[t] = choke[t - 1]
+        
+        wait -= 1
+
+    GL = [0] * num_steps
+    return [choke, GL]
+
 # ----- SCRIPT ----- #
-sequence = 'staircase'
+sequence = 'random_choke'
+
+# -- Generating a randomly varying choke; similar to staircases, but more specified -- #
+if __name__ == '__main__' and sequence == 'random_choke':
+    for i in range(10):
+        specifications = {'init': 50, 
+                        'choke_bounds': [30,70], 
+                        'waiting_limits': [1,5], 
+                        'increment': 2, 
+                        'num_steps': (i+1) * 1000}
+        sequence = random_choke(**specifications)
+        sequence = general_csv(sequence)
+
+        filename = 'random_choke'
+        nr = i
+        csv_path = Path(__file__).parent / ('inputs/random_choke/' + filename + '_' + str(nr) + '.csv')
+        safe_save(csv_path, sequence)
+        yaml_path = csv_path.parent / (csv_path.stem + '.yaml')
+        with open(yaml_path, "w", encoding = "utf-8") as yaml_file:
+            yaml_file.write(dump(specifications, default_flow_style = False, allow_unicode = True, encoding = None))
+
+# -- Generating a controlled ramp from 0% to 100% to 0% opening in choke -- #
+if __name__ == '__main__' and sequence == 'ramp_choke':
+    sequence = ramp_choke()
+    sequence = general_csv(sequence, time=0, delta_t=10, interval=30)
+    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30.csv'
+    safe_save(csv_path, sequence)
 
 # -- Generating a random "staircase" type input_profile represented by a csv -- #
 # the two input profiles are generated differently because we don't want to use GL before choke is maxed out
