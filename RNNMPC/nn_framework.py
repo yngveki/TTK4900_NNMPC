@@ -3,6 +3,7 @@
 import torch
 from pathlib import Path
 from os.path import exists
+from os import makedirs
 from yaml import safe_load, dump
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -54,17 +55,15 @@ with open(hyperparameter_path, "r") as f:
     hyperparameters = safe_load(f)
 
 suffixes = ['.png', '.eps'] # Save formats for figures
-model_nr = 1
-model_name = "model_masteroppgave_" + str(model_nr)
+model_nr = 0
+model_name = "testing_saving" #+ str(model_nr)
 
 # -- TRAINING -- #
 # TODO: Make external loop to iterate over hyperparameter candidates
 if __name__ == '__main__' and not TEST:
     # -- SETUP -- #
-    csv_path_train = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_10000_steps_output_clipped.csv"
-    csv_path_val = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv"
-    model_save_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
-    yaml_save_path = Path(__file__).parent / "".join(("models/corresponding_config/", model_name, ".yaml"))
+    csv_path_train = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv"
+    csv_path_val = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
 
     # Saving which files were used for training and validation for traceability purposes
     hyperparameters['FILES'] = {'train_file': csv_path_train.__str__(), 'val_file': csv_path_val.__str__()}
@@ -93,12 +92,21 @@ if __name__ == '__main__' and not TEST:
     plt.close()
     
     # -- SAVING TRAINED MODEL -- #
+    # Setting up directory for results
+    parent_dir = Path(__file__).parent / 'models'
+    save_dir = parent_dir / model_name
+    if not exists(save_dir):
+        makedirs(save_dir)
+
+    model_save_path = save_dir / (model_name + '.pt')
+    yaml_save_path = save_dir / (model_name + '.yaml')
+
     if exists(model_save_path):
         name = input("Model with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
         if name != '': # _not_ aborting
             if name != 'y': # do _not_ want to override
-                model_save_path = Path(__file__).parent / ('models/' + name + '.pt')
-                yaml_save_path = Path(__file__).parent / ('models/corresponding_config/' + name + '.yaml')
+                model_save_path = save_dir  / (name + '.pt')
+                yaml_save_path = save_dir / (name + '_config' + '.yaml')
 
         else:
             model_save_path = None
@@ -114,9 +122,11 @@ if __name__ == '__main__' and not TEST:
         print(f'Status:\n\tmodel_save_path: {model_save_path}\n\tyaml_save_path: {yaml_save_path}')
 
     
-
     # -- SAVING FIGS -- #    
-    save_path = Path(__file__).parent / ('figs/' + model_name + '_' + hyperparameter_path.stem + '_trainval')
+    save_dir /= 'figs'
+    if not exists(save_dir):
+        makedirs(save_dir)
+    save_path = save_dir / 'trainval'
 
     if      exists(save_path.parent / (save_path.stem + '.png')) \
         or  exists(save_path.parent / (save_path.stem + '.eps')):
@@ -138,8 +148,8 @@ if __name__ == '__main__' and not TEST:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     # -- SETUP -- #
-    csv_path_test = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_100_steps_output_clipped.csv"
-    model_path = Path(__file__).parent / "".join(("models/", model_name, ".pt"))
+    csv_path_test = Path(__file__).parent / "generate_data/outputs/staircases/csv/staircases_10_steps_output_clipped.csv"
+    model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
     
     # -- PREDICTION -- #      
     gt = GroundTruth(csv_path_test)
@@ -147,7 +157,7 @@ if __name__ == '__main__' and TEST:
 
     # -- PLOTTING -- #
     fig2, axes = plt.subplots(2, 2, sharex=True)
-    fig2.suptitle(f'Test MSE: {model.mse:.3g}', fontsize=23)
+    fig2.suptitle(f'Test MSE: {model.mse:.5g}', fontsize=23)
 
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
@@ -182,10 +192,17 @@ if __name__ == '__main__' and TEST:
 
     plt.show(block=False)
     plt.pause(1)
-    plt.close()
+    plt.close()          
 
-    # ----- SAVING FIGS ----- #        
-    save_path = Path(__file__).parent / ('figs/' + model_name + '_' + hyperparameter_path.stem + '_test')
+    
+    # -- SAVING FIGS -- #
+    parent_dir = Path(__file__).parent / ('models/' + model_name)
+    save_dir = parent_dir / 'figs'
+    if not exists(save_dir):
+        temp = Path(__file__).parent / 'test'
+        print(f'save_dir ({save_dir}) does not exist - default save to: {temp}')
+        save_dir = temp
+    save_path = save_dir / 'test'
 
     if      exists(save_path.parent / (save_path.stem + '.png')) \
         or  exists(save_path.parent / (save_path.stem + '.eps')):
@@ -201,5 +218,10 @@ if __name__ == '__main__' and TEST:
         for suffix in suffixes:
             save_path = save_path.parent / (save_path.stem + suffix)
             fig2.savefig(save_path, bbox_inches='tight')
+        
+        txt_file = open(save_path.parent / (save_path.stem + '.txt'), 'a')
+        txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at: ' + str(csv_path_test) + '\n')
+        txt_file.close()
+
     else:
         print("Test of model was not saved.")

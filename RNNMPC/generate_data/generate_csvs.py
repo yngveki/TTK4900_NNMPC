@@ -137,7 +137,7 @@ sequence = 'staircase'
 # -- Generating a random "staircase" type input_profile represented by a csv -- #
 # the two input profiles are generated differently because we don't want to use GL before choke is maxed out
 if __name__ == '__main__' and sequence == 'staircase':
-    num = 10000
+    num = 10
     input_choke, _ = staircase(init=0, lb=0, ub=100, increment=2, interval=1, num=num)
     input_GL, _ = staircase(init=2000, lb=2000, ub=10000, increment=166, interval=1, num=num)
 

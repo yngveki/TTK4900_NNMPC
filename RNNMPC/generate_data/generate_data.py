@@ -115,7 +115,7 @@ if __name__ == '__main__':
     delta_t = config['delta_t']
     resolution = config['resolution']
     
-    filename = 'staircases_1000_steps'
+    filename = 'staircases_10_steps'
     filepath = Path(__file__).parent / "inputs/staircases" / ''.join((filename, '.csv'))
     input_profile = Timeseries(filepath, delta_t=10)
     start_time = input_profile.begin
