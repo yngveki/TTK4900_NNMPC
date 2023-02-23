@@ -55,7 +55,7 @@ with open(hyperparameter_path, "r") as f:
     hyperparameters = safe_load(f)
 
 suffixes = ['.png', '.eps'] # Save formats for figures
-model_nr = 0
+model_nr = 1
 model_name = "model_masteroppgave_" + str(model_nr)
 
 # -- TRAINING -- #
@@ -148,13 +148,12 @@ if __name__ == '__main__' and not TEST:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     # -- SETUP -- #
-    csv_path_test = Path(__file__).parent / "generate_data/outputs/random_choke/csv/random_choke_0_output_clipped.csv"
+    csv_path_test = Path(__file__).parent / "generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv"
     model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
     
     # -- PREDICTION -- #      
     gt = GroundTruth(csv_path_test)
     pred, model = test(model_path, csv_path_test, hyperparameters)
-
     # -- PLOTTING -- #
     fig2, axes = plt.subplots(2, 2, sharex=True)
     fig2.suptitle(f'Test MSE: {model.mse:.5g}', fontsize=23)
