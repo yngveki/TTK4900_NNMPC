@@ -47,23 +47,28 @@ class GroundTruth():
         return len(self.u1)
 
 # ----- SCRIPT BEGINS ----- #
+# -- SETUP -- #
 TEST = True
 
-hyperparameter_name = 'config/nn_config.yaml'
-hyperparameter_path = Path(__file__).parent / hyperparameter_name
-with open(hyperparameter_path, "r") as f:
-    hyperparameters = safe_load(f)
-
-suffixes = ['.png', '.eps'] # Save formats for figures
-model_nr = 1
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_4_output_clipped.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_1_output_clipped.csv'
+# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_output_clipped.csv', 'random_choke_short'
+# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_0_output_clipped.csv', 'random_choke_long'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
+model_nr = 5
 model_name = "model_masteroppgave_" + str(model_nr)
+
+delta_t = 10
+suffixes = ['.png', '.eps'] # Save formats for figures
 
 # -- TRAINING -- #
 # TODO: Make external loop to iterate over hyperparameter candidates
 if __name__ == '__main__' and not TEST:
-    # -- SETUP -- #
-    csv_path_train = Path(__file__).parent / "generate_data/outputs/random_choke/csv/random_choke_4_output_clipped.csv"
-    csv_path_val = Path(__file__).parent / "generate_data/outputs/random_choke/csv/random_choke_1_output_clipped.csv"
+
+    hyperparameter_name = 'config/nn_config.yaml'
+    hyperparameter_path = Path(__file__).parent / hyperparameter_name
+    with open(hyperparameter_path, "r") as f:
+        hyperparameters = safe_load(f)
 
     # Saving which files were used for training and validation for traceability purposes
     hyperparameters['FILES'] = {'train_file': csv_path_train.__str__(), 'val_file': csv_path_val.__str__()}
@@ -88,7 +93,7 @@ if __name__ == '__main__' and not TEST:
     manager.window.showMaximized()
 
     plt.show(block=False)
-    plt.pause(1)
+    plt.pause(15)
     plt.close()
     
     # -- SAVING TRAINED MODEL -- #
@@ -106,7 +111,7 @@ if __name__ == '__main__' and not TEST:
         if name != '': # _not_ aborting
             if name != 'y': # do _not_ want to override
                 model_save_path = save_dir  / (name + '.pt')
-                yaml_save_path = save_dir / (name + '_config' + '.yaml')
+                yaml_save_path = save_dir / (name + '.yaml')
 
         else:
             model_save_path = None
@@ -148,60 +153,68 @@ if __name__ == '__main__' and not TEST:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     # -- SETUP -- #
-    csv_path_test = Path(__file__).parent / "generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv"
     model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
-    
+
+    hyperparameter_path = model_path.parent / (model_path.stem + '.yaml') #Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
+    with open(hyperparameter_path, "r") as f:
+        hyperparameters = safe_load(f)
+
     # -- PREDICTION -- #      
     gt = GroundTruth(csv_path_test)
     pred, model = test(model_path, csv_path_test, hyperparameters)
+
     # -- PLOTTING -- #
     fig2, axes = plt.subplots(2, 2, sharex=True)
     fig2.suptitle(f'Test MSE: {model.mse:.5g}', fontsize=23)
 
+    # predictions are offset because of mu and my. Compensation:
+    t = np.linspace(0, delta_t * len(gt.y1), num=len(gt.y1))
+    offset_y1 = len(gt.y1) - len(pred['y1'])
+    offset_y2 = len(gt.y2) - len(pred['y2'])
+
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-    axes[0,0].plot(gt.y1, '-', label='true gas rate', color='tab:orange')
-    axes[0,0].plot(pred['y1'], label='predicted gas rate', color='tab:red')
+    axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
+    axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
     axes[0,0].legend(loc='best', prop={'size': 15})
 
     # Plotting ground truth and predicted oil rates
     axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-    axes[0,1].plot(gt.y2, label='true oil rate', color='tab:orange')
-    axes[0,1].plot(pred['y2'], '-', label='predicted oil rate', color='tab:red')
+    axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
+    axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
     axes[0,1].legend(loc='best', prop={'size': 15})
 
     # Plotting history of choke input
     axes[1,0].set_title('Input: choke', fontsize=20)
     axes[1,0].set_xlabel('time [s]', fontsize=15)
     axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-    axes[1,0].plot(gt.u1, label='choke', color='blue')
+    axes[1,0].plot(t, gt.u1, label='choke', color='blue')
     axes[1,0].legend(loc='best', prop={'size': 15})
 
     # Plotting history of gas lift rate input
     axes[1,1].set_title('Input: gas lift rate', fontsize=20)
     axes[1,1].set_xlabel('time [s]', fontsize=15)
     axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
-    axes[1,1].plot(gt.u2, label='gas lift rate', color='blue')
+    axes[1,1].plot(t, gt.u2, label='gas lift rate', color='blue')
     axes[1,1].legend(loc='best', prop={'size': 15})
 
     manager = plt.get_current_fig_manager()
     manager.window.showMaximized()
 
     plt.show(block=False)
-    plt.pause(1)
+    plt.pause(15)
     plt.close()          
-
     
     # -- SAVING FIGS -- #
     parent_dir = Path(__file__).parent / ('models/' + model_name)
     save_dir = parent_dir / 'figs'
     if not exists(save_dir):
-        temp = Path(__file__).parent / 'test'
+        temp = Path(__file__).parent / test_save_name
         print(f'save_dir ({save_dir}) does not exist - default save to: {temp}')
         save_dir = temp
-    save_path = save_dir / 'test'
+    save_path = save_dir / test_save_name
 
     if      exists(save_path.parent / (save_path.stem + '.png')) \
         or  exists(save_path.parent / (save_path.stem + '.eps')):
@@ -218,7 +231,7 @@ if __name__ == '__main__' and TEST:
             save_path = save_path.parent / (save_path.stem + suffix)
             fig2.savefig(save_path, bbox_inches='tight')
         
-        txt_file = open(save_path.parent / (save_path.stem + '.txt'), 'a')
+        txt_file = open(save_path.parent / ('tests.txt'), 'a')
         txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at:\n\t' + str(csv_path_test) + '\n')
         txt_file.close()
 

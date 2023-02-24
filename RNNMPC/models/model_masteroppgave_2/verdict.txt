@@ -1,0 +1,3 @@
+Performs well, but struggles with some constant offset (slightly visible in test.png, quite visible in test_step_choke.png).
+
+Not all data are normalized with respect to the same bounds; random_choke is generated for choke \in [30,70], whereas other data may be normalized wrt other bounds. This may be a cause for constant offset.

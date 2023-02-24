@@ -1,10 +1,10 @@
 STRUCTURE: 
-  mu: 1          # history of inputs considered
-  my: 3          # history of outputs considered
+  mu: 10          # history of inputs considered
+  my: 10          # history of outputs considered
   hlszs: [32]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
 
 LEARNING:
   bsz: 100        # batch size
   e: 500          # epochs
   lr: 0.001       # learning rate
-  p: 5            # patience
+  p: 8            # patience

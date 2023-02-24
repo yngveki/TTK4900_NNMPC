@@ -1,0 +1,1 @@
+OK. Somewhat in accordance with previous testing. It seems obvious to me that networks trained on the ramping choke simply learns poorly, whereas networks trained on the random choke learn pretty decently nevertheless.

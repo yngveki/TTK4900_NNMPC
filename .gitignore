@@ -131,6 +131,6 @@ dmypy.json
 # Misc personally added stuff
 *demo*
 *.zip
-*.txt
+*PalLib_JS_JSSingleWell_log*
 *.npy
 *.vscode

@@ -1,0 +1,1 @@
+Det er definitivt noe lumsk som foregår med normaliseringen av test-data som gir opphav til forskjellige verdier for MSE. Inspisér!
