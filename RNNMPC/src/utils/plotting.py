@@ -99,33 +99,33 @@ def plot_MPC_step(t, inputs, outputs, k=0, pause=True, pause_time=5, save_path=N
     """
 
     assert k >= 0, 'current timestep must be a positive semi-definite index'
-    assert len(inputs) == 2, 'Expected exactly 2 inputs: choke and gas lift'
-    assert len(outputs) == 2, 'Expected exactly 2 outputs: gas rate and oil rate'
+    # assert len(inputs) == 2, 'Expected exactly 2 inputs: choke and gas lift'
+    # assert len(outputs) == 2, 'Expected exactly 2 outputs: gas rate and oil rate'
 
     fig, axs = plt.subplots(2, sharex=True)
 
     # gas rate
-    axs[0].set_title('Measured and predicted gas and oil rates', fontsize=20)
-    axs[0].set_ylabel('gas rate [m^3/h]', fontsize=15, color='tab:orange')
-    axs[0].plot(t, outputs[0], '-', label='gas rate', color='tab:orange')
+    axs[0].set_title(outputs['title'], fontsize=20)
+    axs[0].set_ylabel(outputs['gas rate']['ylabel'], fontsize=15, color=outputs['gas rate']['color'])
+    axs[0].plot(t[4:], outputs['gas rate']['future'], '-', label=outputs['gas rate']['label'], color=outputs['gas rate']['color'])
     axs[0].legend(loc='upper right', prop={'size': 15})
 
     # oil rate
     axs0_twin = axs[0].twinx()
-    axs0_twin.set_ylabel('oil rate [m^3/h]', fontsize=15, color='tab:green')
-    axs0_twin.plot(t, outputs[1], '-', label='oil rate', color='tab:green')
+    axs0_twin.set_ylabel(outputs['oil rate']['ylabel'], fontsize=15, color=outputs['oil rate']['color'])
+    axs0_twin.plot(t[4:], outputs['oil rate']['future'], '-', label=outputs['oil rate']['label'], color=outputs['oil rate']['color'])
     axs0_twin.legend(loc='upper right', prop={'size': 15})
     
     # choke
-    axs[1].set_title('Past, current and future inputs', fontsize=20)
-    axs[1].set_ylabel('choke [%]', fontsize=15, color='tab:blue')
-    axs[1].plot(t, inputs[0], '-', label='choke', color='tab:blue')
+    axs[1].set_title(inputs['title'], fontsize=20)
+    axs[1].set_ylabel(inputs['choke']['ylabel'], fontsize=15, color=inputs['choke']['color'])
+    axs[1].plot(t[4:], inputs['choke']['future'], '-', label=inputs['choke']['label'], color=inputs['choke']['color'])
     axs[1].legend(loc='upper right', prop={'size': 15})
 
     # gas lift
     axs1_twin = axs[1].twinx()
-    axs1_twin.set_ylabel('gas lift [m^3/h]', fontsize=15, color='tab:purple')
-    axs1_twin.plot(t, inputs[1], '-', label='gas lift', color='tab:purple')
+    axs1_twin.set_ylabel(inputs['gas lift']['ylabel'], fontsize=15, color=inputs['gas lift']['color'])
+    axs1_twin.plot(t[4:], inputs['gas lift']['future'], '-', label=inputs['gas lift']['label'], color=inputs['gas lift']['color'])
     axs1_twin.legend(loc='upper right', prop={'size': 15})
 
     plt.show(block=False)
@@ -157,7 +157,10 @@ def plot_MPC_step(t, inputs, outputs, k=0, pause=True, pause_time=5, save_path=N
 
 
 if __name__ == "__main__":
+    t = np.linspace(0,10,num=10)
+
     inputs = {}
+    inputs['title'] = 'Past, current and future inputs'
     inputs['choke'] = {'past': [0,1,2],
                        'current': [3],
                        'future': [4,5,6,7,8,9],
@@ -172,6 +175,7 @@ if __name__ == "__main__":
                           'color': 'tab:purple'}
     
     outputs = {}
+    outputs['title'] = 'Measured and predicted gas and oil rates'
     outputs['gas rate'] = {'past': [0,1,2],
                            'current': [3],
                            'future': [4,5,6,7,8,9],
