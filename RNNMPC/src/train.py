@@ -125,7 +125,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     while t < len(time) and not done:
         print(f"Epoch {t+1}\n-------------------------------")
         train_losses[t] = train_loop(train_dl, model, loss_fn, optimizer)
-        val_MSEs[t] = validation_loop(val_dl, model, t)
+        val_MSEs[t] = validation_loop(val_dl, model, t) # Necessary only for early stopping
 
         # Stopping early based on when validation error starts increasing.
         if es(abs(val_MSEs[t]), model):

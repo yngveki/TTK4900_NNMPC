@@ -4,6 +4,7 @@ from os import makedirs
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
+from dataclasses import dataclass
 
 def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
     """
@@ -23,7 +24,7 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
     num = len(mpc.simulated_u['full']['choke'])
     t = np.linspace(0, num * mpc.delta_t, num=num)
     fig, axes = plt.subplots(2, 2, sharex=True)
-    fig.suptitle(f'RNNMPC simulated {mpc.final_t // mpc.delta_t}', fontsize=23)
+    fig.suptitle(f'RNNMPC simulated {mpc.final_t // mpc.delta_t} steps of {mpc.delta_t} [s] each. Total time is {mpc.final_t}', fontsize=23)
 
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Measured gas rate v. reference gas rate', fontsize=20)
@@ -84,9 +85,16 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
             else:
                 print("Figure(s) was(/were) not saved.")
 
-# class PlotElement():
-
-#     def __init__(self, )
+@dataclass
+class PlotElement():
+    """A dataclass containing everything needed to plot a graph onto an axis"""
+    def __init__(self, ):
+        ...
+        
+        axs[0].set_title(outputs['title'], fontsize=20)
+        axs[0].set_ylabel(outputs['gas rate']['ylabel'], fontsize=15, color=outputs['gas rate']['color'])
+        axs[0].plot(t[4:], outputs['gas rate']['future'], '-', label=outputs['gas rate']['label'], color=outputs['gas rate']['color'])
+        axs[0].legend(loc='upper right', prop={'size': 15})
 def plot_MPC_step(t, inputs, outputs, k=0, pause=True, pause_time=5, save_path=None):
     """
     Plots inputs and outputs from an arbitrary MPC step, with potentially past data, in addition to the current and future

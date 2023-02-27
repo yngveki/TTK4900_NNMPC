@@ -1,6 +1,6 @@
 STRUCTURE: 
-  mu: 10          # history of inputs considered
-  my: 10          # history of outputs considered
+  mu: 12          # history of inputs considered
+  my: 12          # history of outputs considered
   hlszs: [32]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
 
 LEARNING:

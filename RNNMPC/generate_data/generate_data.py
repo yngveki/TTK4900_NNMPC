@@ -189,8 +189,8 @@ if __name__ == '__main__':
     GL_bounds = [0,10000]
     u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
     u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
-    y1_normalized = normalize(y1)
-    y2_normalized = normalize(y2)
+    y1_normalized = normalize(y1) # TODO: should be bounded by min and max, I think (e.g. [0,16000])
+    y2_normalized = normalize(y2) # TODO: should be bounded by min and max, I think (e.g. [0,350])
     # -- WRITE TO FILE -- #
     header = ["t_" + str(int(timestamp)) for timestamp in t]
     csv_path = Path(__file__).parent / ('outputs/' + file_family + '/csv/' + save_name + '.csv')

@@ -219,13 +219,13 @@ class RNNMPC:
         # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
         sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
         self.uk = sol.value(self.U)[:,0]
-        print(f'self.Y: {sol.value(self.Y)}')
-        print(f'self.U: {sol.value(self.U)}')
-        print(f'self.DU: {sol.value(self.DU)}')
+        # print(f'self.Y: {sol.value(self.Y)}')
+        # print(f'self.U: {sol.value(self.U)}')
+        # print(f'self.DU: {sol.value(self.DU)}')
 
-        if plot:
-            # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
-            fig, axs = plt.subplots
+        # if plot:
+        #     # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
+        #     fig, axs = plt.subplots
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
