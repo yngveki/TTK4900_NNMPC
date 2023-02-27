@@ -148,7 +148,7 @@ if __name__ == '__main__' and not TEST:
             save_path = save_path.parent / (save_path.stem + suffix)
             fig.savefig(save_path, bbox_inches='tight')
     else:
-        print("Model was not saved.")
+        print("Figures were not saved.")
 
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:

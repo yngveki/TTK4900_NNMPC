@@ -5,14 +5,14 @@ from pathlib import Path
 from src.MPC import RNNMPC
 from src.utils.custom_timing import Timer
 from src.utils.plotting import plot_RNNMPC
-if __name__ == "__main__":
+if __name__ == '__main__':
 
-    model_path = Path(__file__).parent / "models/model_prosjektoppgave_6.pt"
-    fmu_path = Path(__file__).parent / "fmu/fmu_endret_deadband.fmu"
-    ref_path = Path(__file__).parent / "config/refs/refs0.csv"
-    mpc_config_path = Path(__file__).parent / "config/mpc_config.yaml"
-    nn_config_path = Path(__file__).parent / "config/nn_config.yaml"
-    fig_save_path = Path(__file__).parent / "figs/mpc/test_fig.png"
+    model_path = Path(__file__).parent / 'models/model_masteroppgave_2/model_masteroppgave_2.pt'
+    fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
+    ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
+    mpc_config_path = Path(__file__).parent / 'config/mpc_config.yaml'
+    nn_config_path = Path(__file__).parent / 'models/model_masteroppgave_2/model_masteroppgave_2.yaml'
+    fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
     # Initialize the controller
     mpc = RNNMPC(nn_path=model_path,
@@ -46,6 +46,6 @@ if __name__ == "__main__":
         run += 1
     
     mpc.merge_sim_data()
-    mpc.save_data(data_path=Path(__file__).parent / "mpc_data/")
+    mpc.save_data(data_path=Path(__file__).parent / 'mpc_data/')
 
     plot_RNNMPC(mpc=mpc, save_path=fig_save_path)

@@ -1,5 +1,6 @@
 from pathlib import Path
 from os.path import exists
+from os import makedirs
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
@@ -83,5 +84,112 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
             else:
                 print("Figure(s) was(/were) not saved.")
 
+# class PlotElement():
+
+#     def __init__(self, )
+def plot_MPC_step(t, inputs, outputs, k=0, pause=True, pause_time=5, save_path=None):
+    """
+    Plots inputs and outputs from an arbitrary MPC step, with potentially past data, in addition to the current and future
+    
+    args:
+        :param t: array of timestamps covering all timesteps for both inputs and outputs (which may be of inequal lengths)
+        :param inputs: dictionary containing dictionaries of values for each input, describing past, current and future input values.
+        :param outputs: dictionary containing dictionaries of values for each output, describing past, current and future input values.
+        :param k: the 0-indexed index for the current timestep. If k > 0, any values < k are past, and all values > k are future.
+    """
+
+    assert k >= 0, 'current timestep must be a positive semi-definite index'
+    assert len(inputs) == 2, 'Expected exactly 2 inputs: choke and gas lift'
+    assert len(outputs) == 2, 'Expected exactly 2 outputs: gas rate and oil rate'
+
+    fig, axs = plt.subplots(2, sharex=True)
+
+    # gas rate
+    axs[0].set_title('Measured and predicted gas and oil rates', fontsize=20)
+    axs[0].set_ylabel('gas rate [m^3/h]', fontsize=15, color='tab:orange')
+    axs[0].plot(t, outputs[0], '-', label='gas rate', color='tab:orange')
+    axs[0].legend(loc='upper right', prop={'size': 15})
+
+    # oil rate
+    axs0_twin = axs[0].twinx()
+    axs0_twin.set_ylabel('oil rate [m^3/h]', fontsize=15, color='tab:green')
+    axs0_twin.plot(t, outputs[1], '-', label='oil rate', color='tab:green')
+    axs0_twin.legend(loc='upper right', prop={'size': 15})
+    
+    # choke
+    axs[1].set_title('Past, current and future inputs', fontsize=20)
+    axs[1].set_ylabel('choke [%]', fontsize=15, color='tab:blue')
+    axs[1].plot(t, inputs[0], '-', label='choke', color='tab:blue')
+    axs[1].legend(loc='upper right', prop={'size': 15})
+
+    # gas lift
+    axs1_twin = axs[1].twinx()
+    axs1_twin.set_ylabel('gas lift [m^3/h]', fontsize=15, color='tab:purple')
+    axs1_twin.plot(t, inputs[1], '-', label='gas lift', color='tab:purple')
+    axs1_twin.legend(loc='upper right', prop={'size': 15})
+
+    plt.show(block=False)
+    if pause: 
+        assert isinstance(pause_time, int), 'pause_time must be given as integer!'
+        plt.pause(pause_time)
+    plt.close()
+
+    # -- SAVING FIGS -- # 
+    if save_path is not None:   
+        suffixes = ['.png', '.eps']
+
+        if      exists(save_path.parent / (save_path.stem + '.png')) \
+            or  exists(save_path.parent / (save_path.stem + '.eps')):
+            name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+            if name != '': # _not_ aborting
+                if name != 'y': # do _not_ want to override
+                    save_path = save_path.parent / name
+
+            else:
+                save_path = None
+            
+        if save_path is not None:
+            for suffix in suffixes:
+                save_path = save_path.parent / (save_path.stem + suffix)
+                fig.savefig(save_path, bbox_inches='tight')
+        else:
+            print("Figures were not saved.")
+
+
 if __name__ == "__main__":
-    plot_RNNMPC()
+    inputs = {}
+    inputs['choke'] = {'past': [0,1,2],
+                       'current': [3],
+                       'future': [4,5,6,7,8,9],
+                       'ylabel': 'choke [%]',
+                       'label': 'choke',
+                       'color': 'tab:blue'}
+    inputs['gas lift'] = {'past': [9,8,7],
+                          'current': [6],
+                          'future': [5,4,3,2,1,0],
+                          'ylabel': 'gas lift [m^3/h]',
+                          'label': 'gas lift',
+                          'color': 'tab:purple'}
+    
+    outputs = {}
+    outputs['gas rate'] = {'past': [0,1,2],
+                           'current': [3],
+                           'future': [4,5,6,7,8,9],
+                           'ylabel': 'gas rate [m^3/h]',
+                           'label': 'gas rate',
+                           'color': 'tab:orange'} 
+    outputs['oil rate'] = {'past': [9,8,7],
+                           'current': [6],
+                           'future': [5,4,3,2,1,0],
+                           'ylabel': 'oil rate lift [m^3/h]',
+                           'label': 'oil rate',
+                           'color': 'tab:green'} 
+
+    t = np.linspace(0,10,num=10)
+    # outputs = []
+    # outputs.append([i for i in range(len(t))])
+    # outputs.append([10 / (i+1) for i in range(len(t))])
+    # inputs = []
+    # inputs.append([0.2 * i for i in range(len(t))])
+    # inputs.append([i / (0.5 * i + 1) for i in range(len(t))])
+    plot_MPC_step(t, inputs, outputs, k=1, pause_time=30)

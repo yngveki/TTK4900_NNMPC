@@ -12,6 +12,7 @@ from src.utils.simulate_fmu import init_model, simulate_singlewell_step
 from src.neuralnetwork import NeuralNetwork
 from src.utils.references import ReferenceTimeseries
 from src.utils.custom_timing import Timer
+from src.utils.plotting import plot_MPC_step
 # import ml_casadi.torch as mc
 
 class RNNMPC:
@@ -214,13 +215,17 @@ class RNNMPC:
         self.opti.subject_to() # Reset constraints to avoid additivity
         self.opti.subject_to(constraints)
 
-    def solve_OCP(self):
+    def solve_OCP(self, plot=False):
         # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
         sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
         self.uk = sol.value(self.U)[:,0]
         print(f'self.Y: {sol.value(self.Y)}')
         print(f'self.U: {sol.value(self.U)}')
         print(f'self.DU: {sol.value(self.DU)}')
+
+        if plot:
+            # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
+            fig, axs = plt.subplots
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
