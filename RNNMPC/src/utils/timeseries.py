@@ -17,6 +17,8 @@ class Timeseries():
                 self.choke = choke
                 self.gl = gl
                 self.dist = dist
+            def __repr__(self):
+                return f'time={self.time}, [choke, gl]=[{self.choke}, {self.gl}]'
         points = []
         for row in range(len(df)):
             data = df.iloc[row,:]
@@ -85,5 +87,8 @@ class Timeseries():
         return self.timeseries[key]
 
     def __len__(self):
-        assert len(self.timeseries[0]) == len(self.timeseries[1]), "Timeseries must be equally long for both inputs"
+        assert len(self.timeseries[0]) == len(self.timeseries[1]), 'Timeseries must be equally long for both inputs'
         return len(self.timeseries[0])
+
+    def __repr__(self):
+        return f'Timeseries, {len(self)} steps, {len(self) * self.delta_t} [s]'

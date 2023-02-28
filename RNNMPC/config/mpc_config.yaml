@@ -9,11 +9,11 @@ PLUGIN_OPTIONS:
   
 SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
   max_iter: 3000 # default
-  tol: 6000 # 1e8
-  dual_inf_tol: 6000 # 1e8
-  constr_viol_tol: 6000 # 1e8
-  compl_inf_tol: 6000 # 1e8
-  acceptable_tol: 6000 # 1e8
+  tol: 7000 # 1e8
+  dual_inf_tol: 7000 # 1e8
+  constr_viol_tol: 7000 # 1e8
+  compl_inf_tol: 7000 # 1e8
+  acceptable_tol: 7000 # 1e8
   acceptable_iter: 5
 
 TUNING_PARAMETERS:

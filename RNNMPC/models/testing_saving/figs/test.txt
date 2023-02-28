@@ -1,0 +1,1 @@
+Test results showed in 'test' came from testing with file at: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\staircases\csv\staircases_10_steps_output_clipped.csv

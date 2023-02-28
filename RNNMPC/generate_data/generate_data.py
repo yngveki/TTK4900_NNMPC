@@ -114,7 +114,7 @@ if __name__ == '__main__':
     resolution = config['resolution']
     
     file_family = 'random_choke'
-    filename = 'random_choke_short' #+ str(5)
+    filename = 'random_choke_short'#_' + str(2)
     filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
     input_profile = Timeseries(filepath, delta_t=10)
     start_time = input_profile.begin
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     fig.suptitle('Step response')
     fig.tight_layout()
     plt.show(block=False)
-    plt.pause(3)
+    plt.pause(30)
     plt.close()
 
     choke_bounds = [0,100]

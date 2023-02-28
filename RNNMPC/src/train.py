@@ -7,6 +7,7 @@ import torch.nn as nn
 
 from src.neuralnetwork import NeuralNetwork
 from generate_data.load_input_data import load_input_data
+from src.utils.custom_timing import Timer
 
 class EarlyStopping():
 
@@ -66,7 +67,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         optimizer.step()
 
         if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
+            loss, current = loss.item(), batch
             print(f"loss: {loss:>9f}  [{current:>5d}/{size:>5d}]")
         
         total_itrs += 1
@@ -122,6 +123,8 @@ def train(hyperparameters, csv_path_train, csv_path_val):
 
     t = 0
     done = False
+    stopwatch = Timer()
+    stopwatch.start()
     while t < len(time) and not done:
         print(f"Epoch {t+1}\n-------------------------------")
         train_losses[t] = train_loop(train_dl, model, loss_fn, optimizer)
@@ -132,7 +135,10 @@ def train(hyperparameters, csv_path_train, csv_path_val):
             done = True
         
         t += 1
-
+        stopwatch.lap()
+    
+    stopwatch.total_time()
+    
     model.log_MSE(es.best_loss)
 
     print("Done!")

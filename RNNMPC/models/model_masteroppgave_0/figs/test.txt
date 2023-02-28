@@ -1,0 +1,2 @@
+Test results showed in 'test' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_50_60_output_clipped.csv

@@ -7,4 +7,4 @@ LEARNING:
   bsz: 100        # batch size
   e: 500          # epochs
   lr: 0.001       # learning rate
-  p: 8            # patience
+  p: 5            # patience

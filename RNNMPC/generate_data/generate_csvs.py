@@ -195,18 +195,18 @@ sequence = 'random_choke'
 
 # -- Generating a randomly varying choke; similar to staircases, but more specified -- #
 if __name__ == '__main__' and sequence == 'random_choke':
-    for i in range(1):
+    for i in range(2,3):
         specifications = {'init': 50, 
                         'choke_bounds': [30,70], 
-                        'waiting_limits': [15,35], # Should wait between 10 and 50 timesteps, hence interval=1 in general_csv below 
+                        'waiting_limits': [99,100], # Should wait between 10 and 50 timesteps, hence interval=1 in general_csv below 
                         'increment': 2, 
-                        'num_steps': (i+1) * 500}
+                        'num_steps': 1000}
         sequence = random_choke(**specifications)
         sequence = general_csv(sequence, interval=1)
 
         filename = 'random_choke'
-        # nr = i
-        csv_path = Path(__file__).parent / ('inputs/random_choke/' + filename + '_' + 'short' + '.csv')
+        nr = i
+        csv_path = Path(__file__).parent / ('inputs/random_choke/' + filename + '_' + 'short_' + str(i) + '.csv')
         safe_save(csv_path, sequence)
         yaml_path = csv_path.parent / (csv_path.stem + '.yaml')
         with open(yaml_path, "w", encoding = "utf-8") as yaml_file:
