@@ -21,7 +21,7 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
         if-clause use, e.g. choke, gas_lift, gas_rate, oil_rate and t"""
         return NotImplementedError
     
-    num = len(mpc.simulated_u['full']['choke'])
+    num = len(mpc.simulated_u['choke'])
     t = np.linspace(0, num * mpc.delta_t, num=num)
     fig, axes = plt.subplots(2, 2, sharex=True)
     fig.suptitle(f'RNNMPC simulated {mpc.final_t // mpc.delta_t} steps of {mpc.delta_t} [s] each. Total time is {mpc.final_t}', fontsize=23)
@@ -29,14 +29,14 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Measured gas rate v. reference gas rate', fontsize=20)
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-    axes[0,0].plot(t, mpc.simulated_y['full']['gas rate'], '-', label='true gas rate', color='tab:orange')
+    axes[0,0].plot(t, mpc.simulated_y['gas rate'], '-', label='true gas rate', color='tab:orange')
     axes[0,0].plot(t[-len(mpc.full_refs['gas rate']):], mpc.full_refs['gas rate'], label='reference gas rate', color='tab:red')
     axes[0,0].legend(loc='best', prop={'size': 15})
 
     # Plotting ground truth and predicted oil rates
     axes[0,1].set_title('Measured oil rate v. reference oil rate', fontsize=20)
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-    axes[0,1].plot(t, mpc.simulated_y['full']['oil rate'], label='true oil rate', color='tab:orange')
+    axes[0,1].plot(t, mpc.simulated_y['oil rate'], label='true oil rate', color='tab:orange')
     axes[0,1].plot(t[-len(mpc.full_refs['oil rate']):], mpc.full_refs['oil rate'], '-', label='reference oil rate', color='tab:red')
     axes[0,1].legend(loc='best', prop={'size': 15})
 
@@ -44,14 +44,14 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
     axes[1,0].set_title('Input: choke opening', fontsize=20)
     axes[1,0].set_xlabel('time [s]', fontsize=15)
     axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-    axes[1,0].plot(t, mpc.simulated_u['full']['choke'], label='choke', color='blue')
+    axes[1,0].plot(t, mpc.simulated_u['choke'], label='choke', color='blue')
     axes[1,0].legend(loc='best', prop={'size': 15})
 
     # Plotting history of gas lift rate input
     axes[1,1].set_title('Input: gas lift rate', fontsize=20)
     axes[1,1].set_xlabel('time [s]', fontsize=15)
     axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
-    axes[1,1].plot(t, mpc.simulated_u['full']['gas lift'], label='gas lift rate', color='blue')
+    axes[1,1].plot(t, mpc.simulated_u['gas lift'], label='gas lift rate', color='blue')
     axes[1,1].legend(loc='best', prop={'size': 15})
 
     manager = plt.get_current_fig_manager()
@@ -85,16 +85,16 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None):
             else:
                 print("Figure(s) was(/were) not saved.")
 
-@dataclass
-class PlotElement():
-    """A dataclass containing everything needed to plot a graph onto an axis"""
-    def __init__(self, ):
-        ...
+# @dataclass
+# class PlotElement():
+#     """A dataclass containing everything needed to plot a graph onto an axis"""
+#     def __init__(self, ):
+#         ...
         
-        axs[0].set_title(outputs['title'], fontsize=20)
-        axs[0].set_ylabel(outputs['gas rate']['ylabel'], fontsize=15, color=outputs['gas rate']['color'])
-        axs[0].plot(t[4:], outputs['gas rate']['future'], '-', label=outputs['gas rate']['label'], color=outputs['gas rate']['color'])
-        axs[0].legend(loc='upper right', prop={'size': 15})
+#         axs[0].set_title(outputs['title'], fontsize=20)
+#         axs[0].set_ylabel(outputs['gas rate']['ylabel'], fontsize=15, color=outputs['gas rate']['color'])
+#         axs[0].plot(t[4:], outputs['gas rate']['future'], '-', label=outputs['gas rate']['label'], color=outputs['gas rate']['color'])
+#         axs[0].legend(loc='upper right', prop={'size': 15})
 def plot_MPC_step(t, inputs, outputs, k=0, pause=True, pause_time=5, save_path=None):
     """
     Plots inputs and outputs from an arbitrary MPC step, with potentially past data, in addition to the current and future
@@ -198,10 +198,4 @@ if __name__ == "__main__":
                            'color': 'tab:green'} 
 
     t = np.linspace(0,10,num=10)
-    # outputs = []
-    # outputs.append([i for i in range(len(t))])
-    # outputs.append([10 / (i+1) for i in range(len(t))])
-    # inputs = []
-    # inputs.append([0.2 * i for i in range(len(t))])
-    # inputs.append([i / (0.5 * i + 1) for i in range(len(t))])
     plot_MPC_step(t, inputs, outputs, k=1, pause_time=30)
