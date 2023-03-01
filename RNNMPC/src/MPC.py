@@ -249,15 +249,17 @@ class RNNMPC:
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
         
-        u_hist = ...
-        y_curr = ...
-        y_hist = ...
-        x = [self.uk, u_hist, y_curr, y_hist]
-        self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
+        x = [self.uk[0], 
+             self.simulated_u['sim']['choke'][-2:-self.mu:-1], 
+             self.uk[1],
+             self.simulated_u['sim']['gas lift'][-2:-self.mu:-1], 
+             self.yk[0], 
+             self.simulated_y['sim']['gas rate'][-2:-self.my:-1], 
+             self.yk[1], 
+             self.simulated_y['sim']['oil rate'][-2:-self.my:-1]]
         
-            x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
-            x = ca.reshape(x, x.numel(), 1)
-            # constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
+        self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
+         
 
         self.t += self.delta_t
 
