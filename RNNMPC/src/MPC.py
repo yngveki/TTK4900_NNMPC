@@ -242,6 +242,7 @@ class RNNMPC:
 
         self.yk = [gas_rate_k, oil_rate_k]
 
+        # Append puts current at end of array
         self.simulated_u['sim']['choke'].append(choke_act_k)
         self.simulated_u['sim']['gas lift'].append(gas_lift_act_k)
         self.simulated_y['sim']['gas rate'].append(gas_rate_k)
@@ -249,17 +250,11 @@ class RNNMPC:
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
         
-        x = [self.uk[0], 
-             self.simulated_u['sim']['choke'][-2:-self.mu:-1], 
-             self.uk[1],
-             self.simulated_u['sim']['gas lift'][-2:-self.mu:-1], 
-             self.yk[0], 
-             self.simulated_y['sim']['gas rate'][-2:-self.my:-1], 
-             self.yk[1], 
-             self.simulated_y['sim']['oil rate'][-2:-self.my:-1]]
-        
+        x = [self.simulated_u['sim']['choke'][-1:-self.mu:-1],      # current->past
+             self.simulated_u['sim']['gas lift'][-1:-self.mu:-1],   # current->past
+             self.simulated_y['sim']['gas rate'][-1:-self.my:-1],   # current->past
+             self.simulated_y['sim']['oil rate'][-1:-self.my:-1]]   # current->past
         self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
-         
 
         self.t += self.delta_t
 
