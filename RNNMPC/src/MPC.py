@@ -113,7 +113,7 @@ class RNNMPC:
         # -- Set up framework for OCP using Opti from CasADi -- #
         self.opti = ca.Opti()
 
-        self.declare_OCP()
+        self._declare_OCP_variables()
 
         # p_opts = {'expand':self.config['expand'], } # CasADi plugin options   
         # s_opts = {'max_iter': self.config['max_iter'], 'tol': 10e6} # Solver options
@@ -144,7 +144,7 @@ class RNNMPC:
                    self.simulated_y['oil rate'][-1]]
         self.yk_hat = self.yk.copy()
 
-    def declare_OCP(self):
+    def _declare_OCP_variables(self):
         self.Hp = self.config['Hp']
         self.Hu = self.config['Hu']
         assert self.Hu == self.Hp, "Given the current OCP-formulation, control and prediction horizons must be the same!"
@@ -187,20 +187,30 @@ class RNNMPC:
             self.uk = [10,2000] # TODO: Valid start value?
             print(f'uk was not defined during warm start, and was now set to {self.uk}')
         
+        # Updating to correct past values
         for i in range(self.my):
             self.Y[:,i] = self.yk
         for i in range(self.mu):
             self.U[:,i] = self.uk
         self.U[:,self.mu] = self.uk
-
         
-        constraints.append(self.Y[:,self.my] == self.yk) # (3b)
+        # (3b)
+        constraints.append(self.Y[:,self.my] == self.yk) 
         
         for i in range(self.Hp):
                
             # (3c)
-            x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
-            x = ca.reshape(x, x.numel(), 1)
+            #! Verify that input is defined corectly with respect to RNN-fig
+            t1 = self.U[0,self.mu + i:i - 1:-1]
+            t2 = self.U[1,self.mu + i:i - 1:-1]
+            t3 = self.Y[0,self.my + i:i - 1:-1]
+            t4 = self.Y[1,self.my + i:i - 1:-1]
+            x = ca.horzcat(self.U[0,self.mu + i:i - 1:-1],
+                           self.U[1,self.mu + i:i - 1:-1],
+                           self.Y[0,self.my + i:i - 1:-1],
+                           self.Y[1,self.my + i:i - 1:-1])
+            # x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
+            # x = ca.reshape(x, x.numel(), 1)
             constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
         
             # (3d)
