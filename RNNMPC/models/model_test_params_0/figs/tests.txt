@@ -1,0 +1,8 @@
+Test results showed in 'random_choke_short' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_choke\csv\random_choke_short_1_output_clipped.csv
+Test results showed in 'random_choke_short' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_choke\csv\random_choke_short_0_output_clipped.csv
+Test results showed in 'random_choke_long' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_choke\csv\random_choke_0_output_clipped.csv
+Test results showed in 'step_choke' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_50_52_output_clipped.csv

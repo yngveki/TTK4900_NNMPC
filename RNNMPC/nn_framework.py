@@ -48,13 +48,13 @@ class GroundTruth():
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TEST = False
+TEST = True
 
 csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_4_output_clipped.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_1_output_clipped.csv'
-csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_1_output_clipped.csv', 'random_choke_short'
+# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_0_output_clipped.csv', 'random_choke_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_0_output_clipped.csv', 'random_choke_long'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
 model_nr = 0
 model_name = "model_test_params_" + str(model_nr)
 
