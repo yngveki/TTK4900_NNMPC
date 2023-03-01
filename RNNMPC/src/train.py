@@ -55,6 +55,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         y2 = torch.Tensor(sample['y2'])
         X = torch.cat((u1, u2, y1, y2))
         truth = torch.Tensor(sample['target'])
+        # temp = X.detach().numpy() # Should demonstrate that the input now is coherent with the RNN-fig
 
         # Compute prediction and loss
         pred = model(X) 

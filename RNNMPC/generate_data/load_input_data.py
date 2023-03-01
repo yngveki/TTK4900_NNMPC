@@ -39,12 +39,12 @@ class SRDataset(Dataset):
         num_samples = self.data_length - largest_m - 1 # We want the last sample to also have a next, for label's sake
         sr = []
         for n in range(num_samples):
-            #! These store from current to future, left to right. Intuitively makes sense, but we want every sample to be current -> past
-            # TODO: Test switching order
-            u1 = self.u1_full[n:n + mu + 1] # history and current
-            u2 = self.u2_full[n:n + mu + 1] # history and current
-            y1 = self.y1_full[n:n + my + 1] # history and current
-            y2 = self.y2_full[n:n + my + 1] # history and current
+            # .copy() because tensor's can't handle negative stride. Could alternately flip *_full, '
+            # flip iteration and alter indexing, but that seems worse
+            u1 = self.u1_full[n + mu + 1:n:-1].copy() # current->past
+            u2 = self.u2_full[n + mu + 1:n:-1].copy() # current->past
+            y1 = self.y1_full[n + my + 1:n:-1].copy() # current->past
+            y2 = self.y2_full[n + my + 1:n:-1].copy() # current->past
             k = [n + t for t in range(largest_m)]
             sample = {'u1': u1, 
                       'u2': u2, 

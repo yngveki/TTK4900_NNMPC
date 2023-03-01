@@ -50,7 +50,7 @@ class GroundTruth():
 # -- SETUP -- #
 TEST = False
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_4_output_clipped.csv'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_0_output_clipped.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_1_output_clipped.csv'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_1_output_clipped.csv', 'random_choke_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_0_output_clipped.csv', 'random_choke_long'
