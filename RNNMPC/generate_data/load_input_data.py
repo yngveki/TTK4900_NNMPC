@@ -39,6 +39,8 @@ class SRDataset(Dataset):
         num_samples = self.data_length - largest_m - 1 # We want the last sample to also have a next, for label's sake
         sr = []
         for n in range(num_samples):
+            #! These store from current to future, left to right. Intuitively makes sense, but we want every sample to be current -> past
+            # TODO: Test switching order
             u1 = self.u1_full[n:n + mu + 1] # history and current
             u2 = self.u2_full[n:n + mu + 1] # history and current
             y1 = self.y1_full[n:n + my + 1] # history and current

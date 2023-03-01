@@ -138,7 +138,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
         stopwatch.lap()
     
     stopwatch.total_time()
-    
+
     model.log_MSE(es.best_loss)
 
     print("Done!")

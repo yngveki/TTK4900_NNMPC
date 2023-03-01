@@ -41,6 +41,7 @@ class RNNMPC:
         self.full_refs['gas rate'] = []
         self.full_refs['oil rate'] = []
         self.yk = None
+        self.yk_hat = 0 # Initialize bias to zero
         self.uk = None
 
         # -- config parameters -- #
@@ -143,6 +144,7 @@ class RNNMPC:
         self.n_slack = len(self.config['rho'])
 
         self.Y = self.opti.variable(self.config['n_CV'],self.config['Hp']+1+self.my)
+        self.V = self.opti.variable(self.config['n_CV'],1) # Assumed constant; no need for full horizon
         self.DU = self.opti.variable(self.config['n_MV'],self.Hu)
         self.epsy = self.opti.variable(self.n_slack)
 
@@ -151,7 +153,7 @@ class RNNMPC:
     def update_OCP(self):
         self.Y_ref = self.refs.refs_as_lists()
 
-        # (1a)
+        # (3a)
         cost = 0
         for i in range(self.Hp):
             cost += (self.Y[:,self.my+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+i] - self.Y_ref[i])
@@ -161,15 +163,15 @@ class RNNMPC:
             cost += self.config['rho'][i] * self.epsy[i]
         self.opti.minimize(cost)
 
-        # Define constraints, respecting recursion in (1c) and (1g)
+        # Define constraints, respecting recursion in (3c) and (3g)
         constraints = []
         
-        # Initializing overhead for (1c)
+        # Initializing overhead for (3c)
         # Expand so Y and U also contain historical values
         # Note that this has implications for indexing:
-        #   -> From (1c): u_{k+i-1:k+i-mu}   -> [mu+i-mu : mu+1+i-1]     -> [i : mu + i] (fra og med k+i-mu, til _og med_ k+i; historie)
+        #   -> From (3c): u_{k+i-1:k+i-mu}   -> [mu+i-mu : mu+1+i-1]     -> [i : mu + i] (fra og med k+i-mu, til _og med_ k+i; historie)
         #                 u_{k+i}            -> [mu + 1 + i]             -> [mu + 1 + i] (nåværende)
-        #   -> From (1c): y_{k+i:k+i-my}     -> [my+i-my : my+i]         -> [i : my + 1 + i] (fra og med k+i-my, til _og med_ k+i; nåværende pluss historie)
+        #   -> From (3c): y_{k+i:k+i-my}     -> [my+i-my : my+i]         -> [i : my + 1 + i] (fra og med k+i-my, til _og med_ k+i; nåværende pluss historie)
         if self.yk is None:
             self.yk = [0,0] # TODO: Valid start value?
         if self.uk is None:
@@ -182,34 +184,37 @@ class RNNMPC:
         self.U[:,self.mu] = self.uk
 
         
-        constraints.append(self.Y[:,self.my] == self.yk) # (1b)
+        constraints.append(self.Y[:,self.my] == self.yk) # (3b)
         
         for i in range(self.Hp):
                
-            # (1c)
+            # (3c)
             x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
             x = ca.reshape(x, x.numel(), 1)
-            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out']) 
+            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
         
-            # (1d)
+            # (3d)
             constraints.append(self.opti.bounded(self.config['ylb'] - self.epsy,\
                                             self.Y[:,self.my + 1 + i],\
                                             self.config['yub'] + self.epsy)) 
         for i in range(self.Hu):
-            # (1e)
+            # (3e)
             constraints.append(self.opti.bounded(self.config['dulb'],\
                                             self.DU[:,i],\
                                             self.config['duub']))
 
-            # (1f)
+            # (3f)
             constraints.append(self.opti.bounded(self.config['ulb'],\
                                             self.U[:,self.mu + i],\
                                             self.config['uub'])) 
 
-            # (1g)                                        
+            # (3g)                                        
             constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
-        # (1h)
+        # (3h)
+        self.V[:] = self.yk - self.yk_hat
+
+        # (3i)
         constraints.append(self.epsy >= self.config['elb']) # Don't need upper bound
 
         self.opti.subject_to() # Reset constraints to avoid additivity
@@ -236,6 +241,7 @@ class RNNMPC:
                                         self.uk) # measurement from FMU, i.e. result from previous actuation
 
         self.yk = [gas_rate_k, oil_rate_k]
+
         self.simulated_u['sim']['choke'].append(choke_act_k)
         self.simulated_u['sim']['gas lift'].append(gas_lift_act_k)
         self.simulated_y['sim']['gas rate'].append(gas_rate_k)
@@ -243,6 +249,16 @@ class RNNMPC:
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
         
+        u_hist = ...
+        y_curr = ...
+        y_hist = ...
+        x = [self.uk, u_hist, y_curr, y_hist]
+        self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
+        
+            x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
+            x = ca.reshape(x, x.numel(), 1)
+            # constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
+
         self.t += self.delta_t
 
     def merge_sim_data(self):
