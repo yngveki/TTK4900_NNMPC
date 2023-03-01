@@ -114,7 +114,7 @@ if __name__ == '__main__':
     resolution = config['resolution']
     
     file_family = 'random_choke'
-    filename = 'random_choke_short'#_' + str(2)
+    filename = 'random_choke_' + str(5)
     filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
     input_profile = Timeseries(filepath, delta_t=10)
     start_time = input_profile.begin

@@ -47,7 +47,6 @@ if __name__ == '__main__':
         if timed_loop: stopwatch.total_time()
         run += 1
     
-    mpc.merge_sim_data()
     mpc.save_data(data_path=Path(__file__).parent / 'mpc_data/')
 
     plot_RNNMPC(mpc=mpc, save_path=fig_save_path)

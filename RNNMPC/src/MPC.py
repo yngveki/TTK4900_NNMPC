@@ -131,11 +131,11 @@ class RNNMPC:
                                                       self.warm_start_t,
                                                       vals=warm_start_input)
         
-        self.simulated_u['choke'].append(init_u[:,0].tolist())
-        self.simulated_u['gas lift'].append(init_u[:,1].tolist())
+        self.simulated_u['choke'] += init_u[:,0].tolist()
+        self.simulated_u['gas lift'] += init_u[:,1].tolist()
         self.simulated_u['k'] = int(self.t // self.delta_t)
-        self.simulated_y['gas rate'].append(init_y[:,0].tolist())
-        self.simulated_y['oil rate'].append(init_y[:,1].tolist())
+        self.simulated_y['gas rate'] += init_y[:,0].tolist()
+        self.simulated_y['oil rate'] += init_y[:,1].tolist()
         self.simulated_y['k'] = int(self.t // self.delta_t)
 
         self.uk = [self.simulated_u['choke'][-1],
@@ -260,10 +260,11 @@ class RNNMPC:
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
         
-        x = [self.simulated_u['choke'][-1:-self.mu-1:-1],      # current->past
-             self.simulated_u['gas lift'][-1:-self.mu-1:-1],   # current->past
-             self.simulated_y['gas rate'][-1:-self.my-1:-1],   # current->past
-             self.simulated_y['oil rate'][-1:-self.my-1:-1]]   # current->past
+        x = []
+        x.extend(self.simulated_u['choke'][-1:-self.mu-2:-1])      # current->past (want 1 + my (current _and_ past), hence -2)
+        x.extend(self.simulated_u['gas lift'][-1:-self.mu-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
+        x.extend(self.simulated_y['gas rate'][-1:-self.my-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
+        x.extend(self.simulated_y['oil rate'][-1:-self.my-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
         self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
 
         self.t += self.delta_t

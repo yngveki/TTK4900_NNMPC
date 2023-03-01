@@ -104,6 +104,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     epochs = hyperparameters['LEARNING']['e']
     patience = hyperparameters['LEARNING']['p']
 
+    #! n_MV = 2 and n_CV = 2 are implicitly hardcoded here
     layers = []
     layers.append(2 * (mu + 1) + 2 * (my + 1)) # Input layer
     layers += hlszs                            # Hidden layers
