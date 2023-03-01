@@ -22,7 +22,8 @@ if __name__ == '__main__':
                  ref_path=ref_path)
 
     # Ensure FMU is in a defined state
-    mpc.warm_start(fmu_path)
+    warm_start_input = [50,0]
+    mpc.warm_start(fmu_path, warm_start_input)
     timed_loop = True
     if timed_loop: stopwatch = Timer()
     if timed_loop: stopwatch.start()

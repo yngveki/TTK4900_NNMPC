@@ -41,7 +41,7 @@ class RNNMPC:
         self.full_refs['gas rate'] = []
         self.full_refs['oil rate'] = []
         self.yk = None
-        self.yk_hat = 0 # Initialize bias to zero
+        self.yk_hat = [0,0] # Initialize bias to zero
         self.uk = None
 
         # -- config parameters -- #
@@ -119,7 +119,7 @@ class RNNMPC:
         # s_opts = {'max_iter': self.config['max_iter'], 'tol': 10e6} # Solver options
         self.opti.solver('ipopt', p_opts, s_opts)
 
-    def warm_start(self, fmu_path):
+    def warm_start(self, fmu_path, warm_start_input):
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
@@ -128,12 +128,19 @@ class RNNMPC:
                                                       self.t, 
                                                       self.final_t, # Needed for initialization, but different from warm start time
                                                       self.delta_t,
-                                                      self.warm_start_t)
+                                                      self.warm_start_t,
+                                                      vals=warm_start_input)
         
         self.simulated_u['init']['choke'] = init_u[:,0].tolist()
         self.simulated_u['init']['gas lift'] = init_u[:,1].tolist()
         self.simulated_y['init']['gas rate'] = init_y[:,0].tolist()
         self.simulated_y['init']['oil rate'] = init_y[:,1].tolist()
+
+        self.uk = [self.simulated_u['init']['choke'][-1],
+                   self.simulated_u['init']['gas lift'][-1]]
+        self.yk = [self.simulated_y['init']['gas rate'][-1],
+                   self.simulated_y['init']['oil rate'][-1]]
+        self.yk_hat = self.yk.copy()
 
     def declare_OCP(self):
         self.Hp = self.config['Hp']
@@ -176,6 +183,7 @@ class RNNMPC:
             self.yk = [0,0] # TODO: Valid start value?
         if self.uk is None:
             self.uk = [10,2000] # TODO: Valid start value?
+            print(f'uk was not defined during warm start, and was now set to {self.uk}')
         
         for i in range(self.my):
             self.Y[:,i] = self.yk
@@ -212,7 +220,8 @@ class RNNMPC:
             constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
         # (3h)
-        self.V[:] = self.yk - self.yk_hat
+        for i in range(self.V.shape[0]):
+            self.V[i] = self.yk[i] - self.yk_hat[i]
 
         # (3i)
         constraints.append(self.epsy >= self.config['elb']) # Don't need upper bound
@@ -224,9 +233,6 @@ class RNNMPC:
         # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
         sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
         self.uk = sol.value(self.U)[:,0]
-        # print(f'self.Y: {sol.value(self.Y)}')
-        # print(f'self.U: {sol.value(self.U)}')
-        # print(f'self.DU: {sol.value(self.DU)}')
 
         # if plot:
         #     # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
@@ -250,10 +256,10 @@ class RNNMPC:
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
         
-        x = [self.simulated_u['sim']['choke'][-1:-self.mu:-1],      # current->past
-             self.simulated_u['sim']['gas lift'][-1:-self.mu:-1],   # current->past
-             self.simulated_y['sim']['gas rate'][-1:-self.my:-1],   # current->past
-             self.simulated_y['sim']['oil rate'][-1:-self.my:-1]]   # current->past
+        x = [self.simulated_u['sim']['choke'][-1:-self.mu-1:-1],      # current->past
+             self.simulated_u['sim']['gas lift'][-1:-self.mu-1:-1],   # current->past
+             self.simulated_y['sim']['gas rate'][-1:-self.my-1:-1],   # current->past
+             self.simulated_y['sim']['oil rate'][-1:-self.my-1:-1]]   # current->past
         self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
 
         self.t += self.delta_t
