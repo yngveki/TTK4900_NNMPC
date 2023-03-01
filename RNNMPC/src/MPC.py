@@ -30,13 +30,13 @@ class RNNMPC:
         self.fmu = None
 
         self.simulated_u = {}
-        self.simulated_u['init'] = {'choke': [], 'gas lift': []} # Will keep data from warm_start
-        self.simulated_u['sim'] = {'choke': [], 'gas lift': []}  # Will keep data from control loop
-        self.simulated_u['full'] = {'choke': [], 'gas lift': []} # Concatenates the two above
+        self.simulated_u['choke'] = []
+        self.simulated_u['gas lift'] = []
+        self.simulated_u['k'] = 0
         self.simulated_y = {}
-        self.simulated_y['init'] = {'gas rate': [], 'oil rate': []} # Will keep data from warm_start
-        self.simulated_y['sim'] = {'gas rate': [], 'oil rate': []}  # Will keep data from control loop
-        self.simulated_y['full'] = {'gas rate': [], 'oil rate': []} # Concatenates the two above
+        self.simulated_y['gas rate'] = []
+        self.simulated_y['oil rate'] = []
+        self.simulated_y['k'] = 0
         self.full_refs = {}
         self.full_refs['gas rate'] = []
         self.full_refs['oil rate'] = []
@@ -131,15 +131,17 @@ class RNNMPC:
                                                       self.warm_start_t,
                                                       vals=warm_start_input)
         
-        self.simulated_u['init']['choke'] = init_u[:,0].tolist()
-        self.simulated_u['init']['gas lift'] = init_u[:,1].tolist()
-        self.simulated_y['init']['gas rate'] = init_y[:,0].tolist()
-        self.simulated_y['init']['oil rate'] = init_y[:,1].tolist()
+        self.simulated_u['choke'].append(init_u[:,0].tolist())
+        self.simulated_u['gas lift'].append(init_u[:,1].tolist())
+        self.simulated_u['k'] = int(self.t // self.delta_t)
+        self.simulated_y['gas rate'].append(init_y[:,0].tolist())
+        self.simulated_y['oil rate'].append(init_y[:,1].tolist())
+        self.simulated_y['k'] = int(self.t // self.delta_t)
 
-        self.uk = [self.simulated_u['init']['choke'][-1],
-                   self.simulated_u['init']['gas lift'][-1]]
-        self.yk = [self.simulated_y['init']['gas rate'][-1],
-                   self.simulated_y['init']['oil rate'][-1]]
+        self.uk = [self.simulated_u['choke'][-1],
+                   self.simulated_u['gas lift'][-1]]
+        self.yk = [self.simulated_y['gas rate'][-1],
+                   self.simulated_y['oil rate'][-1]]
         self.yk_hat = self.yk.copy()
 
     def declare_OCP(self):
@@ -249,36 +251,29 @@ class RNNMPC:
         self.yk = [gas_rate_k, oil_rate_k]
 
         # Append puts current at end of array
-        self.simulated_u['sim']['choke'].append(choke_act_k)
-        self.simulated_u['sim']['gas lift'].append(gas_lift_act_k)
-        self.simulated_y['sim']['gas rate'].append(gas_rate_k)
-        self.simulated_y['sim']['oil rate'].append(oil_rate_k)
+        self.simulated_u['choke'].append(choke_act_k)
+        self.simulated_u['gas lift'].append(gas_lift_act_k)
+        self.simulated_u['k'] += 1
+        self.simulated_y['gas rate'].append(gas_rate_k)
+        self.simulated_y['oil rate'].append(oil_rate_k)
+        self.simulated_y['k'] += 1 
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
         
-        x = [self.simulated_u['sim']['choke'][-1:-self.mu-1:-1],      # current->past
-             self.simulated_u['sim']['gas lift'][-1:-self.mu-1:-1],   # current->past
-             self.simulated_y['sim']['gas rate'][-1:-self.my-1:-1],   # current->past
-             self.simulated_y['sim']['oil rate'][-1:-self.my-1:-1]]   # current->past
+        x = [self.simulated_u['choke'][-1:-self.mu-1:-1],      # current->past
+             self.simulated_u['gas lift'][-1:-self.mu-1:-1],   # current->past
+             self.simulated_y['gas rate'][-1:-self.my-1:-1],   # current->past
+             self.simulated_y['oil rate'][-1:-self.my-1:-1]]   # current->past
         self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
 
         self.t += self.delta_t
 
-    def merge_sim_data(self):
-        """
-        Convenience function to make the full timeseries more convenient
-        """
-        self.simulated_y['full']['gas rate'] = self.simulated_y['init']['gas rate'] + self.simulated_y['sim']['gas rate']
-        self.simulated_y['full']['oil rate'] = self.simulated_y['init']['oil rate'] + self.simulated_y['sim']['oil rate']
-        self.simulated_u['full']['choke'] = self.simulated_u['init']['choke'] + self.simulated_u['sim']['choke']
-        self.simulated_u['full']['gas lift'] = self.simulated_u['init']['gas lift'] + self.simulated_u['sim']['gas lift']
-
     def save_data(self, data_path):
         np.save(data_path / 't.npy', np.linspace(0, self.final_t, num=self.final_t // self.delta_t))
-        np.save(data_path / 'gas_rate.npy', self.simulated_y['full']['gas rate'])
-        np.save(data_path / 'oil_rate.npy', self.simulated_y['full']['oil rate'])
-        np.save(data_path / 'choke.npy', self.simulated_u['full']['choke'])
-        np.save(data_path / 'gas_lift.npy', self.simulated_u['full']['gas lift'])
+        np.save(data_path / 'gas_rate.npy', self.simulated_y['gas rate'])
+        np.save(data_path / 'oil_rate.npy', self.simulated_y['oil rate'])
+        np.save(data_path / 'choke.npy', self.simulated_u['choke'])
+        np.save(data_path / 'gas_lift.npy', self.simulated_u['gas lift'])
     
     # --- Private funcs --- #
     def _read_yaml(self, file_path):
