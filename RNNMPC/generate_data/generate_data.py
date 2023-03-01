@@ -113,6 +113,7 @@ if __name__ == '__main__':
     delta_t = config['delta_t']
     resolution = config['resolution']
     
+    keep_warm_start = False
     file_family = 'random_choke'
     filename = 'random_choke_' + str(5)
     filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
@@ -133,6 +134,9 @@ if __name__ == '__main__':
     time = warm_start_t # As long as we've come after init
     warm_offset = warm_start_t // delta_t
     itr = 0
+    if not keep_warm_start:
+        y1 = []
+        y2 = []
     while time < input_profile.end:
         uk = input_profile[:, warm_offset + itr]
         y1k, y2k = simulate_singlewell_step(model, time, delta_t, uk)
