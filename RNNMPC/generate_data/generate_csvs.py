@@ -129,6 +129,11 @@ def flatline(start_time, stop_time, step_time, delta_t=1, flat_val=1):
     """
     return step(start_time, stop_time, step_time, delta_t=delta_t, start_val=flat_val, step_val=0)
         
+def ramp(min, max, resolution):
+    arr = [i for i in range(min, max, resolution)]
+    if max not in arr: arr.append(max) # from (including) to (excluding) causes max element to be left out. I want it to be with
+    return arr
+
 def ramp_choke(min=0, max=100, resolution=2):
     """
     1) Kun choke - null gassløft, ramp choke opp fra 0% til 100% og ned til 0% med 2% sprang, der du venter 5 min mellom hver endring.
@@ -140,8 +145,12 @@ def ramp_choke(min=0, max=100, resolution=2):
 
     Note! Must be fed through "general_csv" with delta_t=10 and interval=30 to satisfy format for above specification!
     """
+    arr1 = ramp(min, max, resolution)
+    arr2 = ramp(max, min - 1, (-resolution))
+    temp_choke = arr1 + arr2
     choke = [i for i in range(min, max, resolution)] + [i for i in range(max, min - 1, (-resolution))] # include 0 as final value
 
+    assert temp_choke == choke, 'damn. Debugging time'
     GL = [0] * (1 + 2 * (max - min) // resolution)
     return [choke, GL]
 
@@ -191,7 +200,24 @@ def random_choke(init=30, choke_bounds=[30,70], waiting_limits=[10,50], incremen
     return [choke, GL]
 
 # ----- SCRIPT ----- #
-sequence = 'random_choke'
+sequence = 'max_slopes'
+
+# -- Generate a steady slope to max out first choke, then gas lift -- #
+if __name__ == '__main__' and sequence == 'max_slopes':
+    # This dataset will not be used for training, just to determine max values for normalization of gas rate and oil rate
+    choke = []
+    choke.extend(ramp(0, 100, 2))
+    gl = [0] * len(choke)
+    gl.extend(ramp(0,10000, 200))
+    gl.extend([10000 for _ in range(500)]) # Let's give it some time to settle
+    choke.extend([100 for _ in range(len(gl)-len(choke))])
+
+    assert len(choke) == len(gl)
+
+    sequence = [choke, gl]
+    sequence = general_csv(sequence, interval=10)
+    csv_path = Path(__file__).parent / ('inputs/div/ramp_choke_and_gl.csv')
+    safe_save(csv_path, sequence)
 
 # -- Generating a randomly varying choke; similar to staircases, but more specified -- #
 if __name__ == '__main__' and sequence == 'random_choke':
@@ -215,8 +241,8 @@ if __name__ == '__main__' and sequence == 'random_choke':
 # -- Generating a controlled ramp from 0% to 100% to 0% opening in choke -- #
 if __name__ == '__main__' and sequence == 'ramp_choke':
     sequence = ramp_choke()
-    sequence = general_csv(sequence, time=0, delta_t=10, interval=30)
-    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30.csv'
+    sequence = general_csv(sequence, time=0, delta_t=10, interval=1)
+    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval1.csv'
     safe_save(csv_path, sequence)
 
 # -- Generating a random "staircase" type input_profile represented by a csv -- #

@@ -17,6 +17,7 @@ from os.path import exists
 from yaml import safe_load
 
 from src.utils.timeseries import Timeseries
+from src.utils.custom_timing import Timer
 
 def init_model(model_path, start_time, final_time, Uk=[[50],[0]], delta_t=10, warm_start_t=0, warm_start=False):
     # Initiates a FMU model at the given model_path
@@ -113,9 +114,8 @@ if __name__ == '__main__':
     delta_t = config['delta_t']
     resolution = config['resolution']
     
-    keep_warm_start = False
-    file_family = 'random_choke'
-    filename = 'random_choke_' + str(5)
+    file_family = 'div'
+    filename = 'ramp_choke_and_gl'# + str(9)
     filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
     input_profile = Timeseries(filepath, delta_t=10)
     start_time = input_profile.begin
@@ -134,19 +134,20 @@ if __name__ == '__main__':
     time = warm_start_t # As long as we've come after init
     warm_offset = warm_start_t // delta_t
     itr = 0
-    if not keep_warm_start:
-        y1 = []
-        y2 = []
+    stopwatch = Timer()
+    stopwatch.start()
     while time < input_profile.end:
         uk = input_profile[:, warm_offset + itr]
         y1k, y2k = simulate_singlewell_step(model, time, delta_t, uk)
         y1.append(y1k)
         y2.append(y2k)
-        if itr % 10 == 0: print(f'itr nr. {itr}\n')
-
         time += delta_t
         itr += 1
 
+        if itr % 1000 == 0:
+            print(f'itr nr. {itr}')
+            stopwatch.lap()
+    stopwatch.total_time()
 
     # -- PLOTTING -- #
     fig, axs = plt.subplots(2, 2)
@@ -186,15 +187,19 @@ if __name__ == '__main__':
     fig.suptitle('Step response')
     fig.tight_layout()
     plt.show(block=False)
-    plt.pause(30)
+    plt.pause(3)
     plt.close()
 
     choke_bounds = [0,100]
     GL_bounds = [0,10000]
+    gasrate_bounds = [0,18537] # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
+    oilrate_bounds = [0,349]   # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
+    y1_max = max(y1)
+    y2_max = max(y2)
     u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
     u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
-    y1_normalized = normalize(y1) # TODO: should be bounded by min and max, I think (e.g. [0,16000])
-    y2_normalized = normalize(y2) # TODO: should be bounded by min and max, I think (e.g. [0,350])
+    y1_normalized = normalize(y1, min=gasrate_bounds[0], max=gasrate_bounds[1])
+    y2_normalized = normalize(y2, min=oilrate_bounds[0], max=oilrate_bounds[1])
     # -- WRITE TO FILE -- #
     header = ["t_" + str(int(timestamp)) for timestamp in t]
     csv_path = Path(__file__).parent / ('outputs/' + file_family + '/csv/' + save_name + '.csv')
