@@ -21,15 +21,18 @@ class EarlyStopping():
         self.counter = 0
 
     def __call__(self, val_loss, model):
+        # initial call
         if self.best_loss == None:
             self.best_loss = val_loss
             self.best_model = model
 
+        # validation loss decreased; update model because this one must be better
         elif self.best_loss - val_loss > self.min_delta:
             self.best_loss = val_loss
             self.counter = 0
             self.best_model.load_state_dict(model.state_dict())
 
+        # validation loss increased; losing patience
         elif self.best_loss - val_loss <= self.min_delta:
             self.counter += 1
             if self.counter >= self.patience:
@@ -67,7 +70,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         loss.backward()
         optimizer.step()
 
-        if batch % 100 == 0:
+        if batch % 500 == 0:
             loss, current = loss.item(), batch
             print(f"loss: {loss:>9f}  [{current:>5d}/{size:>5d}]")
         

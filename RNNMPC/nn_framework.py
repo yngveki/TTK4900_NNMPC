@@ -48,15 +48,15 @@ class GroundTruth():
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TEST = False
+TEST = True
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_5_output_clipped.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_1_output_clipped.csv'
-csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_0_output_clipped.csv', 'random_choke_short'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_9_output_clipped.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_4_output_clipped.csv'
+# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_0_output_clipped.csv', 'random_choke_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_0_output_clipped.csv', 'random_choke_long'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
 model_nr = 1
-model_name = "model_test_params_" + str(model_nr)
+model_name = "model_current_past_" + str(model_nr)
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
@@ -82,9 +82,9 @@ if __name__ == '__main__' and not TEST:
 
     # Plotting training against validation error
     fig.tight_layout()
-    ax.plot(val_MSEs[1:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
-    ax.plot(train_losses[1:final_epoch], 'b--', linewidth=2.0, label='Training losses')
-    ax.axvline(len(val_MSEs[1:final_epoch]) - p, color='tab:red')
+    ax.plot(val_MSEs[:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
+    ax.plot(train_losses[:final_epoch], 'b--', linewidth=2.0, label='Training losses')
+    ax.axvline(len(val_MSEs[:final_epoch]) - p, color='tab:red')
     ax.set_xlabel('epochs')
     ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
     ax.legend(loc='center right', prop={'size': 15})
