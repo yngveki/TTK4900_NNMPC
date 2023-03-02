@@ -41,10 +41,12 @@ class SRDataset(Dataset):
         for n in range(num_samples):
             # .copy() because tensor's can't handle negative stride. Could alternately flip *_full, '
             # flip iteration and alter indexing, but that seems worse
-            u1 = self.u1_full[n + mu + 1:n:-1].copy() # current->past
-            u2 = self.u2_full[n + mu + 1:n:-1].copy() # current->past
-            y1 = self.y1_full[n + my + 1:n:-1].copy() # current->past
-            y2 = self.y2_full[n + my + 1:n:-1].copy() # current->past
+
+            if n == 0: n = -self.data_length # So that the first loop will also grab first element in arrays (because n=0 - 1 otherwise becomes the last index)
+            u1 = self.u1_full[n + mu:n - 1:-1].copy() # current->past
+            u2 = self.u2_full[n + mu:n - 1:-1].copy() # current->past
+            y1 = self.y1_full[n + my:n - 1:-1].copy() # current->past
+            y2 = self.y2_full[n + my:n - 1:-1].copy() # current->past
             k = [n + t for t in range(largest_m)]
             sample = {'u1': u1, 
                       'u2': u2, 
@@ -53,7 +55,7 @@ class SRDataset(Dataset):
                       'k': k, 
                       'mu': mu, 
                       'my': my, 
-                      'target': [self.y1_full[n + my - 1], self.y2_full[n + my - 1]]}
+                      'target': [self.y1_full[n + my + 1], self.y2_full[n + my + 1]]}
             sr.append(sample)
 
         self.SR = sr
