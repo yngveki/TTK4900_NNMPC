@@ -99,6 +99,7 @@ def validation_loop(dataloader, model, epoch):
 # ----- TRAINING ----- #
 def train(hyperparameters, csv_path_train, csv_path_val):
 
+    act = hyperparameters['activation']
     mu = hyperparameters['STRUCTURE']['mu']
     my = hyperparameters['STRUCTURE']['my']
     hlszs = hyperparameters['STRUCTURE']['hlszs']
@@ -112,7 +113,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     layers.append(2 * (mu + 1) + 2 * (my + 1)) # Input layer
     layers += hlszs                            # Hidden layers
     layers.append(2)                           # Output layer
-    model = NeuralNetwork(layers=layers)
+    model = NeuralNetwork(layers=layers, act=act)
     loss_fn = nn.MSELoss() # MSE as loss func. for a regression problem
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -130,6 +131,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     done = False
     stopwatch = Timer()
     stopwatch.start()
+    print_params = True
     while t < len(time) and not done:
         print(f"Epoch {t+1}\n-------------------------------")
         train_losses[t] = train_loop(train_dl, model, loss_fn, optimizer)
@@ -141,6 +143,10 @@ def train(hyperparameters, csv_path_train, csv_path_val):
         
         t += 1
         stopwatch.lap()
+
+        if print_params:
+            for name, param in model.named_parameters():
+                print(name, param.data)
     
     stopwatch.total_time()
 

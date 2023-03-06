@@ -103,124 +103,108 @@ def clip_beginning(series, clip_length=100):
 
 # ----- SCRIPT RUN ----- #
 if __name__ == '__main__':
-    # -- SETUP -- #
-    config_path = Path(__file__).parent / "../config/generate_data.yaml"
-    with open(config_path, "r") as f:
-        config = safe_load(f)
-        if not config:
-            Exception("Failed loading config file\n")
+    for i in range(3):
+        # -- SETUP -- #
+        config_path = Path(__file__).parent / "../config/generate_data.yaml"
+        with open(config_path, "r") as f:
+            config = safe_load(f)
+            if not config:
+                Exception("Failed loading config file\n")
 
-    warm_start_t = config['warm_start_t']
-    delta_t = config['delta_t']
-    resolution = config['resolution']
-    
-    file_family = 'div'
-    filename = 'ramp_choke_and_gl'# + str(9)
-    filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
-    input_profile = Timeseries(filepath, delta_t=10)
-    start_time = input_profile.begin
-    final_time = input_profile.end
-
-    warm_start_vals = input_profile.init_vals # Let system settle with desired initial value for data sequence
-    input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
-
-    save_name = ''.join((filename, '_output_clipped'))
-    model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
-    model, y1, y2 = init_model(model_path, start_time, input_profile.end, 
-                            Uk=warm_start_vals, warm_start_t=warm_start_t, 
-                            warm_start=True)
-
-    # -- SIMULATING -- #
-    time = warm_start_t # As long as we've come after init
-    warm_offset = warm_start_t // delta_t
-    itr = 0
-    stopwatch = Timer()
-    stopwatch.start()
-    while time < input_profile.end:
-        uk = input_profile[:, warm_offset + itr]
-        y1k, y2k = simulate_singlewell_step(model, time, delta_t, uk)
-        y1.append(y1k)
-        y2.append(y2k)
-        time += delta_t
-        itr += 1
-
-        if itr % 1000 == 0:
-            print(f'itr nr. {itr}')
-            stopwatch.lap()
-    stopwatch.total_time()
-
-    # -- PLOTTING -- #
-    fig, axs = plt.subplots(2, 2)
-    plot_full=True
-    if plot_full:
-        clip_length = warm_start_t // delta_t
-        t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=clip_length)
-        y1 = clip_beginning(y1, clip_length=clip_length)
-        y2 = clip_beginning(y2, clip_length=clip_length)
-        u1 = clip_beginning(input_profile[0, :], clip_length=clip_length)
-        u2 = clip_beginning(input_profile[1, :], clip_length=clip_length)
-
-        axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
-        axs[0,0].legend(loc='best')
-        axs[0,0].axvline(warm_start_t, color='tab:green')
-        axs[1,0].plot(t, u1, label='choke')
-        axs[1,0].legend(loc='best')
-        axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
-        axs[0,1].legend(loc='best')
-        axs[0,1].axvline(warm_start_t, color='tab:green')
-        axs[1,1].plot(t, u2, label='GL rate')
-        axs[1,1].legend(loc='best')
-    else:   
-        t = np.linspace(start=warm_start_t, stop=input_profile.end - 1, num=(input_profile.end - warm_start_t) // delta_t)
-        u1 = input_profile[0, warm_start_t // delta_t:]
-        u2 = input_profile[1, warm_start_t // delta_t:]
-
-        axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
-        axs[0,0].legend(loc='best')
-        axs[1,0].plot(t, u1, label='choke')
-        axs[1,0].legend(loc='best')
-        axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
-        axs[0,1].legend(loc='best')
-        axs[1,1].plot(t, u2, label='GL rate')
-        axs[1,1].legend(loc='best')
-
-    fig.suptitle('Step response')
-    fig.tight_layout()
-    plt.show(block=False)
-    plt.pause(3)
-    plt.close()
-
-    choke_bounds = [0,100]
-    GL_bounds = [0,10000]
-    gasrate_bounds = [0,18537] # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
-    oilrate_bounds = [0,349]   # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
-    y1_max = max(y1)
-    y2_max = max(y2)
-    u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
-    u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
-    y1_normalized = normalize(y1, min=gasrate_bounds[0], max=gasrate_bounds[1])
-    y2_normalized = normalize(y2, min=oilrate_bounds[0], max=oilrate_bounds[1])
-    # -- WRITE TO FILE -- #
-    header = ["t_" + str(int(timestamp)) for timestamp in t]
-    csv_path = Path(__file__).parent / ('outputs/' + file_family + '/csv/' + save_name + '.csv')
-    if not exists(csv_path): # Safe to save; nothing can be overwritten
-        with open(csv_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-
-            writer.writerow(header)
-            writer.writerow(u1_normalized)
-            writer.writerow(u2_normalized)
-            writer.writerow(y1_normalized)
-            writer.writerow(y2_normalized)
+        warm_start_t = config['warm_start_t']
+        delta_t = config['delta_t']
+        resolution = config['resolution']
         
-        fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/png/' + save_name + '.png'))
-        fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/eps/' + save_name + '.eps'))
+        file_family = 'random_choke'
+        filename = 'random_choke_short_' + str(i)
+        filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
+        input_profile = Timeseries(filepath, delta_t=10)
+        start_time = input_profile.begin
+        final_time = input_profile.end
 
-    else:
-        name = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
-        if name != '': # Do _not_ abort save
-            if name != 'y': # Do _not_ overwrite
-                csv_path = Path(__file__).parent / ('outputs/' + file_family + '/csv/' + name + '.csv')
+        warm_start_vals = input_profile.init_vals # Let system settle with desired initial value for data sequence
+        input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
+
+        save_name = ''.join((filename, '_normalized_output_clipped'))
+        model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
+        model, y1, y2 = init_model(model_path, start_time, input_profile.end, 
+                                Uk=warm_start_vals, warm_start_t=warm_start_t, 
+                                warm_start=True)
+
+        # -- SIMULATING -- #
+        time = warm_start_t # As long as we've come after init
+        warm_offset = warm_start_t // delta_t
+        itr = 0
+        stopwatch = Timer()
+        stopwatch.start()
+        while time < input_profile.end:
+            uk = input_profile[:, warm_offset + itr]
+            y1k, y2k = simulate_singlewell_step(model, time, delta_t, uk)
+            y1.append(y1k)
+            y2.append(y2k)
+            time += delta_t
+            itr += 1
+
+            if itr % 1000 == 0:
+                print(f'itr nr. {itr}')
+                stopwatch.lap()
+        stopwatch.total_time()
+
+        # -- PLOTTING -- #
+        fig, axs = plt.subplots(2, 2)
+        plot_full=True
+        if plot_full:
+            clip_length = warm_start_t // delta_t
+            t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=clip_length)
+            y1 = clip_beginning(y1, clip_length=clip_length)
+            y2 = clip_beginning(y2, clip_length=clip_length)
+            u1 = clip_beginning(input_profile[0, :], clip_length=clip_length)
+            u2 = clip_beginning(input_profile[1, :], clip_length=clip_length)
+
+            axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
+            axs[0,0].legend(loc='best')
+            axs[0,0].axvline(warm_start_t, color='tab:green')
+            axs[1,0].plot(t, u1, label='choke')
+            axs[1,0].legend(loc='best')
+            axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
+            axs[0,1].legend(loc='best')
+            axs[0,1].axvline(warm_start_t, color='tab:green')
+            axs[1,1].plot(t, u2, label='GL rate')
+            axs[1,1].legend(loc='best')
+        else:   
+            t = np.linspace(start=warm_start_t, stop=input_profile.end - 1, num=(input_profile.end - warm_start_t) // delta_t)
+            u1 = input_profile[0, warm_start_t // delta_t:]
+            u2 = input_profile[1, warm_start_t // delta_t:]
+
+            axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
+            axs[0,0].legend(loc='best')
+            axs[1,0].plot(t, u1, label='choke')
+            axs[1,0].legend(loc='best')
+            axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
+            axs[0,1].legend(loc='best')
+            axs[1,1].plot(t, u2, label='GL rate')
+            axs[1,1].legend(loc='best')
+
+        fig.suptitle('Step response')
+        fig.tight_layout()
+        plt.get_current_fig_manager().full_screen_toggle()
+        plt.show(block=False)
+        plt.pause(15)
+        plt.close()
+
+        choke_bounds = [0,100]     # Externally defined hard limits
+        GL_bounds = [0,10000]      # Externally defined hard limits
+        gasrate_bounds = [0,18537] # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
+        oilrate_bounds = [0,349]   # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
+
+        u1_normalized = normalize(u1, min=choke_bounds[0], max=choke_bounds[1])
+        u2_normalized = normalize(u2, min=GL_bounds[0], max=GL_bounds[1])
+        y1_normalized = normalize(y1, min=gasrate_bounds[0], max=gasrate_bounds[1])
+        y2_normalized = normalize(y2, min=oilrate_bounds[0], max=oilrate_bounds[1])
+        # -- WRITE TO FILE -- #
+        header = ["t_" + str(int(timestamp)) for timestamp in t]
+        csv_path = Path(__file__).parent / ('outputs/' + file_family + '/csv/' + save_name + '.csv')
+        if not exists(csv_path): # Safe to save; nothing can be overwritten
             with open(csv_path, 'w', newline='') as f:
                 writer = csv.writer(f)
 
@@ -229,10 +213,27 @@ if __name__ == '__main__':
                 writer.writerow(u2_normalized)
                 writer.writerow(y1_normalized)
                 writer.writerow(y2_normalized)
+            
+            fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/png/' + save_name + '.png'))
+            fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/eps/' + save_name + '.eps'))
 
-            print(f"File written to \'{csv_path}\'")
-
-            fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/png/' + csv_path.stem + '.png'))
-            fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/eps/' + csv_path.stem + '.eps'))
         else:
-            print("File was not saved.")
+            name = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
+            if name != '': # Do _not_ abort save
+                if name != 'y': # Do _not_ overwrite
+                    csv_path = Path(__file__).parent / ('outputs/' + file_family + '/csv/' + name + '.csv')
+                with open(csv_path, 'w', newline='') as f:
+                    writer = csv.writer(f)
+
+                    writer.writerow(header)
+                    writer.writerow(u1_normalized)
+                    writer.writerow(u2_normalized)
+                    writer.writerow(y1_normalized)
+                    writer.writerow(y2_normalized)
+
+                print(f"File written to \'{csv_path}\'")
+
+                fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/png/' + csv_path.stem + '.png'))
+                fig.savefig(Path(__file__).parent / ('outputs/' + file_family + '/eps/' + csv_path.stem + '.eps'))
+            else:
+                print("File was not saved.")

@@ -200,7 +200,11 @@ def random_choke(init=30, choke_bounds=[30,70], waiting_limits=[10,50], incremen
     return [choke, GL]
 
 # ----- SCRIPT ----- #
-sequence = 'max_slopes'
+sequence = 'random_choke'
+
+if __name__ == '__main__' and sequence == 'random_ramp':
+    print('TODO: Implement an input profile that covers more of the output-space (so the normalization doesn\'t become entirely problematic as now)')
+    NotImplementedError
 
 # -- Generate a steady slope to max out first choke, then gas lift -- #
 if __name__ == '__main__' and sequence == 'max_slopes':
@@ -223,8 +227,8 @@ if __name__ == '__main__' and sequence == 'max_slopes':
 if __name__ == '__main__' and sequence == 'random_choke':
     for i in range(2,3):
         specifications = {'init': 50, 
-                        'choke_bounds': [30,70], 
-                        'waiting_limits': [99,100], # Should wait between 10 and 50 timesteps, hence interval=1 in general_csv below 
+                        'choke_bounds': [30,100], 
+                        'waiting_limits': [99,100], 
                         'increment': 2, 
                         'num_steps': 1000}
         sequence = random_choke(**specifications)
