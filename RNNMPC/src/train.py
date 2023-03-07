@@ -44,6 +44,8 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     total_itrs = 0
     tot_loss = 0
+
+    # TODO: These samples should have been random, but are not - they are sequential, which leads to non-independent optimization: BAD!
     for batch, sample in enumerate(dataloader.dataset):
         # Ensure zero-state from any previous iteration
         optimizer.zero_grad()
@@ -94,6 +96,7 @@ def validation_loop(dataloader, model, epoch):
     return mse_val
 
 # ----- TRAINING ----- #
+# TODO: Plot norm of gradient over time to investigate whether local minima are the issue or not
 def train(hyperparameters, csv_path_train, csv_path_val):
 
     mu = hyperparameters['STRUCTURE']['mu']
