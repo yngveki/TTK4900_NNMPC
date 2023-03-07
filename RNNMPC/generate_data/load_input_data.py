@@ -49,7 +49,7 @@ class SRDataset(Dataset):
                 u2 = self.u2_full[n + mu:n - 1:-1].copy() # current->past
                 y1 = self.y1_full[n + my:n - 1:-1].copy() # current->past
                 y2 = self.y2_full[n + my:n - 1:-1].copy() # current->past
-                k = [n + t for t in range(largest_m)]
+                k = np.array([n + t for t in range(largest_m)])
                 sample = {'u1': u1, 
                         'u2': u2, 
                         'y1': y1, 
@@ -57,7 +57,7 @@ class SRDataset(Dataset):
                         'k': k, 
                         'mu': mu, 
                         'my': my, 
-                        'target': [self.y1_full[n + my + 1], self.y2_full[n + my + 1]]}
+                        'target': np.array([self.y1_full[n + my + 1], self.y2_full[n + my + 1]])}
                 sr.append(sample)
         else:
             for n in range(num_samples):
@@ -65,15 +65,15 @@ class SRDataset(Dataset):
                 u2 = self.u2_full[n:n + mu + 1] # past->current
                 y1 = self.y1_full[n:n + my + 1] # past->current
                 y2 = self.y2_full[n:n + my + 1] # past->current
-                k = [n + t for t in range(largest_m + 1)]
+                k = np.array([n + t for t in range(largest_m + 1)])
                 sample = {'u1': u1, 
-                          'u2': u2, 
-                          'y1': y1, 
-                          'y2': y2, 
-                          'k': k, 
-                          'mu': mu, 
-                          'my': my, 
-                          'target': [self.y1_full[n + my + 1], self.y2_full[n + my + 1]]}
+                        'u2': u2, 
+                        'y1': y1, 
+                        'y2': y2, 
+                        'k': k, 
+                        'mu': mu, 
+                        'my': my, 
+                        'target': np.array([self.y1_full[n + my + 1], self.y2_full[n + my + 1]])}
                 sr.append(sample)
 
         self.SR = sr
@@ -141,8 +141,9 @@ class SRDataset(Dataset):
 def load_input_data(csv_path, bsz=64, mu=1, my=1, shuffle=False):
     
     sr_dataset = SRDataset(csv_path, mu=mu, my=my)
+    dataloader = DataLoader(sr_dataset, batch_size=bsz, shuffle=shuffle, num_workers=0, drop_last=True)
 
-    return DataLoader(sr_dataset, batch_size=bsz, shuffle=shuffle, num_workers=0)
+    return dataloader
 
 
 # ----- For testing ----- #

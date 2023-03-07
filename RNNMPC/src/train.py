@@ -45,36 +45,65 @@ class EarlyStopping():
 def train_loop(dataloader, model, loss_fn, optimizer):
     model.train()
     size = len(dataloader.dataset)
+    num_batches = len(dataloader)
     total_itrs = 0
     tot_loss = 0
-    for batch, sample in enumerate(dataloader.dataset):
-        # Ensure zero-state from any previous iteration
-        optimizer.zero_grad()
 
-        # Prepare format of data
-        u1 = torch.Tensor(sample['u1'])
-        u2 = torch.Tensor(sample['u2'])
-        y1 = torch.Tensor(sample['y1'])
-        y2 = torch.Tensor(sample['y2'])
-        X = torch.cat((u1, u2, y1, y2))
-        truth = torch.Tensor(sample['target'])
-        # temp = X.detach().numpy() # Should demonstrate that the input now is coherent with the RNN-fig
+    oldie = False
+    if not oldie:
+        for batch_nr, batch in enumerate(dataloader):
+            optimizer.zero_grad()
+            inputs = []
+            outputs = []
+            labels = []
+            batch_mse = 0
+            for u1, u2, y1, y2, truth in zip(batch['u1'], batch['u2'], batch['y1'], batch['y2'], batch['target']):
+                X = torch.cat((u1.float(), u2.float(), y1.float(), y2.float()))
+                output = model(X)
+                truth = truth.float()
 
-        # Compute prediction and loss
-        pred = model(X) 
-        loss = loss_fn(pred, truth)
+                # inputs.append(X)
+                # outputs.append(output)
+                # labels.append(truth)
+                loss = loss_fn(output, truth)
+                tot_loss += loss
+                batch_mse += loss
+            
+            # TODO: Do we need to normalize? * (1/batch_size)? Even if it is taken care of automatically or not, it should be possible to tune lr around it
+            batch_mse.backward() # Gradient of sum of this batch's losses find gradient of sum of all losses.
+            optimizer.step()
 
-        tot_loss += loss
+            if batch_nr % 50 == 0:
+                print(f"loss: {batch_mse.item():>9f},  [batch: {batch_nr:>5d}/{num_batches:>5d}]")
 
-        # Backpropagation
-        loss.backward()
-        optimizer.step()
 
-        if batch % 500 == 0:
-            loss, current = loss.item(), batch
-            print(f"loss: {loss:>9f}  [{current:>5d}/{size:>5d}]")
+    else:
+        for batch, sample in enumerate(dataloader.dataset):
+            # Ensure zero-state from any previous iteration
+            optimizer.zero_grad()
+
+            u1 = torch.Tensor(sample['u1'])
+            u2 = torch.Tensor(sample['u2'])
+            y1 = torch.Tensor(sample['y1'])
+            y2 = torch.Tensor(sample['y2'])
+            X = torch.cat((u1, u2, y1, y2))
+            truth = torch.Tensor(sample['target'])
+
+            # Compute prediction and loss
+            pred = model(X) 
+            loss = loss_fn(pred, truth)
+
+            tot_loss += loss
+
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+
+            if batch % 500 == 0:
+                loss, current = loss.item(), batch
+                print(f"loss: {loss:>9f}  [{current:>5d}/{size:>5d}]")
         
-        total_itrs += 1
+    total_itrs += 1
     
     return (tot_loss / total_itrs).item()
 

@@ -6,7 +6,7 @@ STRUCTURE:
   hlszs: [32]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
 
 LEARNING:
-  bsz: 100        # batch size
+  bsz: 64         # batch size
   e: 500          # epochs
   lr: 0.001       # learning rate
   p: 8            # patience
