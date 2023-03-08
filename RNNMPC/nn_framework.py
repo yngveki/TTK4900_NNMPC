@@ -50,12 +50,12 @@ class GroundTruth():
 # -- SETUP -- #
 TEST = True
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_1_locally_normalized.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_medium_1_locally_normalized.csv'
-csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_short_1_locally_normalized.csv', 'random_choke_short'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_1_globally_normalized_small_range.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_medium_1_globally_normalized_small_range.csv'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_short_1_globally_normalized_small_range.csv', 'random_choke_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_2_normalized_output_clipped.csv', 'random_choke_long'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
-model_nr = 1
+model_nr = 2
 model_name = "model_random_choke_ramp_" + str(model_nr)
 
 delta_t = 10
@@ -80,7 +80,7 @@ if __name__ == '__main__' and not TEST:
     p = hyperparameters['LEARNING']['p'] + 1 # To account for zero-indexing
     fig, ax = plt.subplots()
 
-    # Plotting training against validation error
+    # Plotting training against validation error # TODO: Make logarithmic
     fig.tight_layout()
     ax.plot(val_MSEs[:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
     ax.plot(train_losses[:final_epoch], 'b--', linewidth=2.0, label='Training losses')
