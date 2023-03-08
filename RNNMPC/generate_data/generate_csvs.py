@@ -220,7 +220,7 @@ def concatenate(*args):
         # Update timestamps
         t = df.values[-1][0]
         df_next = pd.read_csv(args[nr])
-        for idx in range(len(df.values)):
+        for idx in range(len(df_next.values)):
             df_next.values[idx][0] += t
 
         # Extend dataframe
@@ -236,20 +236,19 @@ def concatenate(*args):
 # ----- SCRIPT ----- #
 sequence = 'concatenate'
 
+# -- Concatenating input profiles given by different csv-paths -- #
 if __name__ == '__main__' and sequence == 'concatenate':
-    paths = [Path(__file__).parent / 'inputs/steps_choke/step_choke_0_2.csv',
-             Path(__file__).parent / 'inputs/steps_GL/step_GL_2000_2166.csv']
-    # paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_1.csv',
-    #          Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_60-100.csv',
-    #          Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv',
-    #          Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_0.csv']
+    paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_1.csv',
+             Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_60-100.csv',
+             Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv',
+             Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_0.csv']
     
     concatenated = concatenate(*paths)
     save_path = Path(__file__).parent / 'inputs/random_mixed_ramp/mixed_test_0.csv'
     safe_save(save_path, concatenated)
 
+# -- Generating a semi-randomly oscillating ramp for gas lift (choke = 100) -- #
 if __name__ == '__main__' and sequence == 'random_gl_ramp':
-    # TODO: Make p_inc = [100,0] for when beneath 2000
     global_min = 2000 # Assume already spun up by a ramp; concatenate input profiles later
     global_max = 10000    
     specifications = {'init': global_min, 
@@ -262,12 +261,6 @@ if __name__ == '__main__' and sequence == 'random_gl_ramp':
     sequence = input_random_ramp(**specifications)
     rising = True    
     for i in range(99):
-        # if i == 0:
-        #     sequence.append(input_random_ramp(**specifications))
-        # extension = input_random_ramp(**specifications)
-        # if not len(sequence): # So far, it's empty
-        #     sequence = extension
-        # else:
         extension = input_random_ramp(**specifications)
         sequence[0].extend(extension[0])
         sequence[1].extend(extension[1])
@@ -309,6 +302,7 @@ if __name__ == '__main__' and sequence == 'random_gl_ramp':
     with open(yaml_path, "w", encoding = "utf-8") as yaml_file:
         yaml_file.write(dump(specifications, default_flow_style = False, allow_unicode = True, encoding = None))
 
+# -- Generating a semi-randomly oscillating ramp for choke (gas lift = 0) -- #
 if __name__ == '__main__' and sequence == 'random_choke_ramp':
     sequence = []
     global_min = 60
