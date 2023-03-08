@@ -206,7 +206,9 @@ sequence = 'random_choke_ramp'
 if __name__ == '__main__' and sequence == 'concatenate':
     print('TODO: Implement concatenation of input profiles')
 
-if __name__ == '__main__' and sequence == 'random_choke_ramp':
+if __name__ == '__main__' and sequence == 'random_gl_ramp':
+    print('have not yet modded this to fit gl!')
+    NotImplementedError
     sequence = []
     specifications = {'init': 30, 
                     'choke_bounds': [30, 50], 
@@ -215,7 +217,7 @@ if __name__ == '__main__' and sequence == 'random_choke_ramp':
                     'num_steps': 1000,
                     'p_inc': [0.55,0.45]} # 55% chance to increment, 45% chance to decrement. Intentionally skew the ramp upwards.
     rising = True
-    for i in range(10):
+    for i in range(30):
         extension = random_choke(**specifications)
         if not len(sequence): # So far, it's empty
             sequence = extension
@@ -227,7 +229,7 @@ if __name__ == '__main__' and sequence == 'random_choke_ramp':
         final_choke_val = sequence[0][-1]
         if final_choke_val == 100: # Capped upwards, can span downwards again
             rising = False
-        elif final_choke_val == 30: # Capped downwards, can span upwards again
+        elif final_choke_val == 60: # Capped downwards, can span upwards again. Also don't want to go below 60 after rising above
             rising = True
 
         if rising:
@@ -244,7 +246,64 @@ if __name__ == '__main__' and sequence == 'random_choke_ramp':
     axs[0].legend(loc='best')
     axs[1].plot(sequence[1][:], label='gas_rate', color='tab:green')
     axs[1].legend(loc='best')
-    plt.get_current_fig_manager().full_screen_toggle()
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
+    plt.show(block=False)
+    plt.pause(15)
+    plt.close()
+
+    sequence = general_csv(sequence, interval=1)
+
+    filename = 'random_gl_ramp_'
+    nr = 0
+    csv_path = Path(__file__).parent / ('inputs/random_gl_ramp/' + filename + '_' + str(nr) + '.csv')
+    safe_save(csv_path, sequence)
+    yaml_path = csv_path.parent / (csv_path.stem + '.yaml')
+    with open(yaml_path, "w", encoding = "utf-8") as yaml_file:
+        yaml_file.write(dump(specifications, default_flow_style = False, allow_unicode = True, encoding = None))
+
+if __name__ == '__main__' and sequence == 'random_choke_ramp':
+    sequence = []
+    global_min = 60
+    global_max = 100
+    specifications = {'init': global_min, 
+                    'choke_bounds': [global_min, 70], 
+                    'waiting_limits': [74,75], 
+                    'increment': 2, 
+                    'num_steps': 1000,
+                    'p_inc': [0.55,0.45]} # 55% chance to increment, 45% chance to decrement. Intentionally skew the ramp upwards.
+    rising = True
+    for i in range(10):
+        extension = random_choke(**specifications)
+        if not len(sequence): # So far, it's empty
+            sequence = extension
+        else:
+            sequence[0].extend(extension[0])
+            sequence[1].extend(extension[1])
+
+        # Update for next iteration
+        final_choke_val = sequence[0][-1]
+        if final_choke_val == global_max: # Capped upwards, can span downwards again
+            rising = False
+        elif final_choke_val == global_min: # Capped downwards, can span upwards again. Also don't want to go below 60 after rising above
+            rising = True
+
+        if rising:
+            specifications['p_inc'] = [0.53,0.47]
+            specifications['choke_bounds'] = [max(final_choke_val, global_min), min(final_choke_val + 20, global_max)]
+        else:
+            specifications['p_inc'] = [0.47,0.53]
+            specifications['choke_bounds'] = [max(final_choke_val - 20,global_min),min(final_choke_val, global_max)]
+        specifications['init'] = final_choke_val
+    
+    # Visualize result
+    fig, axs = plt.subplots(2)
+    axs[0].plot(sequence[0][:], label='choke', color='tab:orange')
+    axs[0].legend(loc='best')
+    axs[1].plot(sequence[1][:], label='gas_rate', color='tab:green')
+    axs[1].legend(loc='best')
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
     plt.show(block=False)
     plt.pause(15)
     plt.close()
@@ -252,7 +311,7 @@ if __name__ == '__main__' and sequence == 'random_choke_ramp':
     sequence = general_csv(sequence, interval=1)
 
     filename = 'random_choke_ramp_short'
-    nr = 0
+    nr = 2
     csv_path = Path(__file__).parent / ('inputs/random_choke_ramp/' + filename + '_' + str(nr) + '.csv')
     safe_save(csv_path, sequence)
     yaml_path = csv_path.parent / (csv_path.stem + '.yaml')

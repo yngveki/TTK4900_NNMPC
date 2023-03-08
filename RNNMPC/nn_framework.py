@@ -50,13 +50,13 @@ class GroundTruth():
 # -- SETUP -- #
 TEST = True
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_1_normalized_output_clipped.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_0_normalized_output_clipped.csv'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_short_0_normalized_output_clipped.csv', 'random_choke_short'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_1_locally_normalized.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_medium_1_locally_normalized.csv'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_short_1_locally_normalized.csv', 'random_choke_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_2_normalized_output_clipped.csv', 'random_choke_long'
-csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
-model_nr = 0
-model_name = "model_test_sampling" + str(model_nr)
+# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
+model_nr = 1
+model_name = "model_random_choke_ramp_" + str(model_nr)
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
@@ -89,7 +89,8 @@ if __name__ == '__main__' and not TEST:
     ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
     ax.legend(loc='center right', prop={'size': 15})
 
-    plt.get_current_fig_manager().full_screen_toggle()
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
     plt.show(block=False)
     plt.pause(15)
     plt.close()
