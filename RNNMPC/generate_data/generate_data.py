@@ -103,7 +103,7 @@ def clip_beginning(series, clip_length=100):
 
 # ----- SCRIPT RUN ----- #
 if __name__ == '__main__':
-    for i in range(3):
+    for i in range(1):
         # -- SETUP -- #
         config_path = Path(__file__).parent / "../config/generate_data.yaml"
         with open(config_path, "r") as f:
@@ -115,8 +115,8 @@ if __name__ == '__main__':
         delta_t = config['delta_t']
         resolution = config['resolution']
         
-        file_family = 'random_choke'
-        filename = 'random_choke_short_' + str(i)
+        file_family = 'random_choke_ramp'
+        filename = 'random_choke_ramp_' + str(i)
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
         input_profile = Timeseries(filepath, delta_t=10)
         start_time = input_profile.begin
