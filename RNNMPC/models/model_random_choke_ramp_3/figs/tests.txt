@@ -1,0 +1,2 @@
+Test results showed in 'random_choke_short' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_choke_ramp\csv\random_choke_ramp_short_1_globally_normalized_small_range.csv
