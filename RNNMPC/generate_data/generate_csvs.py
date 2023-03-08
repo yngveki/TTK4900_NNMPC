@@ -217,7 +217,14 @@ def concatenate(*args):
 
     df = pd.read_csv(args[0]) # read paths[0]
     for nr in range(1, len(args)):
-        df = df.append(pd.read_csv(args[nr])) # extend df from paths[1:]
+        # Update timestamps
+        t = df.values[-1][0]
+        df_next = pd.read_csv(args[nr])
+        for idx in range(len(df.values)):
+            df_next.values[idx][0] += t
+
+        # Extend dataframe
+        df = df.append(df_next)
 
     sequence = df.values.tolist()
     sequence = []
@@ -225,14 +232,6 @@ def concatenate(*args):
     sequence.extend(df.values.tolist()) # Stupid to have to do it like this, but I'd have to refactor more than I have time to if not using safe_save
 
     return sequence
-    # assert isinstance(data, list), 'data must be a list of input for choke and GL'
-    # data_transposed = np.array(data).T
-    # for entry in data_transposed:
-    #     sequence.append([time, entry[0], entry[1]])
-    #     time += delta_t * interval
-
-    # # Make into list to fit with the rest of the facilities in here:
-    # return df.values.tolist()
 
 # ----- SCRIPT ----- #
 sequence = 'concatenate'
@@ -240,11 +239,15 @@ sequence = 'concatenate'
 if __name__ == '__main__' and sequence == 'concatenate':
     paths = [Path(__file__).parent / 'inputs/steps_choke/step_choke_0_2.csv',
              Path(__file__).parent / 'inputs/steps_GL/step_GL_2000_2166.csv']
+    # paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_1.csv',
+    #          Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_60-100.csv',
+    #          Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv',
+    #          Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_0.csv']
     
     concatenated = concatenate(*paths)
     save_path = Path(__file__).parent / 'inputs/random_mixed_ramp/mixed_test_0.csv'
     safe_save(save_path, concatenated)
-    
+
 if __name__ == '__main__' and sequence == 'random_gl_ramp':
     # TODO: Make p_inc = [100,0] for when beneath 2000
     global_min = 2000 # Assume already spun up by a ramp; concatenate input profiles later
@@ -298,7 +301,7 @@ if __name__ == '__main__' and sequence == 'random_gl_ramp':
 
     sequence = general_csv(sequence, interval=1)
 
-    filename = 'random_gl_ramp_'
+    filename = 'random_gl_ramp'
     nr = 0
     csv_path = Path(__file__).parent / ('inputs/random_gl_ramp/' + filename + '_' + str(nr) + '.csv')
     safe_save(csv_path, sequence)
@@ -398,11 +401,20 @@ if __name__ == '__main__' and sequence == 'random_choke':
         with open(yaml_path, "w", encoding = "utf-8") as yaml_file:
             yaml_file.write(dump(specifications, default_flow_style = False, allow_unicode = True, encoding = None))
 
-# -- Generating a controlled ramp from 0% to 100% to 0% opening in choke -- #
+# -- Generating a controlled ramp for gas lift rate -- #
+if __name__ == '__main__' and sequence == 'ramp_gl':
+    GL = ramp(min=0, max=2000, resolution=200)
+    choke = [100] * len(GL)
+    sequence = general_csv([choke, GL], time=0, delta_t=10, interval=30)
+    csv_path = Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv'
+    safe_save(csv_path, sequence)
+
+# -- Generating a controlled ramp for choke opening -- #
 if __name__ == '__main__' and sequence == 'ramp_choke':
-    sequence = ramp_choke()
-    sequence = general_csv(sequence, time=0, delta_t=10, interval=1)
-    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval1.csv'
+    choke = ramp(min=60, max=100, resolution=2)
+    GL = [0] * len(choke)
+    sequence = general_csv([choke, GL], time=0, delta_t=10, interval=30)
+    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_60-100.csv'
     safe_save(csv_path, sequence)
 
 # -- Generating a random "staircase" type input_profile represented by a csv -- #
