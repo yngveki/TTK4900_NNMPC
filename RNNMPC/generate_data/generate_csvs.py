@@ -8,6 +8,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 import numpy as np
+import pandas as pd
 from pathlib import Path
 from matplotlib.pylab import plt
 import csv
@@ -17,7 +18,7 @@ from yaml import dump
 from src.utils.timeseries import Timeseries
 
 def safe_save(csv_path, data):
-    assert isinstance(data, list), "This save function is implemented only for lists of csv-rows!"
+    assert isinstance(data, list), "This save function is implemented only for csv-rows of datatype `list`!"
 
     if not exists(csv_path):    # Safe to save; nothing can be overwritten
         with open(csv_path, 'w', newline='') as f:
@@ -154,28 +155,30 @@ def ramp_choke(min=0, max=100, resolution=2):
     GL = [0] * (1 + 2 * (max - min) // resolution)
     return [choke, GL]
 
-def random_choke(init=30, choke_bounds=[30,70], waiting_limits=[10,50], increment=2, num_steps=1000, p_inc=[0.5,0.5]):
+def input_random_ramp(init=30, bounds=[30,70], waiting_limits=[10,50], increment=2, num_steps=1000, p_inc=[0.5,0.5], do_choke=True):
     """
-    2) Kun choke - null gassløft, ramp choke opp og ned litt tilfeldig i typisk arbeidsområde 30-70%, varier hvor lenge du venter mellom hvert 2% sprang.
+    Randomly varying within given limits for specified input variable
     
     args:
-        :param init: initial value for choke
-        :param choke_bounds: legal bounds for values for choke
+        :param init: initial value for input variable
+        :param bounds: legal bounds for values for input variable
         :param waiting_limits: bounds for random waiting time [timesteps]
-        :param increment: how much choke changes for each step
+        :param increment: how much input variable changes for each step
         :param num_steps: how many steps should be performed during the simulation (_not_ how many timesteps)
+        :param p_inc: probabilistic distribution for incrementing or decrementing
+        :param do_choke: whether choke is the randomly ramped input or not (`False` indicates gas lift instead)
 
     Note! Current implementation yields a simulation that is exactly num_steps amount of timesteps, since the random increments
           are not furthered to general_csv() later!
     """
-    assert init >= choke_bounds[0] and init <= choke_bounds[1], f'init must be within legal range!\n'
+    assert init >= bounds[0] and init <= bounds[1], f'init must be within legal range!\n'
     assert np.sum(p_inc) == 1.0, 'Probabilities must sum to 1.0 exactly!'
 
-    choke = [0] * num_steps
-    choke[0] = init
+    inpt = [0] * num_steps
+    inpt[0] = init
     interval = np.random.randint(waiting_limits[0], waiting_limits[1])
     wait = interval - 1 # Since t == 0 causes one skipped decrement
-    for t in range(len(choke)):
+    for t in range(len(inpt)):
         if t == 0:
             continue
 
@@ -186,59 +189,100 @@ def random_choke(init=30, choke_bounds=[30,70], waiting_limits=[10,50], incremen
             do_inc = np.random.choice([True, False], p=p_inc)
             
             if do_inc: # Increment
-                choke[t] = np.min((choke[t-1] + increment, choke_bounds[1]))
+                inpt[t] = np.min((inpt[t-1] + increment, bounds[1]))
             else:      # Decrement
-                choke[t] = np.max((choke[t-1] - increment, choke_bounds[0]))
+                inpt[t] = np.max((inpt[t-1] - increment, bounds[0]))
 
             interval = np.random.randint(waiting_limits[0], waiting_limits[1])
             wait = interval 
         else:
-            choke[t] = choke[t - 1]
+            inpt[t] = inpt[t - 1]
         
         wait -= 1
 
-    GL = [0] * num_steps
-    return [choke, GL]
+    if do_choke:
+        GL = [0] * num_steps
+        return [inpt, GL]
+    else:
+        choke = [100] * num_steps
+        return [choke, inpt]
+    
+def concatenate(*args):
+    """
+    Concatenates data given by csv-paths in args. Fragile! Assumes user gives only paths to files on same format!
+    """
+    for arg in args:
+        assert isinstance(arg, Path), 'All arguments must represent a path to a .csv-file!'
+    assert len(args) >= 2, 'Nothing to concatenate when fewer than 2 arguments!'
+
+    df = pd.read_csv(args[0]) # read paths[0]
+    for nr in range(1, len(args)):
+        df = df.append(pd.read_csv(args[nr])) # extend df from paths[1:]
+
+    sequence = df.values.tolist()
+    sequence = []
+    sequence.append(['time', 'choke', 'GL']) # Header
+    sequence.extend(df.values.tolist()) # Stupid to have to do it like this, but I'd have to refactor more than I have time to if not using safe_save
+
+    return sequence
+    # assert isinstance(data, list), 'data must be a list of input for choke and GL'
+    # data_transposed = np.array(data).T
+    # for entry in data_transposed:
+    #     sequence.append([time, entry[0], entry[1]])
+    #     time += delta_t * interval
+
+    # # Make into list to fit with the rest of the facilities in here:
+    # return df.values.tolist()
 
 # ----- SCRIPT ----- #
-sequence = 'random_choke_ramp'
+sequence = 'concatenate'
 
 if __name__ == '__main__' and sequence == 'concatenate':
-    print('TODO: Implement concatenation of input profiles')
-
+    paths = [Path(__file__).parent / 'inputs/steps_choke/step_choke_0_2.csv',
+             Path(__file__).parent / 'inputs/steps_GL/step_GL_2000_2166.csv']
+    
+    concatenated = concatenate(*paths)
+    save_path = Path(__file__).parent / 'inputs/random_mixed_ramp/mixed_test_0.csv'
+    safe_save(save_path, concatenated)
+    
 if __name__ == '__main__' and sequence == 'random_gl_ramp':
-    print('have not yet modded this to fit gl!')
-    NotImplementedError
-    sequence = []
-    specifications = {'init': 30, 
-                    'choke_bounds': [30, 50], 
+    # TODO: Make p_inc = [100,0] for when beneath 2000
+    global_min = 2000 # Assume already spun up by a ramp; concatenate input profiles later
+    global_max = 10000    
+    specifications = {'init': global_min, 
+                    'bounds': [2000, 4000], 
                     'waiting_limits': [74,75], 
-                    'increment': 2, 
+                    'increment': 200, 
                     'num_steps': 1000,
-                    'p_inc': [0.55,0.45]} # 55% chance to increment, 45% chance to decrement. Intentionally skew the ramp upwards.
-    rising = True
-    for i in range(30):
-        extension = random_choke(**specifications)
-        if not len(sequence): # So far, it's empty
-            sequence = extension
-        else:
-            sequence[0].extend(extension[0])
-            sequence[1].extend(extension[1])
+                    'p_inc': [0.55,0.45],
+                    'do_choke': False}
+    sequence = input_random_ramp(**specifications)
+    rising = True    
+    for i in range(99):
+        # if i == 0:
+        #     sequence.append(input_random_ramp(**specifications))
+        # extension = input_random_ramp(**specifications)
+        # if not len(sequence): # So far, it's empty
+        #     sequence = extension
+        # else:
+        extension = input_random_ramp(**specifications)
+        sequence[0].extend(extension[0])
+        sequence[1].extend(extension[1])
 
         # Update for next iteration
-        final_choke_val = sequence[0][-1]
-        if final_choke_val == 100: # Capped upwards, can span downwards again
+        final_inpt_val = sequence[1][-1]
+        if final_inpt_val == global_max: # Capped upwards, can span downwards again
             rising = False
-        elif final_choke_val == 60: # Capped downwards, can span upwards again. Also don't want to go below 60 after rising above
+        elif final_inpt_val == 2000: # Don't want to be working beneath 2000 when it's active
             rising = True
 
         if rising:
-            specifications['p_inc'] = [0.55,0.45]
-            specifications['choke_bounds'] = [max(final_choke_val, 30), min(final_choke_val + 20, 100)]
+            specifications['p_inc'] = [0.53,0.47]
+            specifications['bounds'] = [max(final_inpt_val, global_min), min(final_inpt_val + 2000, global_max)]
         else:
-            specifications['p_inc'] = [0.45,0.55]
-            specifications['choke_bounds'] = [max(final_choke_val - 20,30),min(final_choke_val, 100)]
-        specifications['init'] = final_choke_val
+            specifications['p_inc'] = [0.47,0.53]
+            specifications['bounds'] = [max(final_inpt_val - 2000, global_min), min(final_inpt_val, global_max)]
+        specifications['init'] = final_inpt_val
     
     # Visualize result
     fig, axs = plt.subplots(2)
@@ -267,14 +311,14 @@ if __name__ == '__main__' and sequence == 'random_choke_ramp':
     global_min = 60
     global_max = 100
     specifications = {'init': global_min, 
-                    'choke_bounds': [global_min, 70], 
+                    'bounds': [global_min, 70], 
                     'waiting_limits': [74,75], 
                     'increment': 2, 
                     'num_steps': 1000,
                     'p_inc': [0.55,0.45]} # 55% chance to increment, 45% chance to decrement. Intentionally skew the ramp upwards.
     rising = True
     for i in range(10):
-        extension = random_choke(**specifications)
+        extension = input_random_ramp(**specifications)
         if not len(sequence): # So far, it's empty
             sequence = extension
         else:
@@ -282,19 +326,19 @@ if __name__ == '__main__' and sequence == 'random_choke_ramp':
             sequence[1].extend(extension[1])
 
         # Update for next iteration
-        final_choke_val = sequence[0][-1]
-        if final_choke_val == global_max: # Capped upwards, can span downwards again
+        final_inpt_val = sequence[0][-1]
+        if final_inpt_val == global_max: # Capped upwards, can span downwards again
             rising = False
-        elif final_choke_val == global_min: # Capped downwards, can span upwards again. Also don't want to go below 60 after rising above
+        elif final_inpt_val == global_min: # Capped downwards, can span upwards again. Also don't want to go below 60 after rising above
             rising = True
 
         if rising:
             specifications['p_inc'] = [0.53,0.47]
-            specifications['choke_bounds'] = [max(final_choke_val, global_min), min(final_choke_val + 20, global_max)]
+            specifications['bounds'] = [max(final_inpt_val, global_min), min(final_inpt_val + 20, global_max)]
         else:
             specifications['p_inc'] = [0.47,0.53]
-            specifications['choke_bounds'] = [max(final_choke_val - 20,global_min),min(final_choke_val, global_max)]
-        specifications['init'] = final_choke_val
+            specifications['bounds'] = [max(final_inpt_val - 20, global_min), min(final_inpt_val, global_max)]
+        specifications['init'] = final_inpt_val
     
     # Visualize result
     fig, axs = plt.subplots(2)
@@ -343,7 +387,7 @@ if __name__ == '__main__' and sequence == 'random_choke':
                         'waiting_limits': [99,100], 
                         'increment': 2, 
                         'num_steps': 1000}
-        sequence = random_choke(**specifications)
+        sequence = input_random_ramp(**specifications)
         sequence = general_csv(sequence, interval=1)
 
         filename = 'random_choke'
