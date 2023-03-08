@@ -197,18 +197,23 @@ class RNNMPC:
         # (3b)
         constraints.append(self.Y[:,self.my] == self.yk) 
         
+        l_U = self.U.shape[1]
+        l_Y = self.Y.shape[1]
         for i in range(self.Hp):
                
             # (3c)
-            #! Verify that input is defined corectly with respect to RNN-fig
-            t1 = self.U[0,self.mu + i:i - 1:-1]
-            t2 = self.U[1,self.mu + i:i - 1:-1]
-            t3 = self.Y[0,self.my + i:i - 1:-1]
-            t4 = self.Y[1,self.my + i:i - 1:-1]
-            x = ca.horzcat(self.U[0,self.mu + i:i - 1:-1],
-                           self.U[1,self.mu + i:i - 1:-1],
-                           self.Y[0,self.my + i:i - 1:-1],
-                           self.Y[1,self.my + i:i - 1:-1])
+            # Since we want to index from current->past, we stride negatively. This makes indexing tricksy. Bear with me:
+            # U_(k) -> U_(k-m_u) = U[-len(U) + (mu + 1) - 1:-l - 1:-1] = U[-l + mu:-l - 1:-1]
+            # Which generalizes to
+            # U_(k+i) -> U_(k-m_u+i) = U[-l + mu + i:-l - 1 + i:-1]
+            # 
+            # Exactly the same applies to Y.
+            t1 = -l_U + self.mu + i
+            t2 = -l_U - 1 + i
+            x = ca.horzcat(self.U[0,-l_U + self.mu + i:-l_U - 1 + i:-1],
+                           self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
+                           self.Y[0,-l_U + self.mu + i:-l_U - 1 + i:-1],
+                           self.Y[1,-l_U + self.mu + i:-l_U - 1 + i:-1])
             # x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
             # x = ca.reshape(x, x.numel(), 1)
             constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 

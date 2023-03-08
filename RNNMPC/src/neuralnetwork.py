@@ -15,7 +15,7 @@ from yaml import safe_load
 # ----- NEURAL NETWORK ----- #
 class NeuralNetwork(nn.Module):
     
-    def __init__(self, layers=None, model_path=None):
+    def __init__(self, layers=None, model_path=None, act='ReLU'):
         """
         Initializes a network with the given structural hyperparameters.
 
@@ -36,7 +36,13 @@ class NeuralNetwork(nn.Module):
 
         self.layers = nn.ModuleList(temp)
 
-        self.act = torch.nn.ReLU(inplace=False)
+        assert isinstance(act, str), "act must be a string, and exactly equal one of the following two:\n\t1) \'ReLU\'\n\t2) \'LeakyReLU\'"
+        if act == 'ReLU':
+            self.act = torch.nn.ReLU(inplace=False)
+        elif act == 'LeakyReLU':
+            self.act = torch.nn.LeakyReLU(negative_slope=0.2, inplace=False)
+        else:
+            return NotImplementedError
 
         if model_path is not None:
             try:

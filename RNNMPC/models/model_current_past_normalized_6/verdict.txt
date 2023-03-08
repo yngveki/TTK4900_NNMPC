@@ -1,0 +1,3 @@
+It seems that adding Leaky ReLU as activation function (instead of regular ReLU) caused the line that appears in model_current_past_5 to disappear in favour of at least some dynamics prediction, and validation error seems to be decreasing at every epoch, now.
+
+No idea what would be the best "leak rate" (negative slope), but from the looks of it, I like how Leaky ReLU allows neurons to not die off; seems like that really played a major role in the flatline prediction models.
