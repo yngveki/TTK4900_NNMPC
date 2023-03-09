@@ -62,9 +62,6 @@ def train_loop(dataloader, model, loss_fn, optimizer):
                 output = model(X)
                 truth = truth.float()
 
-                # inputs.append(X)
-                # outputs.append(output)
-                # labels.append(truth)
                 loss = loss_fn(output, truth)
                 tot_loss += loss
                 batch_mse += loss

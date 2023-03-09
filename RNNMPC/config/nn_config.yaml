@@ -1,9 +1,9 @@
 activation: 'LeakyReLU' # Can be either 'ReLU' or 'LeakyReLU'
 
 STRUCTURE: 
-  mu: 10          # history of inputs considered
-  my: 10          # history of outputs considered
-  hlszs: [32]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
+  mu: 30          # history of inputs considered
+  my: 30          # history of outputs considered
+  hlszs: [100]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
 
 LEARNING:
   bsz: 64         # batch size

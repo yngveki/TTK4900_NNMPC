@@ -116,7 +116,7 @@ if __name__ == '__main__':
         resolution = config['resolution']
         
         file_family = 'random_mixed_ramp'
-        filename = 'mixed_ramp_' + str(i)
+        filename = 'mixed_ramp_short_' + str(i)
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
         input_profile = Timeseries(filepath, delta_t=10)
         start_time = input_profile.begin

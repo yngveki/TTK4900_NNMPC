@@ -7,18 +7,18 @@ PLUGIN_OPTIONS:
   
 SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
   max_iter: 3000 # default
-  tol: 7000 # 1e8
-  dual_inf_tol: 7000 # 1e8
-  constr_viol_tol: 7000 # 1e8
-  compl_inf_tol: 7000 # 1e8
-  acceptable_tol: 7000 # 1e8
+  tol: 1 # 7000 # 1e8
+  dual_inf_tol: 1 # 7000 # 1e8
+  constr_viol_tol: 1 # 7000 # 1e8
+  compl_inf_tol: 1 # 7000 # 1e8
+  acceptable_tol: 1 # 7000 # 1e8
   acceptable_iter: 5
 
 TUNING_PARAMETERS:
   #! Horizon values are tentative and should be tuned properly
   # Horizons (current OCP-formulation demands these be equal)
-  Hu: 20 # Small value during testing for runtime-speed
-  Hp: 20 # Small value during testing for runtime-speed
+  Hu: 80 # Small value during testing for runtime-speed
+  Hp: 80 # Small value during testing for runtime-speed
 
   #! Tuning parameters are tentative and should be tuned properly
   # Tuning parameters

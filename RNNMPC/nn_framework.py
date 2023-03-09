@@ -48,14 +48,15 @@ class GroundTruth():
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TEST = True
+TEST = False
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/random_choke_ramp_2_globally_normalized_small_range.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_medium_0_normalized_output_clipped.csv'
-csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke_ramp/csv/random_choke_ramp_short_0_normalized_output_clipped.csv', 'random_choke_short'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_0_globally_normalized.csv'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_0_globally_normalized.csv', 'mixed_ramp_short'
+# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv', 'test_on_training_set'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_2_normalized_output_clipped.csv', 'random_choke_long'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
-model_nr = 0
+model_nr = 4
 model_name = "model_mixed_ramp_" + str(model_nr)
 
 delta_t = 10
@@ -88,6 +89,7 @@ if __name__ == '__main__' and not TEST:
     ax.set_xlabel('epochs')
     ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
     ax.legend(loc='center right', prop={'size': 15})
+    ax.set_yscale('log')
 
     manager = plt.get_current_fig_manager()
     manager.window.showMaximized()
@@ -176,6 +178,7 @@ if __name__ == '__main__' and TEST:
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
     axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
     axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
+    axes[0,0].plot(t[offset_y1:], pred['bias y1'], label='bias, gas rate predictions', color='tab:green')
     axes[0,0].legend(loc='best', prop={'size': 15})
 
     # Plotting ground truth and predicted oil rates
@@ -183,6 +186,7 @@ if __name__ == '__main__' and TEST:
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
     axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
     axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
+    axes[0,1].plot(t[offset_y2:], pred['bias y2'], label='bias, oil rate predictions', color='tab:green')
     axes[0,1].legend(loc='best', prop={'size': 15})
 
     # Plotting history of choke input
