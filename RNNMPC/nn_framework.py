@@ -48,15 +48,15 @@ class GroundTruth():
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TEST = False
+TEST = True
 
 csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_0_globally_normalized.csv'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_0_globally_normalized.csv', 'mixed_ramp_short'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv', 'test_on_training_set'
+csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv', 'test_on_training_set'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_choke/csv/random_choke_2_normalized_output_clipped.csv', 'random_choke_long'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_output_clipped.csv', 'step_choke'
-model_nr = 5
+model_nr = 6
 model_name = "model_mixed_ramp_" + str(model_nr)
 
 delta_t = 10

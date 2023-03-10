@@ -45,7 +45,6 @@ class EarlyStopping():
 def train_loop(dataloader, model, loss_fn, optimizer):
     model.train()
     num_batches = len(dataloader)
-    # total_itrs = 0
     tot_loss = 0
 
     for batch_nr, batch in enumerate(dataloader):
@@ -66,10 +65,6 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
         if batch_nr % 50 == 0:
             print(f"loss: {batch_mse.item():>9f},  [batch: {batch_nr:>5d}/{num_batches:>5d}]")
-
-    # n_samples = batch_nr * dataloader.batch_size
-    # size = len(dataloader.dataset)
-    # size -= size % dataloader.batch_size
     
     return (tot_loss / (num_batches * dataloader.batch_size)).item()
 
