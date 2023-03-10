@@ -62,9 +62,6 @@ def train_loop(dataloader, model, loss_fn, optimizer):
                 output = model(X)
                 truth = truth.float()
 
-                # inputs.append(X)
-                # outputs.append(output)
-                # labels.append(truth)
                 loss = loss_fn(output, truth)
                 tot_loss += loss
                 batch_mse += loss
@@ -126,6 +123,7 @@ def validation_loop(dataloader, model, epoch):
     return mse_val
 
 # ----- TRAINING ----- #
+# TODO: Plot norm of gradient over time to investigate whether local minima are the issue or not
 def train(hyperparameters, csv_path_train, csv_path_val):
 
     act = hyperparameters['activation']

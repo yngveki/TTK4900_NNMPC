@@ -25,9 +25,10 @@ def test(model_path, csv_path, hyperparameters):
 
     test_dl = load_input_data(csv_path, bsz=batch_size, mu=mu, my=my)
 
-    predicted = {}
-    predicted['y1'] = []
-    predicted['y2'] = []
+    predicted = {'y1': [],
+                 'y2': [],
+                 'bias y1': [],
+                 'bias y2': []}
     with torch.no_grad():
         for sample in test_dl.dataset:
             u1 = torch.Tensor(sample['u1'])
@@ -43,6 +44,10 @@ def test(model_path, csv_path, hyperparameters):
             predicted['y2'].append(pred[1])
 
             test_loss = loss_fn(pred, truth).item()
+
+            # Log bias
+            predicted['bias y1'].append(truth[0] - pred[0])
+            predicted['bias y2'].append(truth[1] - pred[1])
 
     
     num_batches = len(test_dl)

@@ -7,12 +7,13 @@ from src.utils.custom_timing import Timer
 from src.utils.plotting import plot_RNNMPC
 if __name__ == '__main__':
 
-    model_name = 'model_masteroppgave_2'
-    model_path = Path(__file__).parent / ('models/model_masteroppgave_2/' + model_name + '.pt')
+    # model_masteroppgave_2 is current best candidate. Using others now for testing
+    model_name = 'model_mixed_ramp_1'
+    model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
     fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
     ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
     mpc_config_path = Path(__file__).parent / 'config/mpc_config.yaml'
-    nn_config_path = Path(__file__).parent / ('models/model_masteroppgave_2/' + model_name + '.yaml')
+    nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
     fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
     # Initialize the controller

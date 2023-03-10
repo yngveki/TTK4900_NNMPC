@@ -1,0 +1,3 @@
+The purpose of the data here is to span practically all the input space. So far this is done fairly manually, in an arguably PRBS-esque method.
+
+Since both inputs at at least some points are maxed out, the full input space (from [choke=60,gl=0] and up) is covered, and so global normalization is used (i.e. bounds [0,18537] and [0,349])

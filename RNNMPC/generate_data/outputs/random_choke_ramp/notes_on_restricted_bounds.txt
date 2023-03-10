@@ -1,0 +1,6 @@
+Files on format:
+    `random_choke_ramp_medium_i_globally_normalized_small_range`
+
+have been normalized between ranges:
+    - gl: [4500,7000]
+    - choke: [180,260]

@@ -1,0 +1,31 @@
+choke_bounds:
+- &id002 !!python/object/apply:numpy.core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - i4
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    TAAAAA==
+- !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    YAAAAA==
+increment: 2
+init: *id002
+num_steps: 1000
+p_inc:
+- 0.55
+- 0.45
+waiting_limits:
+- 74
+- 75

@@ -103,7 +103,7 @@ def clip_beginning(series, clip_length=100):
 
 # ----- SCRIPT RUN ----- #
 if __name__ == '__main__':
-    for i in range(3):
+    for i in range(1):
         # -- SETUP -- #
         config_path = Path(__file__).parent / "../config/generate_data.yaml"
         with open(config_path, "r") as f:
@@ -115,8 +115,8 @@ if __name__ == '__main__':
         delta_t = config['delta_t']
         resolution = config['resolution']
         
-        file_family = 'random_choke'
-        filename = 'random_choke_short_' + str(i)
+        file_family = 'random_mixed_ramp'
+        filename = 'mixed_ramp_short_' + str(i)
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
         input_profile = Timeseries(filepath, delta_t=10)
         start_time = input_profile.begin
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         warm_start_vals = input_profile.init_vals # Let system settle with desired initial value for data sequence
         input_profile.prepend(val=warm_start_vals, length=warm_start_t // delta_t)
 
-        save_name = ''.join((filename, '_normalized_output_clipped'))
+        save_name = ''.join((filename, '_globally_normalized')) # Removd "output_clipped"; don't think it adds much to say that I've removed the warm start
         model_path = Path(__file__).parent / "../fmu/SingleWell_filtGas.fmu"
         model, y1, y2 = init_model(model_path, start_time, input_profile.end, 
                                 Uk=warm_start_vals, warm_start_t=warm_start_t, 
@@ -187,7 +187,8 @@ if __name__ == '__main__':
 
         fig.suptitle('Step response')
         fig.tight_layout()
-        plt.get_current_fig_manager().full_screen_toggle()
+        manager = plt.get_current_fig_manager()
+        manager.window.showMaximized()
         plt.show(block=False)
         plt.pause(15)
         plt.close()

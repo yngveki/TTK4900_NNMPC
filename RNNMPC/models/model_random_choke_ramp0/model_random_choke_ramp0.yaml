@@ -1,0 +1,14 @@
+FILES:
+  train_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_choke_ramp\csv\random_choke_ramp_0_normalized_output_clipped.csv
+  val_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_choke_ramp\csv\random_choke_ramp_medium_0_normalized_output_clipped.csv
+LEARNING:
+  bsz: 64
+  e: 500
+  lr: 0.001
+  p: 8
+STRUCTURE:
+  hlszs:
+  - 32
+  mu: 10
+  my: 10
+activation: LeakyReLU
