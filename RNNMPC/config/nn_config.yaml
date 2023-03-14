@@ -8,5 +8,8 @@ STRUCTURE:
 LEARNING:
   bsz: 64         # batch size
   e: 100          # epochs
+  p: 5            # patience
+
+OPTIMIZER:
   lr: 0.001       # learning rate
-  p: 8           # patience
+  weight_decay: 0.1

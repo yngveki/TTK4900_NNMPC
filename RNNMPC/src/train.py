@@ -94,7 +94,8 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     mu = hyperparameters['STRUCTURE']['mu']
     my = hyperparameters['STRUCTURE']['my']
     hlszs = hyperparameters['STRUCTURE']['hlszs']
-    learning_rate = hyperparameters['LEARNING']['lr']
+    # weight_decay = hyperparameters['LEARNING']['w_decay']
+    # learning_rate = hyperparameters['LEARNING']['lr']
     batch_size = hyperparameters['LEARNING']['bsz']
     epochs = hyperparameters['LEARNING']['e']
     patience = hyperparameters['LEARNING']['p']
@@ -106,7 +107,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     layers.append(2)                           # Output layer
     model = NeuralNetwork(layers=layers, act=act)
     loss_fn = nn.MSELoss() # MSE as loss func. for a regression problem
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), **hyperparameters['OPTIMIZER'])#lr=learning_rate, weight_decay=weight_decay)
 
     train_dl = load_input_data(csv_path_train, bsz=batch_size, mu=mu, my=my, shuffle=True)
     val_dl = load_input_data(csv_path_val, bsz=batch_size, mu=mu, my=my, shuffle=True)
