@@ -7,6 +7,6 @@ STRUCTURE:
 
 LEARNING:
   bsz: 64         # batch size
-  e: 500          # epochs
+  e: 100          # epochs
   lr: 0.001       # learning rate
-  p: 8            # patience
+  p: 8           # patience

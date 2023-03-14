@@ -238,13 +238,13 @@ sequence = 'concatenate'
 
 # -- Concatenating input profiles given by different csv-paths -- #
 if __name__ == '__main__' and sequence == 'concatenate':
-    paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_medium_1.csv',
-             Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_94-100.csv',
+    paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_medium_2.csv',
+             Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_90-100.csv',
              Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv',
-             Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_medium_0.csv']
+             Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_medium_1.csv']
     
     concatenated = concatenate(*paths)
-    save_path = Path(__file__).parent / 'inputs/random_mixed_ramp/mixed_ramp_medium_0.csv'
+    save_path = Path(__file__).parent / 'inputs/random_mixed_ramp/mixed_ramp_medium_1.csv'
     safe_save(save_path, concatenated)
 
 # -- Generating a semi-randomly oscillating ramp for gas lift (choke = 100) -- #
@@ -295,7 +295,7 @@ if __name__ == '__main__' and sequence == 'random_gl_ramp':
     sequence = general_csv(sequence, interval=1)
 
     filename = 'random_gl_ramp_medium'
-    nr = 0
+    nr = 1
     csv_path = Path(__file__).parent / ('inputs/random_gl_ramp/' + filename + '_' + str(nr) + '.csv')
     safe_save(csv_path, sequence)
     yaml_path = csv_path.parent / (csv_path.stem + '.yaml')
@@ -405,10 +405,10 @@ if __name__ == '__main__' and sequence == 'ramp_gl':
 
 # -- Generating a controlled ramp for choke opening -- #
 if __name__ == '__main__' and sequence == 'ramp_choke':
-    choke = ramp(min=94, max=100, resolution=2)
+    choke = ramp(min=90, max=100, resolution=2)
     GL = [0] * len(choke)
     sequence = general_csv([choke, GL], time=0, delta_t=10, interval=30)
-    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_94-100.csv'
+    csv_path = Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_90-100.csv'
     safe_save(csv_path, sequence)
 
 # -- Generating a random "staircase" type input_profile represented by a csv -- #

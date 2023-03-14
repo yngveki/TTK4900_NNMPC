@@ -1,0 +1,5 @@
+Tried training the model for 100 epochs *without* early stopping, so as to see if completely overfitting would remove the errors of weak gradients in the predictions, such that when testing on the training set, it would, at least there, perform perfectly.
+
+That really didn't seem to work out. Testing on the training set yields as poor results as testing on the other sets. I don't understand.
+
+It's interesting to see that the training and validation errors are approximately stationary after ish 10 epochs (with variation, but tendency-wise), such that p=8 should be fine?

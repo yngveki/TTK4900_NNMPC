@@ -1,0 +1,14 @@
+FILES:
+  train_file: c:\Users\Ynque\Desktop\Uni\'22-'23\masteroppgave\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_0_globally_normalized.csv
+  val_file: c:\Users\Ynque\Desktop\Uni\'22-'23\masteroppgave\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_medium_0_globally_normalized.csv
+LEARNING:
+  bsz: 64
+  e: 100
+  lr: 0.001
+  p: 8
+STRUCTURE:
+  hlszs:
+  - 200
+  mu: 45
+  my: 45
+activation: LeakyReLU

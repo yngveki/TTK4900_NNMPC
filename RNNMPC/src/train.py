@@ -131,6 +131,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
         # Stopping early based on when validation error starts increasing.
         if es(abs(val_MSEs[t]), model):
             done = True
+            # print('disabled early stopping\n')
         
         t += 1
         stopwatch.lap()
