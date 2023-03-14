@@ -1,0 +1,3 @@
+Wanted to try training a smaller model with similar predictive accuracy, such that RNNMPC would run faster, hopefully.
+
+Verdict: Seems to have worked just as well with *much* lower capacity in the network.

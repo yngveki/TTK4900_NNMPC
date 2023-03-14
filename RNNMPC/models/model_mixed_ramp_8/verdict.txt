@@ -1,3 +1,5 @@
+Seems like weight decay really solved it!
+
 After experience with model becoming worse over epochs in model_mixed_ramp_7, I am trying a shorter patience value.
 
 Have also added weight decay.
