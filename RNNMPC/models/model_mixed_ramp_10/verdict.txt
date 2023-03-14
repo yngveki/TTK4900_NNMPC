@@ -1,0 +1,3 @@
+Again, wanted to test even lower capacity (than model_mixed_ramp_9).
+
+Verdict: Somewhat worse (than model_mixed_ramp_9), but not useless.
