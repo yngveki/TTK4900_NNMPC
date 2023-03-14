@@ -55,7 +55,7 @@ csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_0_globally_normalized.csv', 'mixed_ramp_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_1_globally_normalized.csv', 'mixed_ramp_medium'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv', 'test_on_training_set'
-model_nr = 7
+model_nr = 10
 model_name = "model_mixed_ramp_" + str(model_nr)
 
 delta_t = 10

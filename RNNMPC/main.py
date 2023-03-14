@@ -8,7 +8,7 @@ from src.utils.plotting import plot_RNNMPC
 if __name__ == '__main__':
 
     # model_masteroppgave_2 is current best candidate. Using others now for testing
-    model_name = 'model_mixed_ramp_1'
+    model_name = 'model_mixed_ramp_10'
     model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
     fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
     ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
