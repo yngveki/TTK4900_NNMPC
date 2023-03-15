@@ -202,14 +202,14 @@ if __name__ == '__main__' and TEST:
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-    axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange', zorder=2)
-    axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red', zorder=3)
+    axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
+    axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
     axes[0,0].legend(loc='best', prop={'size': 15})
     axes[0,0].set_ylim(0, denormalization_coeffs['y1_scale'] * 1.1)
 
     if plot_offset:
         axes00_twinx = axes[0,0].twinx()
-        axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.2, color='tab:green', zorder=1)
+        axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.2, color='tab:green')
         axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
         axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
         axes00_twinx.spines['right'].set_color('tab:green')
