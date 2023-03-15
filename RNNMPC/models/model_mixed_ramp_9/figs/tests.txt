@@ -1,2 +1,8 @@
 Test results showed in 'mixed_ramp_short' came from testing with file at:
 	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_short_0_globally_normalized.csv
+Test results showed in 'single_step' came from testing with file at:
+	C:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_50_52_globally_normalized.csv
+Test results showed in 'single_step_1' came from testing with file at:
+	C:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_20_22_globally_normalized.csv
+Test results showed in 'single_step_2' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_98_100_globally_normalized.csv

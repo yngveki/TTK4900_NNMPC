@@ -12,4 +12,4 @@ LEARNING:
 
 OPTIMIZER:
   lr: 0.001       # learning rate
-  weight_decay: 0.1
+  weight_decay: 0.2

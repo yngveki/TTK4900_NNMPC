@@ -1,0 +1,16 @@
+FILES:
+  train_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_1_globally_normalized.csv
+  val_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_medium_2_globally_normalized.csv
+LEARNING:
+  bsz: 64
+  e: 200
+  p: 8
+OPTIMIZER:
+  lr: 0.001
+  weight_decay: 0.1
+STRUCTURE:
+  hlszs:
+  - 20
+  mu: 50
+  my: 50
+activation: LeakyReLU
