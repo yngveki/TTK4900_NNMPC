@@ -62,12 +62,14 @@ TEST = True
 
 csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_1_globally_normalized.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_2_globally_normalized.csv'
+
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_1_globally_normalized.csv', 'mixed_ramp_short'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_globally_normalized.csv', 'single_step'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval30_globally_normalized.csv', 'multiple_steps_interval30'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval60_globally_normalized.csv', 'multiple_steps_interval60'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_1_globally_normalized.csv', 'test_on_training_set'
+
 model_nr = 11
 model_name = "model_mixed_ramp_" + str(model_nr)
 
@@ -198,32 +200,36 @@ if __name__ == '__main__' and TEST:
     offset_y2 = len(gt.y2) - len(pred['y2'])
 
     # Plotting ground truth and predicted gas rates
+    axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
+    axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
+    axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange', zorder=2)
+    axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red', zorder=3)
+    axes[0,0].legend(loc='best', prop={'size': 15})
+    axes[0,0].set_ylim(0, denormalization_coeffs['y1_scale'] * 1.1)
+
     if plot_offset:
         axes00_twinx = axes[0,0].twinx()
-        axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.2, color='tab:green')
+        axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.2, color='tab:green', zorder=1)
         axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
         axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
         axes00_twinx.spines['right'].set_color('tab:green')
-
-    axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
-    axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-    axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
-    axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
-    axes[0,0].legend(loc='best', prop={'size': 15})
+        axes00_twinx.set_ylim(min(pred['bias y1']) - 0.5 * abs(min(pred['bias y1'])), 3.5 * max(pred['bias y1'])) # Makes the plot less intrusive
 
     # Plotting ground truth and predicted oil rates
+    axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
+    axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
+    axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
+    axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
+    axes[0,1].legend(loc='best', prop={'size': 15})
+    axes[0,1].set_ylim(0, denormalization_coeffs['y2_scale'] * 1.1)
+    
     if plot_offset:
         axes01_twinx = axes[0,1].twinx()
         axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.2, color='tab:green')
         axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
         axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
         axes01_twinx.spines['right'].set_color('tab:green')
-
-    axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
-    axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-    axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
-    axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
-    axes[0,1].legend(loc='best', prop={'size': 15})
+        axes01_twinx.set_ylim(min(pred['bias y2']) - 0.5 * abs(min(pred['bias y2'])), 3.5 * max(pred['bias y2'])) # Makes the plot less intrusive
 
     # Plotting history of choke input
     axes[1,0].set_title('Input: choke', fontsize=20)
