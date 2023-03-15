@@ -50,8 +50,8 @@ class GroundTruth():
 # -- SETUP -- #
 TEST = True
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_0_globally_normalized.csv'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_1_globally_normalized.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_2_globally_normalized.csv'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_0_globally_normalized.csv', 'mixed_ramp_short'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_medium_1_globally_normalized.csv', 'mixed_ramp_medium'
 # csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_0_globally_normalized.csv', 'test_on_training_set'

@@ -15,11 +15,11 @@ bounds:
     - -1
     - 0
   - !!binary |
-    uAsAAA==
+    EA4AAA==
 - !!python/object/apply:numpy.core.multiarray.scalar
   - *id001
   - !!binary |
-    iBMAAA==
+    4BUAAA==
 do_choke: false
 increment: 200
 init: *id002
