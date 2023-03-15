@@ -115,8 +115,8 @@ if __name__ == '__main__':
         delta_t = config['delta_t']
         resolution = config['resolution']
         
-        file_family = 'random_mixed_ramp'
-        filename = 'mixed_ramp_short_' + str(i)
+        file_family = 'steps_choke'
+        filename = 'step_choke_50_52'# + str(i)
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
         input_profile = Timeseries(filepath, delta_t=10)
         start_time = input_profile.begin

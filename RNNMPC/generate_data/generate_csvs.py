@@ -238,14 +238,16 @@ sequence = 'concatenate'
 
 # -- Concatenating input profiles given by different csv-paths -- #
 if __name__ == '__main__' and sequence == 'concatenate':
-    paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_short_3.csv',
-             Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_78-100.csv',
-             Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv',
-             Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_short_1.csv']
+    # paths = [Path(__file__).parent / 'inputs/random_choke_ramp/random_choke_ramp_short_3.csv',
+    #          Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval30_78-100.csv',
+    #          Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval30_0-2000.csv',
+    #          Path(__file__).parent / 'inputs/random_gl_ramp/random_gl_ramp_short_1.csv']
+    paths = [Path(__file__).parent / 'inputs/ramp_choke/ramp_choke_step2_interval60_20-100.csv',
+             Path(__file__).parent / 'inputs/ramp_gl/ramp_gl_step200_interval60_0-10000.csv']
     
     concatenated = concatenate(*paths)
-    filename = 'mixed_ramp_short_1'
-    save_path = Path(__file__).parent / ('inputs/random_mixed_ramp/' + filename + '.csv')
+    filename = 'ramp_choke_gl_interval60'
+    save_path = Path(__file__).parent / ('inputs/ramp/' + filename + '.csv')
     safe_save(save_path, concatenated)
 
 # -- Generating a semi-randomly oscillating ramp for gas lift (choke = 100) -- #
@@ -399,9 +401,9 @@ if __name__ == '__main__' and sequence == 'random_choke':
 # -- Generating a controlled ramp for gas lift rate -- #
 if __name__ == '__main__' and sequence == 'ramp_gl':
     mini = 0
-    maxi = 2000
+    maxi = 10000
     res = 200
-    intrvl = 30
+    intrvl = 100
     GL = ramp(min=mini, max=maxi, resolution=res)
     choke = [100] * len(GL)
     sequence = general_csv([choke, GL], time=0, delta_t=10, interval=intrvl)
@@ -411,10 +413,10 @@ if __name__ == '__main__' and sequence == 'ramp_gl':
 
 # -- Generating a controlled ramp for choke opening -- #
 if __name__ == '__main__' and sequence == 'ramp_choke':
-    mini = 78
+    mini = 20
     maxi = 100
     res = 2
-    intrvl = 30
+    intrvl = 100
     choke = ramp(min=mini, max=maxi, resolution=res)
     GL = [0] * len(choke)
     sequence = general_csv([choke, GL], time=0, delta_t=10, interval=intrvl)
