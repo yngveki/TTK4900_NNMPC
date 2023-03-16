@@ -192,7 +192,6 @@ class RNNMPC:
             self.Y[:,i] = self.yk
         for i in range(self.mu):
             self.U[:,i] = self.uk
-        # self.U[:,self.mu] = self.uk #? Is this wrong to have? Can't predetermine what uk should be, no?
         
         # (3b)
         constraints.append(self.Y[:,self.my] == self.yk) 
