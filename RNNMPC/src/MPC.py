@@ -192,7 +192,7 @@ class RNNMPC:
             self.Y[:,i] = self.yk
         for i in range(self.mu):
             self.U[:,i] = self.uk
-        self.U[:,self.mu] = self.uk
+        # self.U[:,self.mu] = self.uk #? Is this wrong to have? Can't predetermine what uk should be, no?
         
         # (3b)
         constraints.append(self.Y[:,self.my] == self.yk) 
@@ -208,14 +208,10 @@ class RNNMPC:
             # U_(k+i) -> U_(k-m_u+i) = U[-l + mu + i:-l - 1 + i:-1]
             # 
             # Exactly the same applies to Y.
-            t1 = -l_U + self.mu + i
-            t2 = -l_U - 1 + i
             x = ca.horzcat(self.U[0,-l_U + self.mu + i:-l_U - 1 + i:-1],
                            self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
-                           self.Y[0,-l_U + self.mu + i:-l_U - 1 + i:-1],
-                           self.Y[1,-l_U + self.mu + i:-l_U - 1 + i:-1])
-            # x = ca.horzcat(self.U[:,i:self.mu + i + 1], self.Y[:,i:self.my + i + 1])
-            # x = ca.reshape(x, x.numel(), 1)
+                           self.Y[0,-l_Y + self.mu + i:-l_Y - 1 + i:-1],
+                           self.Y[1,-l_Y + self.mu + i:-l_Y - 1 + i:-1])
             constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
         
             # (3d)
@@ -246,10 +242,20 @@ class RNNMPC:
         self.opti.subject_to() # Reset constraints to avoid additivity
         self.opti.subject_to(constraints)
 
-    def solve_OCP(self, plot=False):
-        # TODO: Should I provide initial state for solver? (opti.set_initial(<variable_name>, <value>))
-        sol = self.opti.solve() # Takes a very long time before even starting to iterate - some sort of initialization?
-        self.uk = sol.value(self.U)[:,0]
+    def solve_OCP(self, debug=False, plot=False):
+        # self.opti.set_initial(self.Y[:,self.my], self.yk)
+        sol = self.opti.solve() #! Takes a very long time before even starting to iterate - some sort of initialization?
+        self.uk = sol.value(self.U)[:,self.mu]
+
+        # For debugging purposes
+        if debug:
+            t1 = sol.value(self.Y)
+            t2 = sol.value(self.DU)
+            t3 = sol.value(self.U)
+            print('debugging')
+        # print(t1)
+        # print(t2)
+        # print(t3)
 
         # if plot:
         #     # TODO: make plot of step (du vet det derre helt standard MPC-plottet)

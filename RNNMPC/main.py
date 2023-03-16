@@ -50,4 +50,4 @@ if __name__ == '__main__':
     
     mpc.save_data(data_path=Path(__file__).parent / 'mpc_data/')
 
-    plot_RNNMPC(mpc=mpc, save_path=fig_save_path)
+    plot_RNNMPC(mpc=mpc, save_path=fig_save_path, pause=False)

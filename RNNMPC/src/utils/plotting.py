@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from dataclasses import dataclass
 
-def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True):
+def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True, pause=True):
     """
     Plots data collected from a simulation of control by means of an RNNMPC
     
@@ -62,8 +62,9 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True)
     manager.window.showMaximized()
 
     plt.show(block=False)
-    plt.pause(10)
-    plt.close()
+    if pause:
+        plt.pause(10)
+        plt.close()
 
     # Saving figs
     if save_path is not None:
