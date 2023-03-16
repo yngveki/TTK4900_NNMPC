@@ -23,7 +23,7 @@ TUNING_PARAMETERS:
   #! Tuning parameters are tentative and should be tuned properly
   # Tuning parameters
   Q: [1,1]
-  R: [1,1]
+  R: [0,0]
   rho: [1000,1000]
 
   # Constraints

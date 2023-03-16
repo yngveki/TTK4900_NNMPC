@@ -165,7 +165,7 @@ class RNNMPC:
         # (3a)
         cost = 0
         for i in range(self.Hp):
-            cost += (self.Y[:,self.my+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+i] - self.Y_ref[i])
+            cost += (self.Y[:,self.my+1+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+1+i] - self.Y_ref[i])
         for i in range(self.Hu):
             cost += self.DU[:,i].T @ self.config['R'] @ self.DU[:,i]
         for i in range(self.n_slack):
@@ -182,9 +182,10 @@ class RNNMPC:
         #                 u_{k+i}            -> [mu + 1 + i]             -> [mu + 1 + i] (nåværende)
         #   -> From (3c): y_{k+i:k+i-my}     -> [my+i-my : my+i]         -> [i : my + 1 + i] (fra og med k+i-my, til _og med_ k+i; nåværende pluss historie)
         if self.yk is None:
-            self.yk = [0,0] # TODO: Valid start value?
+            self.yk = [0,0]
+            print(f'yk was not defined during warm start, and was now set to {self.yk}')
         if self.uk is None:
-            self.uk = [10,2000] # TODO: Valid start value?
+            self.uk = [10,2000]
             print(f'uk was not defined during warm start, and was now set to {self.uk}')
         
         # Updating to correct past values
@@ -211,7 +212,7 @@ class RNNMPC:
                            self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
                            self.Y[0,-l_Y + self.mu + i:-l_Y - 1 + i:-1],
                            self.Y[1,-l_Y + self.mu + i:-l_Y - 1 + i:-1])
-            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
+            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'])# + self.V) 
         
             # (3d)
             constraints.append(self.opti.bounded(self.config['ylb'] - self.epsy,\
@@ -232,8 +233,8 @@ class RNNMPC:
             constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
         # (3h)
-        for i in range(self.V.shape[0]):
-            self.V[i] = self.yk[i] - self.yk_hat[i]
+        # for i in range(self.V.shape[0]):
+        #     self.V[i] = self.yk[i] - self.yk_hat[i]
 
         # (3i)
         constraints.append(self.epsy >= self.config['elb']) # Don't need upper bound

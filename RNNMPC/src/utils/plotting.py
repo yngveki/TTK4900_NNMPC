@@ -66,29 +66,8 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True,
         plt.pause(10)
         plt.close()
 
-    # Saving figs
-    if save_path is not None:
-        if suffixes is None: suffixes = ['.png', '.eps']  
-        if not exists(save_path): # Safe to save; won't override
-            for suffix in suffixes:
-                save_path = save_path.parent / (save_path.stem + suffix)
-                fig.savefig(save_path, bbox_inches='tight')
-
-        else:
-            name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
-            if name != '': # _not_ aborting
-                if name == 'y': # want to override
-                    for suffix in suffixes:
-                        save_path = save_path.parent / (save_path.stem + suffix)
-                        fig.savefig(save_path, bbox_inches='tight')
-                        print("Figure(s) was(/were) overridden.")
-
-                else: # assigning new name
-                    for suffix in suffixes:
-                        save_path = save_path.parent / (name + suffix)
-                        fig.savefig(save_path, bbox_inches='tight')                
-            else:
-                print("Figure(s) was(/were) not saved.")
+    # Saving outsourced to main by returning fig    
+    return fig
 
 # @dataclass
 # class PlotElement():
