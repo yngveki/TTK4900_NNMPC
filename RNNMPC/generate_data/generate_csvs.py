@@ -254,7 +254,8 @@ def semi_random_walk(num_periods,
                      waiting_limits=[75,100],
                      p=[0.51,0.49],
                      p_inc=[-0.02,0.02],
-                     p_bounds=[0.45,0.55]):
+                     p_bounds=[0.45,0.55],
+                     n_decimals=0):
     """
     Randomly varying within given limits for specified input variable. Do this for several periods, varying bounds to cover full input-space
     
@@ -273,30 +274,35 @@ def semi_random_walk(num_periods,
     Note! Current implementation yields a simulation that is exactly num_steps amount of timesteps, since the random increments
           are not furthered to general_csv() later!
     """
+    # TODO: Create some rising/falling logic, so as to more easily cover full input-space
     assert init >= global_bounds[0] and init <= global_bounds[1], 'init must be within global bounds!'
     assert global_bounds[0] < global_bounds[1], 'first global bound must be strictly lower than second!'
     assert local_bound_size <= (global_bounds[1] - global_bounds[0]), 'local_bound_size cannot exceed global bound size!'
     assert init + local_bound_size <= global_bounds[1], 'current implementation demands that init is at least local_bound_size lower than upper global bound!'
     assert waiting_limits[0] < waiting_limits[1], 'current implementation demands that first waiting limit is strictly lower than second!'
     assert np.sum(p) == 1.0, 'Probabilities must sum to 1.0 exactly!'
+    assert isinstance(n_decimals, int) and n_decimals >= 0, 'number of decimals must be a positive semi-definite integer!'
 
     def cap_probs(p, p_bounds):
-        p[0] = max(min(p, p_bounds[1]), p_bounds[0])
+        p[0] = max(min(p[0], p_bounds[1]), p_bounds[0])
         p[1] = 1 - p[0]
 
         assert np.sum(p) == 1.0, 'Probabilities must sum to 1.0 exactly!'
         return p
+    
+    if not isinstance(num_periods, int): num_periods = int(num_periods)
+    if not isinstance(period_length, int): period_length = int(period_length)
 
-    seq = [0] * (num_periods * period_length)
+    seq = [0] * num_periods * period_length
     seq[0] = init
     idx = 0
 
     local_bounds = [init, init + local_bound_size]
     p = cap_probs(p, p_bounds)
     wait = np.random.randint(waiting_limits[0], waiting_limits[1])
-    for period in range(num_periods):
-        for ts in range(period_length):
-            if period * ts == 0: # Don't alter init-value
+    for _ in range(num_periods):
+        for _ in range(period_length):
+            if idx == 0: # Don't alter init-value
                 idx += 1
                 continue
 
@@ -307,7 +313,7 @@ def semi_random_walk(num_periods,
                 # Peform step
                 inc = np.random.uniform(low=inc_bounds[0], high=inc_bounds[1])
                 update = seq[idx - 1] + inc
-                seq[idx] = max(min(update, local_bounds[1]), local_bounds[0]) # Lock update within current bounds
+                seq[idx] = round(max(min(update, local_bounds[1]), local_bounds[0]), n_decimals) # Lock update within current bounds
 
                 interval = np.random.randint(waiting_limits[0], waiting_limits[1])
                 wait = interval 
@@ -317,21 +323,23 @@ def semi_random_walk(num_periods,
             idx  += 1
             wait -= 1
         
-        # Update local_bounds
-        if abs(seq[idx] - global_bounds[0]) < local_bound_size / 2:     # Less than half of legal local bound size down to lower bound
+        # Update local_bounds (-1 in indexing because we are after time-update (`idx += 1`))
+        if abs(seq[idx - 1] - global_bounds[0]) < local_bound_size / 2:     # Less than half of legal local bound size down to lower bound
             local_bounds = [global_bounds[0], global_bounds[0] + local_bound_size]
-        elif abs(seq[idx] - global_bounds[1]) < local_bound_size / 2:   # Less than half of legal local bound size up to upper bound
+        elif abs(seq[idx - 1] - global_bounds[1]) < local_bound_size / 2:   # Less than half of legal local bound size up to upper bound
             local_bounds = [global_bounds[1] - local_bound_size, global_bounds[1]]
         else:                                                           # Lots of leeway either direction
-            local_bounds = [seq[idx] - local_bound_size / 2, seq[idx] + local_bound_size / 2]
+            local_bounds = [seq[idx - 1] - local_bound_size / 2, seq[idx - 1] + local_bound_size / 2]
 
         # Update inc/dec-probabilities (p[0] takes precedence during capping)
         p[0] = p[0] + np.random.uniform(low=p_inc[0], high=p_inc[1])
         p[1] = 1 - p[0]
         p = cap_probs(p, p_bounds)
 
+    return seq
+
 # ----- SCRIPT ----- #
-sequence = 'concatenate'
+sequence = 'rnnmpc_random_walk'
 
 # -- Concatenating input profiles given by different csv-paths -- #
 if __name__ == '__main__' and sequence == 'concatenate':
@@ -358,28 +366,30 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
 
     nr = 0
     filename = 'random_walk_' + str(nr)
-    num_periods = 50 # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
-    period_length = 1e4 # num steps before updating local bounds and inc/dec-probabilities
+    num_periods = 5       # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
+    period_length = 10000 # num steps before updating local bounds and inc/dec-probabilities
 
     choke_specs = {'init': 20, 
                    'global_bounds': [0,100],
                    'local_bound_size': 20, 
-                   'inc_bounds': [-2,2], 
+                   'inc_bounds': [-0.55,0.55], 
                    'waiting_limits': [74,100], 
-                   'p_init': [0.51,0.49], # for [increment, decrement], respectively
+                   'p': [0.51,0.49], # initial probability for [increment, decrement], respectively
                    'p_inc': [-0.02, 0.02],
-                   'p_bounds': [0.45, 0.55]
+                   'p_bounds': [0.45, 0.55],
+                   'n_decimals': 2
                    }
     choke = semi_random_walk(num_periods, period_length, **choke_specs)
 
     gl_specs = {'init': 0, 
                 'global_bounds': [0, 10000],
-                'local_bound_size': 2000,          # How much to alter the region for every period
+                'local_bound_size': 2000,
                 'inc_bounds': [-166.7, 166.7], 
                 'waiting_limits': [74,100],
-                'p_init': [0.51,0.49], # for [increment, decrement], respectively
+                'p': [0.51,0.49], # initial probability for [increment, decrement], respectively
                 'p_inc': [-0.02, 0.02],
-                'p_bounds': [0.45, 0.55]
+                'p_bounds': [0.45, 0.55],
+                'n_decimals': 0
                 }
     GL = semi_random_walk(num_periods, period_length, **gl_specs)
 
