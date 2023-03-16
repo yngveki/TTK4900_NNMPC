@@ -18,7 +18,7 @@ if __name__ == '__main__':
     nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
     fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-    config_name = 'bias_enabled' # For saving the config along with results
+    config_name = 'bias_disabled_1' # For saving the config along with results
 
     # Initialize the controller
     mpc = RNNMPC(nn_path=model_path,
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         run += 1
 
     # Return fig for saving purposes
-    fig = plot_RNNMPC(mpc=mpc, pause=True)
+    fig = plot_RNNMPC(mpc=mpc, pause=True, plot_bias=True)
 
     # -- SAVING MPC TUNING ALONG WITH RESULTS -- #
     # Appending files used for this specific run

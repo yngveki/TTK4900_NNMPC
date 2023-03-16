@@ -212,7 +212,7 @@ class RNNMPC:
                            self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
                            self.Y[0,-l_Y + self.mu + i:-l_Y - 1 + i:-1],
                            self.Y[1,-l_Y + self.mu + i:-l_Y - 1 + i:-1])
-            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
+            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'])# + self.V) 
         
             # (3d)
             constraints.append(self.opti.bounded(self.config['ylb'] - self.epsy,\
@@ -233,10 +233,8 @@ class RNNMPC:
             constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
         # (3h)
-        self.V[0] = self.bias['gas rate'][-1]
-        self.V[1] = self.bias['oil rate'][-1]
-        # for i in range(self.V.shape[0]):
-        #     self.V[i] = self.yk[i] - self.yk_hat[i]
+        # self.V[0] = self.bias['gas rate'][-1]
+        # self.V[1] = self.bias['oil rate'][-1]
 
         # (3i)
         constraints.append(self.epsy >= self.config['elb']) # Don't need upper bound
@@ -286,8 +284,8 @@ class RNNMPC:
         x.extend(self.simulated_y['gas rate'][-1:-self.my-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
         x.extend(self.simulated_y['oil rate'][-1:-self.my-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
         self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
-        self.bias['gas rate'].append(self.yk[0] - self.yk_hat[0])
-        self.bias['oil rate'].append(self.yk[1] - self.yk_hat[1])
+        self.bias['gas rate'].append(self.yk[0] - float(self.yk_hat[0]))
+        self.bias['oil rate'].append(self.yk[1] - float(self.yk_hat[1]))
 
         self.t += self.delta_t
 

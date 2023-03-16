@@ -11,7 +11,7 @@ import numpy as np
 
 from src.neuralnetwork import NeuralNetwork
 from src.train import train
-from src.test import test
+from src.test import test, test_single_sample
 from src.utils.splitter import Splitter
 
 class GroundTruth():
@@ -72,7 +72,7 @@ csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/r
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100'
 csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_1_globally_normalized.csv', 'test_on_training_set'
 
-model_nr = 12
+model_nr = 10
 model_name = "model_mixed_ramp_" + str(model_nr)
 
 delta_t = 10
@@ -180,6 +180,38 @@ if __name__ == '__main__' and TEST:
     hyperparameter_path = model_path.parent / (model_path.stem + '.yaml')
     with open(hyperparameter_path, "r") as f:
         hyperparameters = safe_load(f)
+
+    #! TEMP
+    input_vector = torch.tensor([51.09997683084354,
+         50.54999885482869,
+         50,
+         50,
+         50,
+         50,
+         333.400003011535,
+         166.7000015077866,
+         0,
+         0,
+         0,
+         0,
+         6417.297146506286,
+         6417.297146506286,
+         6407.312985605277,
+         6407.312985605277,
+         6407.312985605277,
+         6407.312985605277,
+         245.34721065469768,
+         245.34721065469768,
+         244.93704375989967,
+         244.34587277953147,
+         244.9549418168157,
+         244.9642564604021])
+    ret = test_single_sample(model_path, hyperparameters, input_vector)
+
+    RNNMPCs_result = [2156.48, 1185.6]
+    for idx, el in enumerate(ret):
+        print(f'diff: {el - RNNMPCs_result[idx]}')
+    print(ret)
 
     # -- PREDICTION -- #      
     gt = GroundTruth(csv_path_test)

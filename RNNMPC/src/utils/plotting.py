@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from dataclasses import dataclass
 
-def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True):
+def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True, plot_bias=False):
     """
     Plots data collected from a simulation of control by means of an RNNMPC
     
@@ -31,18 +31,36 @@ def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True):
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
     axes[0,0].plot(t, mpc.simulated_y['gas rate'], '-', label='true gas rate', color='tab:orange')
     axes[0,0].plot(t[-len(mpc.full_refs['gas rate']):], mpc.full_refs['gas rate'], label='reference gas rate', color='tab:red')
-    axes[0,0].plot(t[-(len(mpc.full_refs['gas rate']) + 1):], mpc.bias['gas rate'], label='bias gas rate', color='tab:olive')
     if warm_start_cutoff: axes[0,0].axvline(mpc.warm_start_t, color='tab:green')
     axes[0,0].legend(loc='best', prop={'size': 15})
+
+    if plot_bias: 
+        twin00 = axes[0,0].twinx()
+        twin00.plot(t[-(len(mpc.full_refs['gas rate']) + 1):], mpc.bias['gas rate'], label='bias gas rate', color='tab:olive')
+        twin00.set_ylabel('gas rate bias (yk - yk_hat) [m^3/h]', color='tab:olive')
+        twin00.tick_params(axis='y', color='tab:olive', labelcolor='tab:olive')
+        twin00.spines['right'].set_color('tab:olive')
+        max_lim = max(mpc.bias['gas rate']) + (2.5 * abs(max(mpc.bias['gas rate'])))
+        min_lim = min(mpc.bias['gas rate']) - (0.5 * abs(min(mpc.bias['gas rate'])))
+        twin00.set_ylim(min_lim, max_lim) # Makes the plot less intrusive
 
     # Plotting ground truth and predicted oil rates
     axes[0,1].set_title('Measured oil rate v. reference oil rate', fontsize=20)
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
     axes[0,1].plot(t, mpc.simulated_y['oil rate'], label='true oil rate', color='tab:orange')
     axes[0,1].plot(t[-len(mpc.full_refs['oil rate']):], mpc.full_refs['oil rate'], '-', label='reference oil rate', color='tab:red')
-    axes[0,1].plot(t[-(len(mpc.full_refs['oil rate']) + 1):], mpc.bias['oil rate'], label='bias oil rate', color='tab:olive')
     if warm_start_cutoff: axes[0,1].axvline(mpc.warm_start_t, color='tab:green')
     axes[0,1].legend(loc='best', prop={'size': 15})
+
+    if plot_bias: 
+        twin01 = axes[0,1].twinx()
+        twin01.plot(t[-(len(mpc.full_refs['oil rate']) + 1):], mpc.bias['oil rate'], label='bias oil rate', color='tab:olive')
+        twin01.set_ylabel('oil rate bias (yk - yk_hat) [m^3/h]', color='tab:olive')
+        twin01.tick_params(axis='y', color='tab:olive', labelcolor='tab:olive')
+        twin01.spines['right'].set_color('tab:olive')
+        max_lim = max(mpc.bias['oil rate']) + (2.5 * abs(max(mpc.bias['oil rate'])))
+        min_lim = min(mpc.bias['oil rate']) - (0.5 * abs(min(mpc.bias['oil rate'])))
+        twin01.set_ylim(min_lim, max_lim) # Makes the plot less intrusive
 
     # Plotting history of choke input
     axes[1,0].set_title('Input: choke opening', fontsize=20)
