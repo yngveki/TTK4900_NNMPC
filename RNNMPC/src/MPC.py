@@ -40,6 +40,9 @@ class RNNMPC:
         self.full_refs = {}
         self.full_refs['gas rate'] = []
         self.full_refs['oil rate'] = []
+        self.bias = {}
+        self.bias['gas rate'] = []
+        self.bias['oil rate'] = []
         self.yk = None
         self.yk_hat = [0,0] # Initialize bias to zero
         self.uk = None
@@ -72,8 +75,6 @@ class RNNMPC:
         self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
 
         # Solver options
-        # self.config['expand'] = configs['SOLVER_OPTIONS']['expand']
-        # self.config['max_iter'] = configs['SOLVER_OPTIONS']['max_iter']
         p_opts = configs['PLUGIN_OPTIONS']
         s_opts = configs['SOLVER_OPTIONS']
 
@@ -108,15 +109,12 @@ class RNNMPC:
         self.nn = NeuralNetwork(layers=layers, model_path=nn_path)
         self.weights, self.biases = self.nn.extract_coefficients()
         self.f_MLP = self._build_MLP(self.weights, self.biases)
-        # self.f_MLP = self._build_MLP(layers, nn_path)
 
         # -- Set up framework for OCP using Opti from CasADi -- #
         self.opti = ca.Opti()
 
         self._declare_OCP_variables()
 
-        # p_opts = {'expand':self.config['expand'], } # CasADi plugin options   
-        # s_opts = {'max_iter': self.config['max_iter'], 'tol': 10e6} # Solver options
         self.opti.solver('ipopt', p_opts, s_opts)
 
     def warm_start(self, fmu_path, warm_start_input):
@@ -143,6 +141,8 @@ class RNNMPC:
         self.yk = [self.simulated_y['gas rate'][-1],
                    self.simulated_y['oil rate'][-1]]
         self.yk_hat = self.yk.copy()
+        self.bias['gas rate'].append(self.yk[0] - self.yk_hat[0])
+        self.bias['oil rate'].append(self.yk[1] - self.yk_hat[1])
 
     def _declare_OCP_variables(self):
         self.Hp = self.config['Hp']
@@ -165,9 +165,9 @@ class RNNMPC:
         # (3a)
         cost = 0
         for i in range(self.Hp):
-            cost += (self.Y[:,self.my+1+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+1+i] - self.Y_ref[i])
+            cost += (self.Y[:,self.my+1+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+1+i] - self.Y_ref[i]) # TODO: Is this matrix product correct? Isn't Q 2x1?
         for i in range(self.Hu):
-            cost += self.DU[:,i].T @ self.config['R'] @ self.DU[:,i]
+            cost += self.DU[:,i].T @ self.config['R'] @ self.DU[:,i] # TODO: Is this matrix product correct? Isn't R 2x1?
         for i in range(self.n_slack):
             cost += self.config['rho'][i] * self.epsy[i]
         self.opti.minimize(cost)
@@ -212,7 +212,7 @@ class RNNMPC:
                            self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
                            self.Y[0,-l_Y + self.mu + i:-l_Y - 1 + i:-1],
                            self.Y[1,-l_Y + self.mu + i:-l_Y - 1 + i:-1])
-            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'])# + self.V) 
+            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
         
             # (3d)
             constraints.append(self.opti.bounded(self.config['ylb'] - self.epsy,\
@@ -233,6 +233,8 @@ class RNNMPC:
             constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
         # (3h)
+        self.V[0] = self.bias['gas rate'][-1]
+        self.V[1] = self.bias['oil rate'][-1]
         # for i in range(self.V.shape[0]):
         #     self.V[i] = self.yk[i] - self.yk_hat[i]
 
@@ -284,6 +286,8 @@ class RNNMPC:
         x.extend(self.simulated_y['gas rate'][-1:-self.my-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
         x.extend(self.simulated_y['oil rate'][-1:-self.my-2:-1])   # current->past (want 1 + my (current _and_ past), hence -2)
         self.yk_hat = self.f_MLP(MLP_in=x)['MLP_out']
+        self.bias['gas rate'].append(self.yk[0] - self.yk_hat[0])
+        self.bias['oil rate'].append(self.yk[1] - self.yk_hat[1])
 
         self.t += self.delta_t
 

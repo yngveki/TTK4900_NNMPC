@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from dataclasses import dataclass
 
-def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True, pause=True):
+def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True):
     """
     Plots data collected from a simulation of control by means of an RNNMPC
     
@@ -31,6 +31,7 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True,
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
     axes[0,0].plot(t, mpc.simulated_y['gas rate'], '-', label='true gas rate', color='tab:orange')
     axes[0,0].plot(t[-len(mpc.full_refs['gas rate']):], mpc.full_refs['gas rate'], label='reference gas rate', color='tab:red')
+    axes[0,0].plot(t[-(len(mpc.full_refs['gas rate']) + 1):], mpc.bias['gas rate'], label='bias gas rate', color='tab:olive')
     if warm_start_cutoff: axes[0,0].axvline(mpc.warm_start_t, color='tab:green')
     axes[0,0].legend(loc='best', prop={'size': 15})
 
@@ -39,6 +40,7 @@ def plot_RNNMPC(mpc=None, save_path=None, suffixes=None, warm_start_cutoff=True,
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
     axes[0,1].plot(t, mpc.simulated_y['oil rate'], label='true oil rate', color='tab:orange')
     axes[0,1].plot(t[-len(mpc.full_refs['oil rate']):], mpc.full_refs['oil rate'], '-', label='reference oil rate', color='tab:red')
+    axes[0,1].plot(t[-(len(mpc.full_refs['oil rate']) + 1):], mpc.bias['oil rate'], label='bias oil rate', color='tab:olive')
     if warm_start_cutoff: axes[0,1].axvline(mpc.warm_start_t, color='tab:green')
     axes[0,1].legend(loc='best', prop={'size': 15})
 
