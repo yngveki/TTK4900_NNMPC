@@ -1,0 +1,5 @@
+This folder will contain input-profiles that strive to stick to exactly the same restrictions/boundaries as the RNNMPC; no more, no less.
+
+The thought is that the data in `random_mixed_ramp` is well suited for the Single Well case, but the RNNMPC-formulation as it currently stands, does not correlate. Expanding on this formulation is possible, but very problem specific. Since mixed-integer considerations (among others) are not the point of this project, this other route is proposed.
+
+This is less accurate with respect to the Single Well case, but will probably yield more general results.

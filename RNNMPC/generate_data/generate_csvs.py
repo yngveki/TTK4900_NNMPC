@@ -17,27 +17,39 @@ from yaml import dump
 
 from src.utils.timeseries import Timeseries
 
-def safe_save(csv_path, data):
-    assert isinstance(data, list), "This save function is implemented only for csv-rows of datatype `list`!"
+def safe_save(path, data, filetype):
+    # TODO: Add bool for mkdir, and mkdir-check. Bonus: account for if dir exists, but contains file of same name, such that want to make new dir now, and not provide new names after
+    assert isinstance(path, Path), 'Path given must be of the \'Path\' type!'
 
-    if not exists(csv_path):    # Safe to save; nothing can be overwritten
-        with open(csv_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            
-            for row in data:
-                writer.writerow(row)
-    else:
-        name = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
-        if name != '': # Do _not_ abort save
-            if name != 'y': # Do _not_ overwrite
-                csv_path = Path(__file__).parent / "data/steps" / ''.join((name, '.csv'))
-            with open(csv_path, 'w', newline='') as f:
+    # Define how to perform save
+    if filetype == 'csv':
+        def save(path, data):
+            with open(path, 'w', newline='') as f:
                 writer = csv.writer(f)
 
                 for row in data:
                     writer.writerow(row)
 
-            print(f"File written to \'{csv_path}\'")
+    elif filetype == 'yaml':
+        def save(path, data):
+            with open(path, "w", encoding = "utf-8") as yaml_file:
+                yaml_file.write(dump(data, default_flow_style = False, allow_unicode = True, encoding = None))
+
+    else:
+        return ValueError('Invalid filetype specified. Options are \'csv\' and \'yaml\'')
+    
+    # Perform save
+    if not exists(path): # Safe to save; nothing can be overwritten
+        save(path, data)
+    
+    else:
+        filename = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
+        if filename != '': # Do _not_ abort save. Will overwrite if `filename=='y'`
+            if filename != 'y': # Do _not_ overwrite
+                path = Path(__file__).parent / "data/steps" / ''.join((filename, '.csv'))
+            
+            save(path, data)
+            print(f"File written to \'{path}\'")
 
         else:
             print("File was not saved.")
@@ -233,6 +245,91 @@ def concatenate(*args):
 
     return sequence
 
+def semi_random_walk(num_periods, 
+                     period_length, 
+                     init=20, 
+                     global_bounds=[20,100],
+                     local_bound_size=20,
+                     inc_bounds=[-2,2],
+                     waiting_limits=[75,100],
+                     p=[0.51,0.49],
+                     p_inc=[-0.02,0.02],
+                     p_bounds=[0.45,0.55]):
+    """
+    Randomly varying within given limits for specified input variable. Do this for several periods, varying bounds to cover full input-space
+    
+    args:
+        :param num_periods: number of periods for which to vary bounds
+        :param period_length: number of simulation steps per period
+        :param init: initial value for sequence
+        :param global_bounds: global bounds for legal values in sequence
+        :param local_bound_size: how large each local bound for legal values in sequence should be. Constant across periods
+        :param inc_bounds: hard limits for increments/decrements per step. Steps are random within these limits
+        :param waiting_limits: how long to wait between steps
+        :param p: initial probabilities for increment/decrement, respectively
+        :param p_inc: how much probabilities may be altered per period. One number is chosen, increment probability is increased by this amount, decrement probability decreased
+        :param p_bounds: hard limits for probabilities for increment and decrement. [lower limit, upper limit], respectively.
+
+    Note! Current implementation yields a simulation that is exactly num_steps amount of timesteps, since the random increments
+          are not furthered to general_csv() later!
+    """
+    assert init >= global_bounds[0] and init <= global_bounds[1], 'init must be within global bounds!'
+    assert global_bounds[0] < global_bounds[1], 'first global bound must be strictly lower than second!'
+    assert local_bound_size <= (global_bounds[1] - global_bounds[0]), 'local_bound_size cannot exceed global bound size!'
+    assert init + local_bound_size <= global_bounds[1], 'current implementation demands that init is at least local_bound_size lower than upper global bound!'
+    assert waiting_limits[0] < waiting_limits[1], 'current implementation demands that first waiting limit is strictly lower than second!'
+    assert np.sum(p) == 1.0, 'Probabilities must sum to 1.0 exactly!'
+
+    def cap_probs(p, p_bounds):
+        p[0] = max(min(p, p_bounds[1]), p_bounds[0])
+        p[1] = 1 - p[0]
+
+        assert np.sum(p) == 1.0, 'Probabilities must sum to 1.0 exactly!'
+        return p
+
+    seq = [0] * (num_periods * period_length)
+    seq[0] = init
+    idx = 0
+
+    local_bounds = [init, init + local_bound_size]
+    p = cap_probs(p, p_bounds)
+    wait = np.random.randint(waiting_limits[0], waiting_limits[1])
+    for period in range(num_periods):
+        for ts in range(period_length):
+            if period * ts == 0: # Don't alter init-value
+                idx += 1
+                continue
+
+            if idx % 1000 == 0:
+                print(f'iter: {idx}')
+
+            if wait == 0:
+                # Peform step
+                inc = np.random.uniform(low=inc_bounds[0], high=inc_bounds[1])
+                update = seq[idx - 1] + inc
+                seq[idx] = max(min(update, local_bounds[1]), local_bounds[0]) # Lock update within current bounds
+
+                interval = np.random.randint(waiting_limits[0], waiting_limits[1])
+                wait = interval 
+            else:
+                seq[idx] = seq[idx - 1]
+            
+            idx  += 1
+            wait -= 1
+        
+        # Update local_bounds
+        if abs(seq[idx] - global_bounds[0]) < local_bound_size / 2:     # Less than half of legal local bound size down to lower bound
+            local_bounds = [global_bounds[0], global_bounds[0] + local_bound_size]
+        elif abs(seq[idx] - global_bounds[1]) < local_bound_size / 2:   # Less than half of legal local bound size up to upper bound
+            local_bounds = [global_bounds[1] - local_bound_size, global_bounds[1]]
+        else:                                                           # Lots of leeway either direction
+            local_bounds = [seq[idx] - local_bound_size / 2, seq[idx] + local_bound_size / 2]
+
+        # Update inc/dec-probabilities (p[0] takes precedence during capping)
+        p[0] = p[0] + np.random.uniform(low=p_inc[0], high=p_inc[1])
+        p[1] = 1 - p[0]
+        p = cap_probs(p, p_bounds)
+
 # ----- SCRIPT ----- #
 sequence = 'concatenate'
 
@@ -249,6 +346,51 @@ if __name__ == '__main__' and sequence == 'concatenate':
     filename = 'ramp_choke_gl_interval60'
     save_path = Path(__file__).parent / ('inputs/ramp/' + filename + '.csv')
     safe_save(save_path, concatenated)
+
+# -- Generating data that semi-randomly walks through the RNNMPC's input-space -- #
+if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
+    # Specs (valid for both choke and gas lift):
+    # 1) Must adhere to global bounds ('global_bounds')
+    # 2) Must adhere to bounds in change ('inc_bounds'), but may increment/decrement randomly within these
+    # 3) Must wait some specified time before advancing ('waiting_limits')
+    # 4) Should stay for some time within "local bounds", so as to make cover all regions better, with some certainty 
+    # 5) Should vary probabilities for increment/decrement randomly (within limits)
+
+    nr = 0
+    filename = 'random_walk_' + str(nr)
+    num_periods = 50 # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
+    period_length = 1e4 # num steps before updating local bounds and inc/dec-probabilities
+
+    choke_specs = {'init': 20, 
+                   'global_bounds': [0,100],
+                   'local_bound_size': 20, 
+                   'inc_bounds': [-2,2], 
+                   'waiting_limits': [74,100], 
+                   'p_init': [0.51,0.49], # for [increment, decrement], respectively
+                   'p_inc': [-0.02, 0.02],
+                   'p_bounds': [0.45, 0.55]
+                   }
+    choke = semi_random_walk(num_periods, period_length, **choke_specs)
+
+    gl_specs = {'init': 0, 
+                'global_bounds': [0, 10000],
+                'local_bound_size': 2000,          # How much to alter the region for every period
+                'inc_bounds': [-166.7, 166.7], 
+                'waiting_limits': [74,100],
+                'p_init': [0.51,0.49], # for [increment, decrement], respectively
+                'p_inc': [-0.02, 0.02],
+                'p_bounds': [0.45, 0.55]
+                }
+    GL = semi_random_walk(num_periods, period_length, **gl_specs)
+
+    sequence = general_csv([choke, GL], interval=1)
+
+    csv_path = Path(__file__).parent / ('inputs/rnnmpc_random_walk/' + filename + '.csv')
+    safe_save(csv_path, sequence, filetype='csv')
+
+    yaml_path = csv_path.parent / (csv_path.stem + '.yaml')
+    safe_save(yaml_path, {'choke': choke_specs, 'gl': gl_specs}, filetype='yaml')
+
 
 # -- Generating a semi-randomly oscillating ramp for gas lift (choke = 100) -- #
 if __name__ == '__main__' and sequence == 'random_gl_ramp':
