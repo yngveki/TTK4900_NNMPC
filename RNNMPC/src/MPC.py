@@ -243,8 +243,7 @@ class RNNMPC:
         self.opti.subject_to(constraints)
 
     def solve_OCP(self, debug=False, plot=False):
-        # self.opti.set_initial(self.Y[:,self.my], self.yk)
-        sol = self.opti.solve() #! Takes a very long time before even starting to iterate - some sort of initialization?
+        sol = self.opti.solve() #! Takes a very long time before even starting to iterate - some sort of initialization? - probably normal, though
         self.uk = sol.value(self.U)[:,self.mu]
 
         # For debugging purposes
@@ -253,13 +252,11 @@ class RNNMPC:
             t2 = sol.value(self.DU)
             t3 = sol.value(self.U)
             print('debugging')
-        # print(t1)
-        # print(t2)
-        # print(t3)
 
-        # if plot:
-        #     # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
-        #     fig, axs = plt.subplots
+        if plot:
+            # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
+            print('Plots per step not yet implemented')
+            return NotImplementedError
 
     def iterate_system(self):
         gas_rate_k, oil_rate_k, \
