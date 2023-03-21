@@ -212,7 +212,7 @@ class RNNMPC:
                            self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
                            self.Y[0,-l_Y + self.mu + i:-l_Y - 1 + i:-1],
                            self.Y[1,-l_Y + self.mu + i:-l_Y - 1 + i:-1])
-            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'])# + self.V) 
+            constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
         
             # (3d)
             constraints.append(self.opti.bounded(self.config['ylb'] - self.epsy,\
@@ -233,8 +233,8 @@ class RNNMPC:
             constraints.append(self.U[:,self.mu + i] == self.U[:,self.mu + i - 1] + self.DU[:,i]) 
         
         # (3h)
-        # self.V[0] = self.bias['gas rate'][-1]
-        # self.V[1] = self.bias['oil rate'][-1]
+        self.V[0] = self.bias['gas rate'][-1]
+        self.V[1] = self.bias['oil rate'][-1]
 
         # (3i)
         constraints.append(self.epsy >= self.config['elb']) # Don't need upper bound

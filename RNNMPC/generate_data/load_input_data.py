@@ -78,6 +78,11 @@ class SRDataset(Dataset):
 
         self.SR = sr
 
+    # def split(self, ratios=[0.85,0.15]):
+    #     new_datasets = []
+    #     for idx, fraction in enumerate(ratios):
+    #         new_datasets[idx] = 
+
     def __len__(self):
         """Returns number of samples available"""
         return len(self.SR)

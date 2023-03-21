@@ -23,6 +23,7 @@ def test(model_path, csv_path, hyperparameters):
     model = NeuralNetwork(layers=layers, model_path=model_path)
     loss_fn = nn.MSELoss() # MSELoss since we're regressing
 
+    # TODO: Change into smaller subset of huge dataset, such that potential bias in data-creation (se spørsmål til Lars, 2023.03.20) is not an issue
     test_dl = load_input_data(csv_path, bsz=batch_size, mu=mu, my=my)
 
     predicted = {'y1': [],

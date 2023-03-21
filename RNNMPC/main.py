@@ -18,7 +18,7 @@ if __name__ == '__main__':
     nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
     fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-    config_name = 'bias_disabled_and_both_penalties_on_0' # For saving the config along with results
+    config_name = 'bias_enabled_1' # For saving the config along with results
 
     # Initialize the controller
     mpc = RNNMPC(nn_path=model_path,

@@ -25,6 +25,7 @@ class EarlyStopping():
         if self.best_loss == None:
             self.best_loss = val_loss
             self.best_model = model
+            self.counter += 1
 
         # validation loss decreased; update model because this one must be better
         elif self.best_loss - val_loss > self.min_delta:
@@ -39,6 +40,8 @@ class EarlyStopping():
                 if self.restore_best_weights:
                     model.load_state_dict(self.best_model.state_dict())
                 return True
+        
+        print(f'{self.patience - self.counter} epochs left before quit')
         return False
 
 # ----- UTIL FUNCTIONS ----- #
@@ -107,6 +110,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     loss_fn = nn.MSELoss() # MSE as loss func. for a regression problem
     optimizer = torch.optim.Adam(model.parameters(), **hyperparameters['OPTIMIZER'])
 
+    # TODO: Change into random subsetting of one huge dataset (instead of using separate datasets)
     train_dl = load_input_data(csv_path_train, bsz=batch_size, mu=mu, my=my, shuffle=True)
     val_dl = load_input_data(csv_path_val, bsz=batch_size, mu=mu, my=my, shuffle=True)
     
@@ -126,7 +130,8 @@ def train(hyperparameters, csv_path_train, csv_path_val):
         print(f"Epoch {t+1}\n-------------------------------")
         train_losses[t] = train_loop(train_dl, model, loss_fn, optimizer)
         val_MSEs[t] = validation_loop(val_dl, model, t) # Necessary only for early stopping
-
+        print(f'Epoch {t+1 - es.counter}, validation MSE: {es.best_loss} (CURRENT BEST)')
+        
         # Stopping early based on when validation error starts increasing.
         if es(abs(val_MSEs[t]), model):
             done = True

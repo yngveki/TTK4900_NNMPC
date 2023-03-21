@@ -80,7 +80,9 @@ def simulate_singlewell_step(model, time, delta_t, Uk):
     
     return gas_rate, oil_rate
 
-def normalize(series, min=None, max=None):
+def normalize(series, min=None, max=None, rounding=5):
+    assert isinstance(rounding, int), 'Number of digits (rounding) must be an integer!'
+
     normalized = []
     if min == None:
         series_min = np.min(series)
@@ -93,7 +95,7 @@ def normalize(series, min=None, max=None):
         series_max = max
 
     for element in series:
-        normalized_item = (element - series_min) / (series_max - series_min)
+        normalized_item = round((element - series_min) / (series_max - series_min), rounding)
         normalized.append(normalized_item)
 
     return normalized
@@ -115,10 +117,15 @@ if __name__ == '__main__':
         delta_t = config['delta_t']
         resolution = config['resolution']
         
-        file_family = 'steps_choke'
-        filename = 'step_choke_98_100'# + str(i)
+        file_family = 'rnnmpc_random_walk'
+        filename = 'random_walk_1mill'# + str(i)
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
+        
+        stopwatch = Timer()
+        stopwatch.start()
         input_profile = Timeseries(filepath, delta_t=10)
+        stopwatch.lap()
+
         start_time = input_profile.begin
         final_time = input_profile.end
 
@@ -135,8 +142,6 @@ if __name__ == '__main__':
         time = warm_start_t # As long as we've come after init
         warm_offset = warm_start_t // delta_t
         itr = 0
-        stopwatch = Timer()
-        stopwatch.start()
         while time < input_profile.end:
             uk = input_profile[:, warm_offset + itr]
             y1k, y2k = simulate_singlewell_step(model, time, delta_t, uk)
@@ -155,7 +160,7 @@ if __name__ == '__main__':
         plot_full=True
         if plot_full:
             clip_length = warm_start_t // delta_t
-            t = clip_beginning(np.linspace(start=0, stop=input_profile.end, num=input_profile.end // delta_t), clip_length=clip_length)
+            t = clip_beginning(np.linspace(start=0, stop=int(input_profile.end), num=int(input_profile.end // delta_t)), clip_length=clip_length)
             y1 = clip_beginning(y1, clip_length=clip_length)
             y2 = clip_beginning(y2, clip_length=clip_length)
             u1 = clip_beginning(input_profile[0, :], clip_length=clip_length)

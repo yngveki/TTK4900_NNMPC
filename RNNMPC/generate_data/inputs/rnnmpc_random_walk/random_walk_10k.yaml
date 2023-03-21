@@ -1,0 +1,42 @@
+CHOKE:
+  global_bounds:
+  - 20
+  - 100
+  inc_bounds:
+  - -0.55
+  - 0.55
+  init: 20
+  local_bound_size: 20
+  n_decimals: 2
+  p:
+  - 0.5339286119332128
+  - 0.46607138806678716
+  p_bounds:
+  - 0.4
+  - 0.6
+  p_inc: 0.02
+  waiting_limits:
+  - 50
+  - 100
+GL:
+  global_bounds:
+  - 0
+  - 10000
+  inc_bounds:
+  - -166.7
+  - 166.7
+  init: 0
+  local_bound_size: 2000
+  n_decimals: 0
+  p:
+  - 0.5301029921024666
+  - 0.4698970078975334
+  p_bounds:
+  - 0.4
+  - 0.6
+  p_inc: 0.02
+  waiting_limits:
+  - 74
+  - 100
+n_periods: 1
+period_length: 10000
