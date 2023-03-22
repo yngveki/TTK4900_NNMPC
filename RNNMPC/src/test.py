@@ -53,7 +53,7 @@ def test(model_path, csv_path, hyperparameters):
     
     num_batches = len(test_dl)
     test_loss /= num_batches
-    print(f"Avg loss: {test_loss:>8f} \n")
+    print(f"Avg (normalized) loss: {test_loss:>8f} \n")
 
     model.log_MSE(test_loss)
 
