@@ -1,0 +1,1 @@
+Decidedly the best model so far, at least in terms of MSE. Gas rate hits (seemingly) incredibly precisely, but seems to be at the expense of oil rate prediction
