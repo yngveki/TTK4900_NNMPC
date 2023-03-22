@@ -5,7 +5,7 @@ hlszs: [[20],[50],[80]]  # sizes of only hidden layers (input and output layers'
 
 bsz: [64]         # batch size
 e: [200]          # epochs
-p: [5]            # patience
+p: [4]            # patience
 
 lr: [0.001, 0.0001]       # learning rate
 weight_decay: [0.1, 0.2] # weight decay

@@ -381,18 +381,18 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
     # 4) Should stay for some time within "local bounds", so as to make cover all regions better, with some certainty 
     # 5) Should vary probabilities for increment/decrement randomly (within limits)
 
-    filename = 'random_walk_200k'
-    num_periods = 20       # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
+    filename = 'random_walk_50k'
+    num_periods = 5       # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
     period_length = 10000   # num steps before updating local bounds and inc/dec-probabilities
 
-    choke_specs = {'init': 20, 
+    choke_specs = {'init': 50, 
                    'global_bounds': [20,100],
                    'local_bound_size': 20, 
                    'inc_bounds': [-0.55,0.55], 
                    'waiting_limits': [50,100], 
-                   'p': [0.53,0.47], # initial probability for [increment, decrement], respectively
-                   'p_inc': 0.02,
-                   'p_bounds': [0.40, 0.60],
+                   'p': [0.55,0.45], # initial probability for [increment, decrement], respectively
+                   'p_inc': 0.04,
+                   'p_bounds': [0.35, 0.65],
                    'n_decimals': 2
                    }
     choke = semi_random_walk(num_periods, period_length, **choke_specs)
@@ -401,11 +401,11 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
                 'global_bounds': [0, 10000],
                 'local_bound_size': 2000,
                 'inc_bounds': [-166.7, 166.7], 
-                'waiting_limits': [74,100],
-                'p': [0.53,0.47], # initial probability for [increment, decrement], respectively
-                'p_inc': 0.02,
-                'p_bounds': [0.40, 0.60],
-                'n_decimals': 0
+                'waiting_limits': [50,100], 
+                'p': [0.55,0.45], # initial probability for [increment, decrement], respectively
+                'p_inc': 0.04,
+                'p_bounds': [0.35, 0.65],
+                'n_decimals': 2
                 }
     GL = semi_random_walk(num_periods, period_length, **gl_specs)
 
@@ -420,7 +420,7 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
     manager = plt.get_current_fig_manager()
     manager.window.showMaximized()
     plt.show(block=False)
-    plt.pause(30)
+    plt.pause(15)
     plt.close()
 
     # Save results

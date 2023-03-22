@@ -118,7 +118,7 @@ if __name__ == '__main__':
         resolution = config['resolution']
         
         file_family = 'rnnmpc_random_walk'
-        filename = 'random_walk_1mill'# + str(i)
+        filename = 'random_walk_50k'
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
         
         stopwatch = Timer()

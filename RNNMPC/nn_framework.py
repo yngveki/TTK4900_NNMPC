@@ -96,38 +96,22 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = False
-GRID = False
+TRAIN = True
+GRID = True
 TEST = True
 
-# csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_1mill_globally_normalized.csv'
-# csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_200k_globally_normalized.csv'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_1mill_globally_normalized.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_50k_globally_normalized.csv'
 
-# FOR TESTING
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/staircases/csv/staircases_1000_steps_output_clipped.csv'
+tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_globally_normalized.csv', 'step_choke_medium'),
+         (Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_20_22_globally_normalized.csv', 'step_choke_low'),
+         (Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_98_100_globally_normalized.csv', 'step_choke_high'),
+         (Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_10k_globally_normalized.csv', 'random_walk_short'),
+         (Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_1_globally_normalized.csv', 'mixed_ramp_short'),
+         (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
-tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_70_72_output_clipped.csv', 'step_choke'),
-             (Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_10k_globally_normalized.csv', 'random_walk_short'),
-             (Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_1_globally_normalized.csv', 'mixed_ramp_short')]
-
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_70_72_output_clipped.csv', 'step_choke'
-
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_10k_globally_normalized.csv', 'random_walk_short'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_1_globally_normalized.csv', 'mixed_ramp_short'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_globally_normalized.csv', 'single_step'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_20_22_globally_normalized.csv', 'single_step_1'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_98_100_globally_normalized.csv', 'single_step_2'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval30_globally_normalized.csv', 'multiple_steps_interval30'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval60_globally_normalized.csv', 'multiple_steps_interval60'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100'
-# csv_path_test, test_save_name = Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_1_globally_normalized.csv', 'test_on_training_set'
-
-# model_nr_offset = 0
-# model_name = 'model_grid_'
-
-model_nr_offset = 7
-model_name = 'model_test_grid_search_'
+model_nr_offset = 0
+model_name = 'model_grid_'
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
