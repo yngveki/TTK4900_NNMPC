@@ -1,0 +1,13 @@
+FILES:
+  train_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\staircases\csv\staircases_1000_steps_output_clipped.csv
+  val_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\staircases\csv\staircases_1000_steps_output_clipped.csv
+activation: LeakyReLU
+bsz: 64
+e: 200
+hlszs:
+- 50
+lr: 0.001
+mu: 10
+my: 10
+p: 5
+weight_decay: 0.1
