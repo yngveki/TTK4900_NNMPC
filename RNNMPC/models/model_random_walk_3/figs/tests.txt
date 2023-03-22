@@ -1,0 +1,2 @@
+Test results showed in 'mixed_ramp_short' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_short_1_globally_normalized.csv
