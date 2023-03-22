@@ -94,12 +94,12 @@ def validation_loop(dataloader, model, epoch):
 def train(hyperparameters, csv_path_train, csv_path_val):
 
     act = hyperparameters['activation']
-    mu = hyperparameters['STRUCTURE']['mu']
-    my = hyperparameters['STRUCTURE']['my']
-    hlszs = hyperparameters['STRUCTURE']['hlszs']
-    batch_size = hyperparameters['LEARNING']['bsz']
-    epochs = hyperparameters['LEARNING']['e']
-    patience = hyperparameters['LEARNING']['p']
+    mu = hyperparameters['mu']
+    my = hyperparameters['my']
+    hlszs = hyperparameters['hlszs']
+    batch_size = hyperparameters['bsz']
+    epochs = hyperparameters['e']
+    patience = hyperparameters['p']
 
     #! n_MV = 2 and n_CV = 2 are implicitly hardcoded here
     layers = []
@@ -108,7 +108,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     layers.append(2)                           # Output layer
     model = NeuralNetwork(layers=layers, act=act)
     loss_fn = nn.MSELoss() # MSE as loss func. for a regression problem
-    optimizer = torch.optim.Adam(model.parameters(), **hyperparameters['OPTIMIZER'])
+    optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters['lr'], weight_decay=hyperparameters['weight_decay'])
 
     # TODO: Change into random subsetting of one huge dataset (instead of using separate datasets)
     train_dl = load_input_data(csv_path_train, bsz=batch_size, mu=mu, my=my, shuffle=True)
@@ -125,18 +125,18 @@ def train(hyperparameters, csv_path_train, csv_path_val):
     done = False
     stopwatch = Timer()
     stopwatch.start()
-    print_params = True
+    print_params = False
     while t < len(time) and not done:
         print(f"Epoch {t+1}\n-------------------------------")
         train_losses[t] = train_loop(train_dl, model, loss_fn, optimizer)
         val_MSEs[t] = validation_loop(val_dl, model, t) # Necessary only for early stopping
-        print(f'Epoch {t+1 - es.counter}, validation MSE: {es.best_loss} (CURRENT BEST)')
         
-        # Stopping early based on when validation error starts increasing.
+        # Checking for early stop
         if es(abs(val_MSEs[t]), model):
             done = True
-            # print('disabled early stopping\n')
         
+        print(f'Epoch {t+1 - es.counter}, validation MSE: {es.best_loss} (CURRENT BEST)')
+
         t += 1
         stopwatch.lap()
 
@@ -145,6 +145,7 @@ def train(hyperparameters, csv_path_train, csv_path_val):
                 print(name, param.data)
     
     stopwatch.total_time()
+    print('--------------------------------------------------------------\n')
 
     model.log_MSE(es.best_loss)
 

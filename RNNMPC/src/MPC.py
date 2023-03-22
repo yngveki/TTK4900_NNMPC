@@ -92,15 +92,15 @@ class RNNMPC:
 
         # -- Load neural network model -- #   
         configs = self._read_yaml(nn_config_path)
-        self.config['mu'] = configs['STRUCTURE']['mu']
-        self.config['my'] = configs['STRUCTURE']['my']    
+        self.config['mu'] = configs['mu']
+        self.config['my'] = configs['my']    
         # Load model
         layers = []
         layers.append(self.config['n_MV'] * (self.config['mu'] + 1) + \
                       self.config['n_CV'] * (self.config['my'] + 1))
         self.input_layer = layers[-1]
 
-        layers += configs['STRUCTURE']['hlszs']
+        layers += configs['hlszs']
         self.hidden_layers = layers[-1]
 
         layers.append(self.config['n_CV'])

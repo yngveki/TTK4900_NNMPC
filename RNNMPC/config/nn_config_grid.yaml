@@ -1,0 +1,11 @@
+activation: ['LeakyReLU'] # Can be either 'ReLU' or 'LeakyReLU'
+
+m: [10,20,30,40,50]          # history of inputs/outputs considered (set to be equal for both input and output)
+hlszs: [[20],[50],[80]]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
+
+bsz: [64]         # batch size
+e: [200]          # epochs
+p: [5]            # patience
+
+lr: [0.001, 0.0001]       # learning rate
+weight_decay: [0.1, 0.2] # weight decay

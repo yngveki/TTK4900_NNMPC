@@ -11,10 +11,10 @@ from generate_data.load_input_data import load_input_data
 # ----- PREDICTING A SEQUENCE ----- #
 def test(model_path, csv_path, hyperparameters):
     
-    mu = hyperparameters['STRUCTURE']['mu']
-    my = hyperparameters['STRUCTURE']['my']
-    hlszs = hyperparameters['STRUCTURE']['hlszs']
-    batch_size = hyperparameters['LEARNING']['bsz']
+    mu = hyperparameters['mu']
+    my = hyperparameters['my']
+    hlszs = hyperparameters['hlszs']
+    batch_size = hyperparameters['bsz']
 
     layers = []
     layers.append(2 * (mu + 1) + 2 * (my + 1)) # Input layer
