@@ -144,8 +144,9 @@ def train(hyperparameters, csv_path_train, csv_path_val):
             for name, param in model.named_parameters():
                 print(name, param.data)
     
+        print('--------------------------------------------------------------\n')
+    
     stopwatch.total_time()
-    print('--------------------------------------------------------------\n')
 
     model.log_MSE(es.best_loss)
 
