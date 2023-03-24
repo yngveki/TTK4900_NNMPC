@@ -83,10 +83,7 @@ def grid_search_params(config_path):
         params = safe_load(f)
 
     all_param_sets = []
-    
-    # Need to unwrap layers of dictionaries
-    
-    
+
     # Set up grid
     grid = product(*params.values())
     for point in grid:
@@ -96,7 +93,7 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = True
+TRAIN = False
 GRID = True
 TEST = True
 
