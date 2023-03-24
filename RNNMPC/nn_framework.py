@@ -10,11 +10,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-
-from src.neuralnetwork import NeuralNetwork
 from src.train import train
 from src.test import test
-from src.utils.splitter import Splitter
+from src.utils.saving import append_test_mse
 
 class GroundTruth():
     """Holds arrays showing u1, u2, y1, y2"""
@@ -109,6 +107,7 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
 
 model_nr_offset = 0
 model_name = 'model_grid_'
+mse_log_path = Path(__file__).parent / 'models/model_grid_mses.csv'
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
@@ -224,9 +223,6 @@ if __name__ == '__main__' and TRAIN:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     for i, hyperparameters in enumerate(sets): # (for each model as defined in all the hyperparameters)
-        if i <= 15:
-            continue
-        
         model_name_test = model_name + str(model_nr_offset + i)
 
         # -- SETUP -- #
@@ -244,106 +240,129 @@ if __name__ == '__main__' and TEST:
             gt = GroundTruth(csv_path_test)
             pred, model = test(model_path, csv_path_test, hyperparameters)
 
-            if denormalize_test_results:
-                gt.denormalize(**denormalization_coeffs)
-                pred['y1'] = [el * denormalization_coeffs['y1_scale'] for el in pred['y1']]
-                pred['bias y1'] = [el * denormalization_coeffs['y1_scale'] for el in pred['bias y1']]
-                pred['y2'] = [el * denormalization_coeffs['y2_scale'] for el in pred['y2']]
-                pred['bias y2'] = [el * denormalization_coeffs['y2_scale'] for el in pred['bias y2']]
+            append_test_mse(mse_log_path, model_name_test, test_save_name, model.mse,
+                            activation=hyperparameters['activation'],
+                            mu=hyperparameters['mu'],
+                            my=hyperparameters['my'],
+                            hlszs=hyperparameters['hlszs'][0],
+                            bsz=hyperparameters['bsz'],
+                            e=hyperparameters['e'],
+                            p=hyperparameters['p'],
+                            lr=hyperparameters['lr'],
+                            weight_decay=hyperparameters['weight_decay'])
 
-            # -- PLOTTING -- #
-            fig2, axes = plt.subplots(2, 2, sharex=True)
-            fig2.suptitle(f'Test MSE: {model.mse:.5g}', fontsize=23)
+            # if denormalize_test_results:
+            #     gt.denormalize(**denormalization_coeffs)
+            #     pred['y1'] = [el * denormalization_coeffs['y1_scale'] for el in pred['y1']]
+            #     pred['bias y1'] = [el * denormalization_coeffs['y1_scale'] for el in pred['bias y1']]
+            #     pred['y2'] = [el * denormalization_coeffs['y2_scale'] for el in pred['y2']]
+            #     pred['bias y2'] = [el * denormalization_coeffs['y2_scale'] for el in pred['bias y2']]
 
-            # predictions are offset because of mu and my. Compensation:
-            t = np.linspace(0, delta_t * len(gt.y1), num=len(gt.y1))
-            offset_y1 = len(gt.y1) - len(pred['y1'])
-            offset_y2 = len(gt.y2) - len(pred['y2'])
+            # # -- PLOTTING -- #
+            # fig2, axes = plt.subplots(2, 2, sharex=True)
+            # fig2.suptitle(f'Test MSE: {model.mse:.5g}', fontsize=23)
 
-            # Plotting ground truth and predicted gas rates
-            axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
-            axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-            axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
-            axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
-            axes[0,0].legend(loc='best', prop={'size': 15})
-            # axes[0,0].set_ylim(0, denormalization_coeffs['y1_scale'] * 1.1)
+            # # predictions are offset because of mu and my. Compensation:
+            # t = np.linspace(0, delta_t * len(gt.y1), num=len(gt.y1))
+            # offset_y1 = len(gt.y1) - len(pred['y1'])
+            # offset_y2 = len(gt.y2) - len(pred['y2'])
 
-            if plot_offset:
-                axes00_twinx = axes[0,0].twinx()
-                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.3, color='tab:green')
-                axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
-                axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
-                axes00_twinx.spines['right'].set_color('tab:green')
-                max_lim = max(pred['bias y1']) + (2.5 * abs(max(pred['bias y1'])))
-                min_lim = min(pred['bias y1']) - (0.5 * abs(min(pred['bias y1'])))
-                axes00_twinx.set_ylim(min_lim, max_lim) # Makes the plot less intrusive
+            # # Plotting ground truth and predicted gas rates
+            # axes[0,0].set_title('Predicted v. true dynamics, gas rate', fontsize=20)
+            # axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
+            # axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
+            # axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
+            # axes[0,0].legend(loc='best', prop={'size': 15})
+            # # axes[0,0].set_ylim(0, denormalization_coeffs['y1_scale'] * 1.1)
 
-            # Plotting ground truth and predicted oil rates
-            axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
-            axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-            axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
-            axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
-            axes[0,1].legend(loc='best', prop={'size': 15})
-            # axes[0,1].set_ylim(0, denormalization_coeffs['y2_scale'] * 1.1)
+            # if plot_offset:
+            #     axes00_twinx = axes[0,0].twinx()
+            #     axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.3, color='tab:green')
+            #     axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
+            #     axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
+            #     axes00_twinx.spines['right'].set_color('tab:green')
+            #     max_lim = max(pred['bias y1']) + (2.5 * abs(max(pred['bias y1'])))
+            #     min_lim = min(pred['bias y1']) - (0.5 * abs(min(pred['bias y1'])))
+            #     axes00_twinx.set_ylim(min_lim, max_lim) # Makes the plot less intrusive
+
+            # # Plotting ground truth and predicted oil rates
+            # axes[0,1].set_title('Predicted v. true dynamics, oil rate', fontsize=20)
+            # axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
+            # axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
+            # axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
+            # axes[0,1].legend(loc='best', prop={'size': 15})
+            # # axes[0,1].set_ylim(0, denormalization_coeffs['y2_scale'] * 1.1)
             
-            if plot_offset:
-                axes01_twinx = axes[0,1].twinx()
-                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.3, color='tab:green')
-                axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
-                axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
-                axes01_twinx.spines['right'].set_color('tab:green')
-                max_lim = max(pred['bias y2']) + (2.5 * abs(max(pred['bias y2'])))
-                min_lim = min(pred['bias y2']) - (0.5 * abs(min(pred['bias y2'])))
-                axes01_twinx.set_ylim(min_lim, max_lim) # Makes the plot less intrusive
+            # if plot_offset:
+            #     axes01_twinx = axes[0,1].twinx()
+            #     axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.3, color='tab:green')
+            #     axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
+            #     axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
+            #     axes01_twinx.spines['right'].set_color('tab:green')
+            #     max_lim = max(pred['bias y2']) + (2.5 * abs(max(pred['bias y2'])))
+            #     min_lim = min(pred['bias y2']) - (0.5 * abs(min(pred['bias y2'])))
+            #     axes01_twinx.set_ylim(min_lim, max_lim) # Makes the plot less intrusive
 
-            # Plotting history of choke input
-            axes[1,0].set_title('Input: choke', fontsize=20)
-            axes[1,0].set_xlabel('time [s]', fontsize=15)
-            axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-            axes[1,0].plot(t, gt.u1, label='choke', color='blue')
-            axes[1,0].legend(loc='best', prop={'size': 15})
+            # # Plotting history of choke input
+            # axes[1,0].set_title('Input: choke', fontsize=20)
+            # axes[1,0].set_xlabel('time [s]', fontsize=15)
+            # axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
+            # axes[1,0].plot(t, gt.u1, label='choke', color='blue')
+            # axes[1,0].legend(loc='best', prop={'size': 15})
 
-            # Plotting history of gas lift rate input
-            axes[1,1].set_title('Input: gas lift rate', fontsize=20)
-            axes[1,1].set_xlabel('time [s]', fontsize=15)
-            axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
-            axes[1,1].plot(t, gt.u2, label='gas lift rate', color='blue')
-            axes[1,1].legend(loc='best', prop={'size': 15})
+            # # Plotting history of gas lift rate input
+            # axes[1,1].set_title('Input: gas lift rate', fontsize=20)
+            # axes[1,1].set_xlabel('time [s]', fontsize=15)
+            # axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
+            # axes[1,1].plot(t, gt.u2, label='gas lift rate', color='blue')
+            # axes[1,1].legend(loc='best', prop={'size': 15})
 
-            manager = plt.get_current_fig_manager()
-            manager.window.showMaximized()
+            # manager = plt.get_current_fig_manager()
+            # manager.window.showMaximized()
 
-            plt.show(block=False)
-            plt.pause(1)
-            plt.close()          
+            # plt.show(block=False)
+            # plt.pause(1)
+            # plt.close()          
             
-            # -- SAVING FIGS -- #
-            parent_dir = Path(__file__).parent / ('models/' + model_name_test)
-            save_dir = parent_dir / 'figs'
-            if not exists(save_dir):
-                temp = Path(__file__).parent / test_save_name
-                print(f'save_dir ({save_dir}) does not exist - default save to: {temp}')
-                save_dir = temp
-            save_path = save_dir / test_save_name
+            # # -- SAVING FIGS -- #
+            # parent_dir = Path(__file__).parent / ('models/' + model_name_test)
+            # save_dir = parent_dir / 'figs'
+            # if not exists(save_dir):
+            #     temp = Path(__file__).parent / test_save_name
+            #     print(f'save_dir ({save_dir}) does not exist - default save to: {temp}')
+            #     save_dir = temp
+            # save_path = save_dir / test_save_name
 
-            if      exists(save_path.parent / (save_path.stem + '.png')) \
-                or  exists(save_path.parent / (save_path.stem + '.eps')):
-                name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
-                if name != '': # _not_ aborting
-                    if name != 'y': # do _not_ want to override
-                        save_path = save_path.parent / name
+            # if      exists(save_path.parent / (save_path.stem + '.png')) \
+            #     or  exists(save_path.parent / (save_path.stem + '.eps')):
+            #     name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+            #     if name != '': # _not_ aborting
+            #         if name != 'y': # do _not_ want to override
+            #             save_path = save_path.parent / name
 
-                else:
-                    save_path = None
+            #     else:
+            #         save_path = None
                 
-            if save_path is not None:
-                for suffix in suffixes:
-                    save_path = save_path.parent / (save_path.stem + suffix)
-                    fig2.savefig(save_path, bbox_inches='tight')
+            # if save_path is not None:
+            #     for suffix in suffixes:
+            #         save_path = save_path.parent / (save_path.stem + suffix)
+            #         fig2.savefig(save_path, bbox_inches='tight')
                 
-                txt_file = open(save_path.parent / ('tests.txt'), 'a')
-                txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at:\n\t' + str(csv_path_test) + '\n')
-                txt_file.close()
+            #     txt_file = open(save_path.parent / ('tests.txt'), 'a')
+            #     txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at:\n\t' + str(csv_path_test) + '\n\t' \
+            #                    + f'MSE: {model.mse:.5g}\n')
+            #     txt_file.close()
 
-            else:
-                print("Test of model was not saved.")
+            #     append_test_mse(mse_log_path, model_name_test, test_save_name, model.mse,
+            #                     activation=hyperparameters['activation'],
+            #                     mu=hyperparameters['mu'],
+            #                     my=hyperparameters['my'],
+            #                     hlszs=hyperparameters['hlszs'][0],
+            #                     bsz=hyperparameters['bsz'],
+            #                     e=hyperparameters['e'],
+            #                     p=hyperparameters['p'],
+            #                     lr=hyperparameters['lr'],
+            #                     weight_decay=hyperparameters['weight_decay'])
+
+            # else:
+            #     print("Test of model was not saved.")
