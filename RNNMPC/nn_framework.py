@@ -262,11 +262,10 @@ if __name__ == '__main__' and TEST:
             axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
             axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
             axes[0,0].legend(loc='best', prop={'size': 15})
-            # axes[0,0].set_ylim(0, denormalization_coeffs['y1_scale'] * 1.1)
 
             if plot_offset:
                 axes00_twinx = axes[0,0].twinx()
-                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.3, color='tab:green')
+                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.5, color='tab:green')
                 axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
                 axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes00_twinx.spines['right'].set_color('tab:green')
@@ -284,7 +283,7 @@ if __name__ == '__main__' and TEST:
             
             if plot_offset:
                 axes01_twinx = axes[0,1].twinx()
-                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.3, color='tab:green')
+                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.5, color='tab:green')
                 axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
                 axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes01_twinx.spines['right'].set_color('tab:green')

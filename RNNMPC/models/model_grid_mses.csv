@@ -1,4 +1,4 @@
-model_name, test_name, mse, activation, mu, my, hlszs, bsz, e, p, lr, weight_decaymodel_grid_0,step_choke_medium,8.727521552438183e-06,LeakyReLU,10,10,20,64,200,4,0.001,0.1
+model_name,test_name,mse,activation,mu,my,hlszs,bsz,e,p,lr,weight_decay
 model_grid_0,step_choke_medium,8.727521552438183e-06,LeakyReLU,10,10,20,64,200,4,0.001,0.1
 model_grid_0,step_choke_low,0.00011723604153043457,LeakyReLU,10,10,20,64,200,4,0.001,0.1
 model_grid_0,step_choke_high,1.136064695726548e-05,LeakyReLU,10,10,20,64,200,4,0.001,0.1
