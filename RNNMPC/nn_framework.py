@@ -134,6 +134,11 @@ else:
 if __name__ == '__main__' and TRAIN:
     # Train across all hyperparameters (only 1 set if GRID == False)
     for i, hyperparameters in enumerate(sets):
+        
+        # In case I want to restart training somewhere into the sets
+        if i <= 17:
+            continue
+
         model_name_train = model_name + str(model_nr_offset + i)
 
         # Saving which files were used for training and validation for traceability purposes
@@ -148,9 +153,9 @@ if __name__ == '__main__' and TRAIN:
 
         # Plotting training against validation error
         fig.tight_layout()
-        ax.plot(val_MSEs[:final_epoch], 'r-', linewidth=2.0, label='Validation MSE')
-        ax.plot(train_losses[:final_epoch], 'b--', linewidth=2.0, label='Training losses')
-        ax.axvline(len(val_MSEs[:final_epoch]) - p + 1, color='tab:red') # +1 corrects for 0-indexing
+        ax.plot(val_MSEs[:final_epoch], 'r-', linewidth=2.0, label='Validation MSE (avg.)')
+        ax.plot(train_losses[:final_epoch], 'b--', linewidth=2.0, label='Training losses\n(per mini-batch)')
+        ax.axvline(len(val_MSEs[:final_epoch]) - p, color='tab:red')
         ax.set_xlabel('epochs')
         ax.set_title(f'Validation performance over epochs. Lowest MSE: {model.mse:.3g}')
         ax.legend(loc='center right', prop={'size': 15})
