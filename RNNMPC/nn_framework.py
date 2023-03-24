@@ -83,10 +83,7 @@ def grid_search_params(config_path):
         params = safe_load(f)
 
     all_param_sets = []
-    
-    # Need to unwrap layers of dictionaries
-    
-    
+
     # Set up grid
     grid = product(*params.values())
     for point in grid:
@@ -96,7 +93,7 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = True
+TRAIN = False
 GRID = True
 TEST = True
 
@@ -227,6 +224,9 @@ if __name__ == '__main__' and TRAIN:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     for i, hyperparameters in enumerate(sets): # (for each model as defined in all the hyperparameters)
+        if i <= 15:
+            continue
+        
         model_name_test = model_name + str(model_nr_offset + i)
 
         # -- SETUP -- #
