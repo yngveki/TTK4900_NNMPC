@@ -11,17 +11,14 @@ from yaml import safe_load
 from src.utils.simulate_fmu import init_model, simulate_singlewell_step
 from src.neuralnetwork import NeuralNetwork
 from src.utils.references import ReferenceTimeseries
-from src.utils.custom_timing import Timer
-from src.utils.plotting import plot_MPC_step
-# import ml_casadi.torch as mc
 
 class RNNMPC:
 
     def __init__(self, 
                 nn_path,
-                mpc_config_path,
                 nn_config_path,
-                ref_path):
+                ref_path,
+                mpc_configs):
         """
         Takes in given paths to setup the framework around the OCP
         """
@@ -48,40 +45,39 @@ class RNNMPC:
         self.uk = None
 
         # -- config parameters -- #
-        configs = self._read_yaml(mpc_config_path)
         self.config = {}
 
         # System parameters
-        self.config['n_MV'] = configs['SYSTEM_PARAMETERS']['n_MV']
-        self.config['n_CV'] = configs['SYSTEM_PARAMETERS']['n_CV']
+        self.config['n_MV'] = mpc_configs['n_MV']
+        self.config['n_CV'] = mpc_configs['n_CV']
 
         # Horizons
-        self.config['Hu'] = configs['TUNING_PARAMETERS']['Hu']
-        self.config['Hp'] = configs['TUNING_PARAMETERS']['Hp']
+        self.config['Hu'] = mpc_configs['Hu']
+        self.config['Hp'] = mpc_configs['Hp']
 
         # Weights
-        self.config['Q'] = np.diag(configs['TUNING_PARAMETERS']['Q'])
-        self.config['R'] = np.diag(configs['TUNING_PARAMETERS']['R'])
-        self.config['rho'] = configs['TUNING_PARAMETERS']['rho']
+        self.config['Q'] = np.diag(mpc_configs['Q'])
+        self.config['R'] = np.diag(mpc_configs['R'])
+        self.config['rho'] = mpc_configs['rho']
 
         # Constraints
-        self.config['ylb'] = configs['TUNING_PARAMETERS']['ylb']
-        self.config['yub'] = configs['TUNING_PARAMETERS']['yub']
-        self.config['ulb'] = configs['TUNING_PARAMETERS']['ulb']
-        self.config['uub'] = configs['TUNING_PARAMETERS']['uub']
-        self.config['dulb'] = configs['TUNING_PARAMETERS']['dulb']
-        self.config['duub'] = configs['TUNING_PARAMETERS']['duub']
-        self.config['elb'] = configs['TUNING_PARAMETERS']['elb']
-        self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
+        self.config['ylb'] = mpc_configs['ylb']
+        self.config['yub'] = mpc_configs['yub']
+        self.config['ulb'] = mpc_configs['ulb']
+        self.config['uub'] = mpc_configs['uub']
+        self.config['dulb'] = mpc_configs['dulb']
+        self.config['duub'] = mpc_configs['duub']
+        self.config['elb'] = mpc_configs['elb']
+        self.config['eub'] = mpc_configs['eub']
 
         # Solver options
-        p_opts = configs['PLUGIN_OPTIONS']
-        s_opts = configs['SOLVER_OPTIONS']
+        p_opts = mpc_configs['PLUGIN_OPTIONS']
+        s_opts = mpc_configs['SOLVER_OPTIONS']
 
         # Timekeeping
-        self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.warm_start_t = configs['RUNNING_PARAMETERS']['warm_start_t']
-        self.final_t = configs['RUNNING_PARAMETERS']['final_t'] + self.warm_start_t
+        self.delta_t = mpc_configs['delta_t']
+        self.warm_start_t = mpc_configs['warm_start_t']
+        self.final_t = mpc_configs['final_t'] + self.warm_start_t
         self.t = 0
 
         # -- Set up references -- #
@@ -91,16 +87,16 @@ class RNNMPC:
                                         time=0)
 
         # -- Load neural network model -- #   
-        configs = self._read_yaml(nn_config_path)
-        self.config['mu'] = configs['mu']
-        self.config['my'] = configs['my']    
+        nn_configs = self._read_yaml(nn_config_path)
+        self.config['mu'] = nn_configs['mu']
+        self.config['my'] = nn_configs['my']    
         # Load model
         layers = []
         layers.append(self.config['n_MV'] * (self.config['mu'] + 1) + \
                       self.config['n_CV'] * (self.config['my'] + 1))
         self.input_layer = layers[-1]
 
-        layers += configs['hlszs']
+        layers += nn_configs['hlszs']
         self.hidden_layers = layers[-1]
 
         layers.append(self.config['n_CV'])
@@ -305,18 +301,6 @@ class RNNMPC:
         with open(file_path, "r") as f:
             return safe_load(f)
 
-    # def _build_MLP(self, layers, path):
-    #     nn = mc.nn.CasadiNeuralNetwork(layers)
-    #     nn.load(path)
-
-    #     casadi_sym_inp = ca.MX.sym('inp', layers[0])
-    #     casadi_sym_out = nn(casadi_sym_inp)
-    #     return ca.Function('model2',
-    #                             [casadi_sym_inp],
-    #                             [casadi_sym_out],
-    #                             ['MLP_in'],
-    #                             ['MLP_out'])
-
     def _build_MLP(self, weights, biases):
         assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
         assert len(weights) >= 2, "Must include at least input layer, hidden layer and output layer!"
@@ -324,7 +308,9 @@ class RNNMPC:
         n_layers = len(weights) # Number of layers (excluding input layer, since no function call happens there)
 
         placeholder = ca.MX.sym('placeholder')
-        ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
+        # TODO: More robust fetch of leak_rate (currently just hardcoded into neuralnetwork.py)
+        leak_rate = 0.2
+        LReLU = ca.Function('LReLU', [placeholder], [ca.if_else(placeholder >= 0, placeholder, leak_rate * placeholder)],
                                     ['relu_in'], ['relu_out'])
 
         x_in = ca.MX.sym('x', len(weights[0]))
@@ -336,7 +322,7 @@ class RNNMPC:
                                 ['layer_in'], ['layer_out'])
             x = layer(x)
             if (l+1) < n_layers:
-                x = ReLU(x)
+                x = LReLU(x)
 
         return ca.Function('f_MLP', [x_in], [x], ['MLP_in'], ['MLP_out'])
         
