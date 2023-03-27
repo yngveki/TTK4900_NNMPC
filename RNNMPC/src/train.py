@@ -25,7 +25,6 @@ class EarlyStopping():
         if self.best_loss == None:
             self.best_loss = val_loss
             self.best_model = model
-            self.counter += 1
 
         # validation loss decreased; update model because this one must be better
         elif self.best_loss - val_loss > self.min_delta:

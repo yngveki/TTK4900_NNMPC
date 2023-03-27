@@ -93,9 +93,9 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = False
+TRAIN = True
 GRID = True
-TEST = True
+TEST = False
 
 csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_1mill_globally_normalized.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_50k_globally_normalized.csv'
@@ -108,7 +108,7 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
 model_nr_offset = 0
-model_name = 'model_grid_'
+model_name = 'model_grid_second_run_'
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
@@ -134,11 +134,6 @@ else:
 if __name__ == '__main__' and TRAIN:
     # Train across all hyperparameters (only 1 set if GRID == False)
     for i, hyperparameters in enumerate(sets):
-        
-        # In case I want to restart training somewhere into the sets
-        if i <= 17:
-            continue
-
         model_name_train = model_name + str(model_nr_offset + i)
 
         # Saving which files were used for training and validation for traceability purposes
