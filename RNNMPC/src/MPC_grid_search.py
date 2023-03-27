@@ -311,8 +311,11 @@ class RNNMPC:
         n_layers = len(weights) # Number of layers (excluding input layer, since no function call happens there)
 
         placeholder = ca.MX.sym('placeholder')
-        # TODO: CHANGE TO LReLU
-        ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
+        # ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
+        #                             ['relu_in'], ['relu_out'])
+        # TODO: More robust fetch of leak_rate (currently just hardcoded into neuralnetwork.py)
+        leak_rate = 0.2
+        LReLU = ca.Function('LReLU', [placeholder], [ca.if_else(placeholder >= 0, placeholder, leak_rate * placeholder)],
                                     ['relu_in'], ['relu_out'])
 
         x_in = ca.MX.sym('x', len(weights[0]))
@@ -324,7 +327,7 @@ class RNNMPC:
                                 ['layer_in'], ['layer_out'])
             x = layer(x)
             if (l+1) < n_layers:
-                x = ReLU(x)
+                x = LReLU(x)
 
         return ca.Function('f_MLP', [x_in], [x], ['MLP_in'], ['MLP_out'])
         

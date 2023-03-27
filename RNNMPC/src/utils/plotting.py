@@ -23,20 +23,24 @@ def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True, plot_bias=False):
     
     num = len(mpc.simulated_u['choke'])
     t = np.linspace(0, num * mpc.delta_t, num=num)
+    cutoff = 0
+    if warm_start_cutoff:
+        cutoff = mpc.warm_start_t // mpc.delta_t
+
     fig, axes = plt.subplots(2, 2, sharex=True)
-    fig.suptitle(f'RNNMPC simulated {mpc.final_t // mpc.delta_t} steps of {mpc.delta_t} [s] each. Total time is {mpc.final_t}', fontsize=23)
+    fig.suptitle(f'RNNMPC simulated {num} steps of {mpc.delta_t} [s] each. Total time is {mpc.final_t}', fontsize=23)
 
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Measured gas rate v. reference gas rate', fontsize=20)
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
-    axes[0,0].plot(t, mpc.simulated_y['gas rate'], '-', label='true gas rate', color='tab:orange')
+    axes[0,0].plot(t[cutoff:], mpc.simulated_y['gas rate'][cutoff:], '-', label='true gas rate', color='tab:orange')
     axes[0,0].plot(t[-len(mpc.full_refs['gas rate']):], mpc.full_refs['gas rate'], '--', label='reference gas rate', color='tab:red')
-    if warm_start_cutoff: axes[0,0].axvline(mpc.warm_start_t, color='tab:green')
+    if not warm_start_cutoff: axes[0,0].axvline(mpc.warm_start_t, color='tab:green')
     axes[0,0].legend(loc='best', prop={'size': 15})
 
     if plot_bias: 
         twin00 = axes[0,0].twinx()
-        twin00.plot(t[-(len(mpc.full_refs['gas rate']) + 1):], mpc.bias['gas rate'], label='bias gas rate', color='tab:olive')
+        twin00.plot(t[-len(mpc.full_refs['gas rate']):], mpc.bias['gas rate'][1:], label='bias gas rate', color='tab:olive')
         twin00.set_ylabel('gas rate bias (yk - yk_hat) [m^3/h]', color='tab:olive')
         twin00.tick_params(axis='y', color='tab:olive', labelcolor='tab:olive')
         twin00.spines['right'].set_color('tab:olive')
@@ -47,14 +51,14 @@ def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True, plot_bias=False):
     # Plotting ground truth and predicted oil rates
     axes[0,1].set_title('Measured oil rate v. reference oil rate', fontsize=20)
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-    axes[0,1].plot(t, mpc.simulated_y['oil rate'], label='true oil rate', color='tab:orange')
+    axes[0,1].plot(t[cutoff:], mpc.simulated_y['oil rate'][cutoff:], label='true oil rate', color='tab:orange')
     axes[0,1].plot(t[-len(mpc.full_refs['oil rate']):], mpc.full_refs['oil rate'], '--', label='reference oil rate', color='tab:red')
-    if warm_start_cutoff: axes[0,1].axvline(mpc.warm_start_t, color='tab:green')
+    if not warm_start_cutoff: axes[0,1].axvline(mpc.warm_start_t, color='tab:green')
     axes[0,1].legend(loc='best', prop={'size': 15})
 
     if plot_bias: 
         twin01 = axes[0,1].twinx()
-        twin01.plot(t[-(len(mpc.full_refs['oil rate']) + 1):], mpc.bias['oil rate'], label='bias oil rate', color='tab:olive')
+        twin01.plot(t[-len(mpc.full_refs['oil rate']):], mpc.bias['oil rate'][1:], label='bias oil rate', color='tab:olive')
         twin01.set_ylabel('oil rate bias (yk - yk_hat) [m^3/h]', color='tab:olive')
         twin01.tick_params(axis='y', color='tab:olive', labelcolor='tab:olive')
         twin01.spines['right'].set_color('tab:olive')
@@ -66,16 +70,16 @@ def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True, plot_bias=False):
     axes[1,0].set_title('Input: choke opening', fontsize=20)
     axes[1,0].set_xlabel('time [s]', fontsize=15)
     axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-    axes[1,0].plot(t, mpc.simulated_u['choke'], label='choke', color='blue')
-    if warm_start_cutoff: axes[1,0].axvline(mpc.warm_start_t, color='tab:green')
+    axes[1,0].plot(t[cutoff:], mpc.simulated_u['choke'][cutoff:], label='choke', color='blue')
+    if not warm_start_cutoff: axes[1,0].axvline(mpc.warm_start_t, color='tab:green')
     axes[1,0].legend(loc='best', prop={'size': 15})
 
     # Plotting history of gas lift rate input
     axes[1,1].set_title('Input: gas lift rate', fontsize=20)
     axes[1,1].set_xlabel('time [s]', fontsize=15)
     axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
-    axes[1,1].plot(t, mpc.simulated_u['gas lift'], label='gas lift rate', color='blue')
-    if warm_start_cutoff: axes[1,1].axvline(mpc.warm_start_t, color='tab:green')
+    axes[1,1].plot(t[cutoff:], mpc.simulated_u['gas lift'][cutoff:], label='gas lift rate', color='blue')
+    if not warm_start_cutoff: axes[1,1].axvline(mpc.warm_start_t, color='tab:green')
     axes[1,1].legend(loc='best', prop={'size': 15})
 
     manager = plt.get_current_fig_manager()

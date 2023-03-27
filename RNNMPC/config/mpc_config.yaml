@@ -3,7 +3,8 @@ n_MV: 2
 n_CV: 2
 
 # Horizons (current OCP-formulation demands these be equal)
-H: 50
+Hu: 50
+Hp: 50
 
 # Tuning parameters
 Q: [1000,1000]
@@ -23,7 +24,7 @@ eub: [1000000, 1000000]
 # Running parameters
 delta_t: 10
 warm_start_t: 2000
-final_t: 2000
+final_t: 16000
 
 # These are layered, because they should be parsed as dicts
 PLUGIN_OPTIONS:

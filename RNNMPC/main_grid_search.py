@@ -64,7 +64,7 @@ def grid_search_params(config_path, searchable):
 
 # -- SCRIPT BEGINS -- #
 
-GRID = True
+GRID = False
 
 if GRID == True:
     mpc_config_path = Path(__file__).parent / 'config/mpc_config_grid.yaml'
@@ -79,7 +79,11 @@ else:
 for i, params in enumerate(sets):
     if __name__ == '__main__':
 
-        model_name = 'model_grid_second_run_8'
+        # BEST MODEL
+        # model_name = 'model_grid_second_run_8'
+
+        # FASTER MODEL - still very decent (little to no offset?)
+        model_name = 'model_grid_0'
         model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
         fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
         ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
@@ -162,7 +166,7 @@ for i, params in enumerate(sets):
         save_dir /= 'figs'
         if not exists(save_dir):
             makedirs(save_dir)
-        save_path = save_dir / (str(config['RUNNING_PARAMETERS']['final_t'] // config['RUNNING_PARAMETERS']['delta_t']) + '_steps')
+        save_path = save_dir / (str(config['final_t'] // config['delta_t']) + '_steps')
 
         if      exists(save_path.parent / (save_path.stem + '.png')) \
             or  exists(save_path.parent / (save_path.stem + '.eps')):
