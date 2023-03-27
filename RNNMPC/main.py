@@ -4,6 +4,7 @@ from pathlib import Path
 from os.path import exists
 from os import makedirs
 from yaml import safe_load, dump
+from itertools import product
 
 from src.MPC import RNNMPC
 from src.utils.custom_timing import Timer
