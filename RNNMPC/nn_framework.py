@@ -10,11 +10,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-
-from src.neuralnetwork import NeuralNetwork
 from src.train import train
 from src.test import test
-from src.utils.splitter import Splitter
+from src.utils.saving import append_test_mse
 
 class GroundTruth():
     """Holds arrays showing u1, u2, y1, y2"""
@@ -108,7 +106,8 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
 model_nr_offset = 0
-model_name = 'model_grid_second_run_'
+model_name = 'model_grid_'
+mse_log_path = Path(__file__).parent / 'models/model_grid_mses.csv'
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
@@ -219,9 +218,6 @@ if __name__ == '__main__' and TRAIN:
 # -- TESTING -- #
 if __name__ == '__main__' and TEST:
     for i, hyperparameters in enumerate(sets): # (for each model as defined in all the hyperparameters)
-        if i <= 15:
-            continue
-        
         model_name_test = model_name + str(model_nr_offset + i)
 
         # -- SETUP -- #
@@ -261,11 +257,10 @@ if __name__ == '__main__' and TEST:
             axes[0,0].plot(t, gt.y1, '-', label='true gas rate', color='tab:orange')
             axes[0,0].plot(t[offset_y1:], pred['y1'], label='predicted gas rate', color='tab:red')
             axes[0,0].legend(loc='best', prop={'size': 15})
-            # axes[0,0].set_ylim(0, denormalization_coeffs['y1_scale'] * 1.1)
 
             if plot_offset:
                 axes00_twinx = axes[0,0].twinx()
-                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.3, color='tab:green')
+                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.5, color='tab:green')
                 axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
                 axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes00_twinx.spines['right'].set_color('tab:green')
@@ -283,7 +278,7 @@ if __name__ == '__main__' and TEST:
             
             if plot_offset:
                 axes01_twinx = axes[0,1].twinx()
-                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.3, color='tab:green')
+                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.5, color='tab:green')
                 axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
                 axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes01_twinx.spines['right'].set_color('tab:green')
@@ -337,8 +332,20 @@ if __name__ == '__main__' and TEST:
                     fig2.savefig(save_path, bbox_inches='tight')
                 
                 txt_file = open(save_path.parent / ('tests.txt'), 'a')
-                txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at:\n\t' + str(csv_path_test) + '\n')
+                txt_file.write('Test results showed in \'' + str(save_path.stem) + '\' came from testing with file at:\n\t' + str(csv_path_test) + '\n\t' \
+                               + f'MSE: {model.mse:.5g}\n')
                 txt_file.close()
+
+                append_test_mse(mse_log_path, model_name_test, test_save_name, model.mse,
+                                activation=hyperparameters['activation'],
+                                mu=hyperparameters['mu'],
+                                my=hyperparameters['my'],
+                                hlszs=hyperparameters['hlszs'][0],
+                                bsz=hyperparameters['bsz'],
+                                e=hyperparameters['e'],
+                                p=hyperparameters['p'],
+                                lr=hyperparameters['lr'],
+                                weight_decay=hyperparameters['weight_decay'])
 
             else:
                 print("Test of model was not saved.")
