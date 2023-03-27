@@ -8,6 +8,8 @@ def append_test_mse(csv_path, model_name, test_name, mse, **hyperparameters):
     Custom function designed to append the mse for a specific test of a specific model to the given .csv-path
     '''
     
+    # TODO: Check if file doesn't exist. If it doesnt, also add header!
+    # TODO: Currently adds without newline! Remember to add newline to end of header when fixed automatic header-adding
     assert isinstance(csv_path, Path), 'Path given must be of the \'Path\' type!'
     row = [model_name, test_name, mse]
 

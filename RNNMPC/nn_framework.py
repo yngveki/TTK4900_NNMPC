@@ -91,9 +91,9 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = True
+TRAIN = False
 GRID = True
-TEST = False
+TEST = True
 
 csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_1mill_globally_normalized.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_50k_globally_normalized.csv'
@@ -106,8 +106,8 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
 model_nr_offset = 0
-model_name = 'model_grid_'
-mse_log_path = Path(__file__).parent / 'models/model_grid_mses.csv'
+model_name = 'model_grid_second_run_'
+mse_log_path = Path(__file__).parent / 'models/model_grid_second_mses.csv'
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
@@ -129,10 +129,11 @@ else:
         hyperparameters = safe_load(f)
     sets = [hyperparameters]
 
+
+for i, hyperparameters in enumerate(sets):
 # -- TRAINING -- #
-if __name__ == '__main__' and TRAIN:
-    # Train across all hyperparameters (only 1 set if GRID == False)
-    for i, hyperparameters in enumerate(sets):
+    # Train and/or test across all hyperparameters (only 1 set if GRID == False)
+    if __name__ == '__main__' and TRAIN:
         model_name_train = model_name + str(model_nr_offset + i)
 
         # Saving which files were used for training and validation for traceability purposes
@@ -160,7 +161,7 @@ if __name__ == '__main__' and TRAIN:
         plt.show(block=False)
         plt.pause(15)
         plt.close()
-        
+
         # -- SAVING TRAINED MODEL -- #
         # Setting up directory for results
         parent_dir = Path(__file__).parent / 'models'
@@ -216,8 +217,10 @@ if __name__ == '__main__' and TRAIN:
             print("Figures were not saved.")
 
 # -- TESTING -- #
-if __name__ == '__main__' and TEST:
-    for i, hyperparameters in enumerate(sets): # (for each model as defined in all the hyperparameters)
+    if __name__ == '__main__' and TEST:
+        if i <= -1:
+            continue
+
         model_name_test = model_name + str(model_nr_offset + i)
 
         # -- SETUP -- #
@@ -260,7 +263,7 @@ if __name__ == '__main__' and TEST:
 
             if plot_offset:
                 axes00_twinx = axes[0,0].twinx()
-                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.5, color='tab:green')
+                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.75, color='tab:green')
                 axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
                 axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes00_twinx.spines['right'].set_color('tab:green')
@@ -274,11 +277,10 @@ if __name__ == '__main__' and TEST:
             axes[0,1].plot(t, gt.y2, label='true oil rate', color='tab:orange')
             axes[0,1].plot(t[offset_y2:], pred['y2'], '-', label='predicted oil rate', color='tab:red')
             axes[0,1].legend(loc='best', prop={'size': 15})
-            # axes[0,1].set_ylim(0, denormalization_coeffs['y2_scale'] * 1.1)
             
             if plot_offset:
                 axes01_twinx = axes[0,1].twinx()
-                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.5, color='tab:green')
+                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.75, color='tab:green')
                 axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
                 axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes01_twinx.spines['right'].set_color('tab:green')
@@ -305,8 +307,8 @@ if __name__ == '__main__' and TEST:
 
             plt.show(block=False)
             plt.pause(1)
-            plt.close()          
-            
+            plt.close()
+
             # -- SAVING FIGS -- #
             parent_dir = Path(__file__).parent / ('models/' + model_name_test)
             save_dir = parent_dir / 'figs'
