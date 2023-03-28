@@ -28,7 +28,7 @@ def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True, plot_bias=False):
         cutoff = mpc.warm_start_t // mpc.delta_t
 
     fig, axes = plt.subplots(2, 2, sharex=True)
-    fig.suptitle(f'RNNMPC simulated {num} steps of {mpc.delta_t} [s] each. Total time is {mpc.final_t}', fontsize=23)
+    fig.suptitle(f'RNNMPC simulated {num - cutoff} steps of {mpc.delta_t} [s] each. Total time is {mpc.final_t}', fontsize=23)
 
     # Plotting ground truth and predicted gas rates
     axes[0,0].set_title('Measured gas rate v. reference gas rate', fontsize=20)

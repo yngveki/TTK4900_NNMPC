@@ -156,26 +156,34 @@ class ReferenceTimeseries(References):
     [Reference0, Reference1, Reference2, Reference3, Reference4]
     """
 
+    # TODO: Change self.length to correspond to prediction horizon - must always have a reference!
     def __init__(self, ref_path, length, delta_t, time=0):
+        self._ts_nr = 0 # Current timestep we're on (essentially curr_time // delta_t). Start at -1 so that the initial update leaves us ready at 0
         self.delta_t = delta_t
-        self.length = length
+        self.length = length # Should correspond to Hp
         self.ref_series = [0] * self.length
 
         super().__init__(ref_path, time)
         
-        self.update()
+        self.update(update_time=False) # Do not update time during initialization!
 
-    def update(self):
+    def update(self, update_time=True):
         """
         Updates the references-timeseries to be valid from current time
-        and a _length_ number of timesteps into the future"""
+        and a _length_ number of timesteps into the future, and also
+        increments the current time to account for updates being made
+        """
+        if update_time:
+            self._ts_nr += 1
+            self.curr_time += self.delta_t # Update _after_ because it's used to set during __init__
+        
         self.ref_series[0] = self.curr_ref
 
-        t = self.curr_time
-        for i in range(1, self.length):
-            t_in_future = t + (i * self.delta_t)
-            self.ref_series[i] = self[t_in_future]
-            
+        # t = self.curr_time
+        for i in range(1, self.length): # Skip 0th element because it's set manually
+            # t_in_future = t + (i * self.delta_t)
+            self.ref_series[i] = self[i] # Add _ts_nr since the static self.refs is what's being accessed
+    
     def __len__(self):
         """
         Returns how many steps into the future a series of reference
@@ -196,10 +204,15 @@ class ReferenceTimeseries(References):
     def __getitem__(self, key):
         """
         Returns the reference valid at the specified time in linear time(?)
+
+        Note: The given key is multiplied, so that the API can stride with unit strides,
+              and the size of the timestep will still be accounted for.
         
         Could probably be improved by better search method 
         """
         item = None
+        key += self._ts_nr # Offset such that indexation is according to where we are in time
+        key *= self.delta_t # Scale such that indexation matches magnitude of timesteps
         for ref in self.refs:
             # Avoids illegal comparison operation below
             if ref.nxt is None:

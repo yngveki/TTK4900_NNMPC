@@ -273,6 +273,7 @@ class RNNMPC:
         self.simulated_y['k'] += 1 
         self.full_refs['gas rate'].append(self.Y_ref[0][0])
         self.full_refs['oil rate'].append(self.Y_ref[0][1])
+        self.refs.update() # Iterate reference for next step
         
         x = []
         x.extend(self.simulated_u['choke'][-1:-self.mu-2:-1])      # current->past (want 1 + my (current _and_ past), hence -2)
