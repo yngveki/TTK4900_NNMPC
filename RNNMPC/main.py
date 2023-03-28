@@ -81,19 +81,18 @@ for i, params in enumerate(sets):
     if __name__ == '__main__':
 
         # BEST MODEL
-        # model_name = 'model_grid_second_run_8'
+        model_name = 'model_grid_second_run_0'
 
         # FASTER MODEL - still very decent (little to no offset?)
-        model_name = 'model_grid_0'
+        # model_name = 'model_grid_0'
         model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
         fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
-        # ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
-        ref_path = Path(__file__).parent / 'config/refs/refs_fast.csv'
+        ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
         mpc_config_path = Path(__file__).parent / 'config/mpc_config.yaml'
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-        config_name = 'grid_search_' + str(i) # For saving the config along with results
+        config_name = 'grid_search_' + str(i+3) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,

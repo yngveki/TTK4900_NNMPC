@@ -33,7 +33,7 @@ elb:
 eub:
 - 1000000
 - 1000000
-final_t: 16000
+final_t: 3000
 n_CV: 2
 n_MV: 2
 rho:
