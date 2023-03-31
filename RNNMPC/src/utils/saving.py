@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 from os.path import exists
+from os import makedirs
 from yaml import dump
 
 def append_test_mse(csv_path, model_name, test_name, mse, **hyperparameters):
@@ -22,8 +23,12 @@ def append_test_mse(csv_path, model_name, test_name, mse, **hyperparameters):
 
         writer.writerow(row)
 
+def make_parent_dir(dir):
+    if not exists(dir):
+        makedirs(dir)
 
-def safe_save(path, data, filetype):
+
+def safe_save(path, data, filetype, create_parent=False):
     '''
     Custom function designed to save the given data to the given path, and safeguard for overwriting. 
     Filetype has to be specified, as different filetypes require different means of saving
@@ -49,7 +54,9 @@ def safe_save(path, data, filetype):
     else:
         return ValueError('Invalid filetype specified. Options are \'csv\' and \'yaml\'')
     
-    # Perform save
+    # Perform 
+    if create_parent: make_parent_dir(path.parent)
+
     if not exists(path): # Safe to save; nothing can be overwritten
         save(path, data)
     
@@ -64,3 +71,6 @@ def safe_save(path, data, filetype):
 
         else:
             print("File was not saved.")
+
+
+    

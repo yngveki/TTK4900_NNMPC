@@ -9,11 +9,11 @@ Hu: 100
 PLUGIN_OPTIONS:
   expand: true
 Q:
-- 1
-- 1
-R:
 - 1000
 - 1
+R:
+- 1
+- 1000
 SOLVER_OPTIONS:
   acceptable_iter: 5
   acceptable_tol: 1

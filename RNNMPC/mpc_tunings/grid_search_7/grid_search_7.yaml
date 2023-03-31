@@ -1,7 +1,3 @@
-FILES:
-  fmu: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\fmu\fmu_endret_deadband.fmu
-  model: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\models\model_grid_0\model_grid_0.pt
-  refs: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\config\refs\refs0.csv
 H:
 - 100
 Hp: 100
@@ -10,7 +6,7 @@ PLUGIN_OPTIONS:
   expand: true
 Q:
 - 1
-- 1
+- 1000
 R:
 - 1000
 - 1

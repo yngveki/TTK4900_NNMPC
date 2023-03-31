@@ -2,16 +2,18 @@ FILES:
   fmu: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\fmu\fmu_endret_deadband.fmu
   model: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\models\model_grid_0\model_grid_0.pt
   refs: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\config\refs\refs0.csv
-Hp: 80
-Hu: 80
+H:
+- 100
+Hp: 100
+Hu: 100
 PLUGIN_OPTIONS:
   expand: true
 Q:
-- 1000
-- 1000
+- 1
+- 1
 R:
 - 1
-- 1
+- 1000
 SOLVER_OPTIONS:
   acceptable_iter: 5
   acceptable_tol: 1
@@ -33,7 +35,7 @@ elb:
 eub:
 - 1000000
 - 1000000
-final_t: 2500
+final_t: 2000
 n_CV: 2
 n_MV: 2
 rho:
@@ -50,5 +52,5 @@ ylb:
 - 0
 - 0
 yub:
-- 18537
-- 349
+- 16000
+- 500

@@ -9,7 +9,7 @@ Hu: 100
 PLUGIN_OPTIONS:
   expand: true
 Q:
-- 1
+- 1000
 - 1
 R:
 - 1000

@@ -9,6 +9,7 @@ from itertools import product
 from src.MPC import RNNMPC
 from src.utils.custom_timing import Timer
 from src.utils.plotting import plot_RNNMPC
+from src.utils.saving import safe_save
 
 # -- FUNCS -- #
 def grid_search_params(config_path, searchable):
@@ -65,7 +66,7 @@ def grid_search_params(config_path, searchable):
 
 # -- SCRIPT BEGINS -- #
 
-GRID = False
+GRID = True
 
 if GRID == True:
     mpc_config_path = Path(__file__).parent / 'config/mpc_config_grid.yaml'
@@ -76,23 +77,24 @@ else:
         params = safe_load(f)
     sets = [params]
 
-
+# TODO: Fix "try" so that fail in solution exits that point on the grid search, and doesn't terminate the entire running.
 for i, params in enumerate(sets):
-    if __name__ == '__main__':
-
+    if i <= 6:
+        continue
+    try:
+    # if __name__ == '__main__':
         # BEST MODEL
-        model_name = 'model_grid_second_run_0'
+        # model_name = 'model_grid_second_run_0'
 
         # FASTER MODEL - still very decent (little to no offset?)
-        # model_name = 'model_grid_0'
+        model_name = 'model_grid_0'
         model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
         fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
         ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
-        mpc_config_path = Path(__file__).parent / 'config/mpc_config.yaml'
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-        config_name = 'grid_search_' + str(i+3) # For saving the config along with results
+        config_name = 'grid_search_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,
@@ -131,10 +133,7 @@ for i, params in enumerate(sets):
 
         # -- SAVING MPC TUNING ALONG WITH RESULTS -- #
         # Appending files used for this specific run
-        with open(mpc_config_path, 'r') as f:
-            config = safe_load(f)
-
-        config['FILES'] = {'model': model_path.__str__(),
+        params['FILES'] = {'model': model_path.__str__(),
                         'fmu': fmu_path.__str__(),
                         'refs': ref_path.__str__()}
         
@@ -158,7 +157,7 @@ for i, params in enumerate(sets):
         if config_save_path is not None:
             # Save config
             with open(config_save_path, 'w', encoding = 'utf-8') as yaml_file:
-                yaml_file.write(dump(config, default_flow_style = False, allow_unicode = True, encoding = None))
+                yaml_file.write(dump(params, default_flow_style = False, allow_unicode = True, encoding = None))
                 mpc.save_data(config_save_path.parent)
         else:
             print('Config was not saved')
@@ -167,7 +166,7 @@ for i, params in enumerate(sets):
         save_dir /= 'figs'
         if not exists(save_dir):
             makedirs(save_dir)
-        save_path = save_dir / (str(config['final_t'] // config['delta_t']) + '_steps')
+        save_path = save_dir / (str(params['final_t'] // params['delta_t']) + '_steps')
 
         if      exists(save_path.parent / (save_path.stem + '.png')) \
             or  exists(save_path.parent / (save_path.stem + '.eps')):
@@ -185,3 +184,10 @@ for i, params in enumerate(sets):
                 fig.savefig(save_path, bbox_inches='tight')
         else:
             print("Figures were not saved.")
+
+    except: # To safeguard against exiting on solution failure
+        parent_dir = Path(__file__).parent / 'mpc_tunings'
+        save_dir = parent_dir / config_name
+        config_save_path = save_dir / (config_name + '.yaml')
+        safe_save(config_save_path, params, 'yaml', create_parent=True)
+        continue
