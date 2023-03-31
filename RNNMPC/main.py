@@ -77,10 +77,7 @@ else:
         params = safe_load(f)
     sets = [params]
 
-# TODO: Fix "try" so that fail in solution exits that point on the grid search, and doesn't terminate the entire running.
 for i, params in enumerate(sets):
-    if i <= 6:
-        continue
     try:
     # if __name__ == '__main__':
         # BEST MODEL
@@ -94,7 +91,7 @@ for i, params in enumerate(sets):
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-        config_name = 'grid_search_' + str(i) # For saving the config along with results
+        config_name = 'grid_search_second_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,
