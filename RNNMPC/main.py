@@ -78,8 +78,6 @@ else:
     sets = [params]
 
 for i, params in enumerate(sets):
-    if i <= 7:
-        continue
     try:
     # if __name__ == '__main__':
         # BEST MODEL
@@ -93,7 +91,7 @@ for i, params in enumerate(sets):
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-        config_name = 'grid_search_third_' + str(i) # For saving the config along with results
+        config_name = 'grid_search_fourth_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,

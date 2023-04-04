@@ -3,12 +3,12 @@ n_MV: 2
 n_CV: 2
 
 # Horizons (current OCP-formulation demands these be equal)
-H: [100] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
+H: [50,100,150] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
 
 # Tuning parameters
-Q: [[0.01,0.01], [0.01,0.1], [0.01,1], [0.1,0.01], [0.1,0.1],[0.1,1],[1,0.01],[1,0.1],[1,1]]  
+Q: [[1, 0.001], [1, 0.005], [1, 0.01], [1, 0.05], [1, 0.1]]
 R: [[1000,1000]]
-rho: [[1000,1000]]
+rho: [[1,1], [1000,1000], [1000000,1000000]]
 
 # Constraints
 ylb: [0,0]
