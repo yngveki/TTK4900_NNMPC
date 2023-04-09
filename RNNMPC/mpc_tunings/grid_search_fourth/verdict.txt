@@ -25,3 +25,7 @@ Takeaway:
 - Prediction horizon should be >100, but does little to no added effect after this.
 
 Time consumption per MPC loop should be considered when choosing between e.g. H=100 or H=150.
+
+Maybe we won't get much further, even with a good tuning, so long as the model is bad?
+
+Would be interesting to run a few tests on longer references and changes in references to see performance of best model + best tuning thus far.
