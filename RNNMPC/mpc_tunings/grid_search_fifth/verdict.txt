@@ -1,0 +1,26 @@
+grid search spanned combinations of
+
+Q: [[1,0.0001],[1,0.01],[1,1],[10,0.0001],[10,0.01],[10,1],[100,0.0001],[100,0.01],[100,1],[1000,0.0001],[1000,0.01],[1000,1]]
+R: [[1000,1000],[10000,10000]]
+
+In every case, R=[1000,1000] performed better than R=[10000,10000]
+
+Following that, too large differences between Q[0] and Q[1] caused oscillations, but arguably better performance as well
+
+Examples are:
+1) grid_search_fifth_2 (Q=[1,0.01], R=[1000,1000]):
+    - Relatively quick target tracking, but then suffers from some stationary error
+2) grid_search_fifth_6 (Q=[10,0.0001], R=[1000,1000]):
+    - Target tracks slightly more precisely than grid_search_fifth_2, but is overdamped and oscillates before it hits.
+      Input profiles are pretty ugly.
+3) grid_search_fifth_10 (Q=[10,1], R=[1000,1000]):
+    - Tracks relatively quickly and precisely, but overshoots somewhat to begin with (similar to grid_search_fifth_6, but less)
+      and then oscillates, almost marginally stably, around reference.
+      Input profiles are pretty ugly.
+
+Summary:
+My final verdict would be that grid_search_fifth_2 is best. The corresponding config file is practically identical to 
+previous best (grid_search_fourth_15), so no new information was gained in this grid search.
+
+I will try to experiment some more with different variations of R to shape the input profile to hopefully become prettier,
+but I think the most impactful next step would be to make a better model (somehow).
