@@ -91,7 +91,7 @@ for i, params in enumerate(sets):
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
 
-        config_name = 'grid_search_fifth_' + str(i) # For saving the config along with results
+        config_name = 'grid_search_sixth_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,
