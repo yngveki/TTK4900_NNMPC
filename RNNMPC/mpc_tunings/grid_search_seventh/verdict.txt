@@ -1,0 +1,7 @@
+This grid search spanned configurations of:
+
+R: [[0.0001,1000],[0.001,1000],[0.01,1000],[0.1,1000]],
+
+all with the same results. Next I'll try to keep R[0]=1 statically,
+and alter R[1] to higher values. I predict that this will have no or negative
+effect, and that a better model is what is really needed.
