@@ -1,0 +1,7 @@
+This grid search spanned configurations of:
+
+R: [[1,5000],[1,10000],[1,15000],[1,20000],[1,25000],[1,30000],[1,35000],[1,40000],[1,45000],[1,50000],[1,60000],[1,70000],[1,80000],[1,90000],[1,100000]]
+
+TL;DR: Very poor performance to begin with, and worse the higher R[1]
+
+Will have to try to find a better middle ground. Maybe something like R=[1,\in[750,1000]]?
