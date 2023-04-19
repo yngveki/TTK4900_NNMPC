@@ -239,6 +239,7 @@ class RNNMPC:
         self.opti.subject_to(constraints)
 
     def solve_OCP(self, debug=False, plot=False):
+        #! Takes longer and longer for each iteration
         sol = self.opti.solve() #! Takes a very long time before even starting to iterate - some sort of initialization? - probably normal, though
         self.uk = sol.value(self.U)[:,self.mu]
 
