@@ -24,7 +24,7 @@ eub: [1000000, 1000000]
 # Running parameters
 delta_t: 10
 warm_start_t: 2000
-final_t: 17000
+final_t: 21000
 
 # These are layered, because they should be parsed as dicts
 PLUGIN_OPTIONS:
