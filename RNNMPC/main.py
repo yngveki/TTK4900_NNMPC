@@ -84,7 +84,7 @@ for i, params in enumerate(sets):
         # model_name = 'model_grid_second_run_0'
 
         # FASTER MODEL - still very decent (little to no offset?)
-        model_name = 'model_grid_0'
+        model_name = 'light_weight_0'
         model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
         fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
         ref_path = Path(__file__).parent / 'config/refs/refs0.csv'

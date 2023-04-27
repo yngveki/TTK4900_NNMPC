@@ -91,12 +91,12 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = False
-GRID = True
+TRAIN = True
+GRID = False
 TEST = True
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_1mill_globally_normalized.csv'
-csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_50k_globally_normalized.csv'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_150k_fast_globally_normalized.csv'
+csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_30k_fast_globally_normalized.csv'
 
 tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_globally_normalized.csv', 'step_choke_medium'),
          (Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_20_22_globally_normalized.csv', 'step_choke_low'),
@@ -106,8 +106,8 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
 model_nr_offset = 0
-model_name = 'model_grid_second_run_'
-mse_log_path = Path(__file__).parent / 'models/model_grid_second_mses.csv'
+model_name = 'light_weight_'
+mse_log_path = Path(__file__).parent / 'models/light_weight_0.csv'
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures
