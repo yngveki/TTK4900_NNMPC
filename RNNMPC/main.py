@@ -66,7 +66,7 @@ def grid_search_params(config_path, searchable):
 
 # -- SCRIPT BEGINS -- #
 
-GRID = False
+GRID = True
 
 if GRID == True:
     mpc_config_path = Path(__file__).parent / 'config/mpc_config_grid.yaml'
@@ -90,8 +90,9 @@ for i, params in enumerate(sets):
         ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
+        parent_dir = Path(__file__).parent / 'mpc_tunings'
 
-        config_name = 'grid_search_fourth_15_1'# + str(i) # For saving the config along with results
+        config_name = 'grid_search_light_weight_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,
@@ -135,7 +136,6 @@ for i, params in enumerate(sets):
                         'refs': ref_path.__str__()}
         
         # Setting up directory for results
-        parent_dir = Path(__file__).parent / 'mpc_tests'
         save_dir = parent_dir / config_name
         if not exists(save_dir):
             makedirs(save_dir)
