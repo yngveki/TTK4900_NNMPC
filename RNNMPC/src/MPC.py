@@ -11,17 +11,14 @@ from yaml import safe_load
 from src.utils.simulate_fmu import init_model, simulate_singlewell_step
 from src.neuralnetwork import NeuralNetwork
 from src.utils.references import ReferenceTimeseries
-from src.utils.custom_timing import Timer
-from src.utils.plotting import plot_MPC_step
-# import ml_casadi.torch as mc
 
 class RNNMPC:
 
     def __init__(self, 
                 nn_path,
-                mpc_config_path,
                 nn_config_path,
-                ref_path):
+                ref_path,
+                mpc_configs):
         """
         Takes in given paths to setup the framework around the OCP
         """
@@ -48,46 +45,44 @@ class RNNMPC:
         self.uk = None
 
         # -- config parameters -- #
-        configs = self._read_yaml(mpc_config_path)
         self.config = {}
 
         # System parameters
-        self.config['n_MV'] = configs['SYSTEM_PARAMETERS']['n_MV']
-        self.config['n_CV'] = configs['SYSTEM_PARAMETERS']['n_CV']
+        self.config['n_MV'] = mpc_configs['n_MV']
+        self.config['n_CV'] = mpc_configs['n_CV']
 
         # Horizons
-        self.config['Hu'] = configs['TUNING_PARAMETERS']['Hu']
-        self.config['Hp'] = configs['TUNING_PARAMETERS']['Hp']
+        self.config['Hu'] = mpc_configs['Hu']
+        self.config['Hp'] = mpc_configs['Hp']
 
         # Weights
-        self.config['Q'] = np.diag(configs['TUNING_PARAMETERS']['Q'])
-        self.config['R'] = np.diag(configs['TUNING_PARAMETERS']['R'])
-        self.config['rho'] = configs['TUNING_PARAMETERS']['rho']
+        self.config['Q'] = np.diag(mpc_configs['Q'])
+        self.config['R'] = np.diag(mpc_configs['R'])
+        self.config['rho'] = mpc_configs['rho']
 
         # Normalization - bounds are defined by ylb, yub, ulb and uub
-        self.normalization_vals = {'choke': configs['NORMALIZATION_VALUES']['choke'],
-                                   'GL': configs['NORMALIZATION_VALUES']['GL'],
-                                   'gasrate': configs['NORMALIZATION_VALUES']['gasrate'],
-                                   'oilrate': configs['NORMALIZATION_VALUES']['oilrate']}
-        
-        # Constraints - Constraints must be normalized for coherence
-        self.config['ylb'] = self._normalize(configs['TUNING_PARAMETERS']['ylb'], ('gasrate','oilrate'))
-        self.config['yub'] = self._normalize(configs['TUNING_PARAMETERS']['yub'], ('gasrate','oilrate'))
-        self.config['ulb'] = self._normalize(configs['TUNING_PARAMETERS']['ulb'], ('choke','GL'))
-        self.config['uub'] = self._normalize(configs['TUNING_PARAMETERS']['uub'], ('choke','GL'))
-        self.config['dulb'] = self._normalize(configs['TUNING_PARAMETERS']['dulb'], ('choke','GL'))
-        self.config['duub'] = self._normalize(configs['TUNING_PARAMETERS']['duub'], ('choke','GL'))
-        self.config['elb'] = configs['TUNING_PARAMETERS']['elb']
-        self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
+        self.normalization_vals = {'choke': mpc_configs['NORMALIZATION_VALUES']['choke'],
+                                   'GL': mpc_configs['NORMALIZATION_VALUES']['GL'],
+                                   'gasrate': mpc_configs['NORMALIZATION_VALUES']['gasrate'],
+                                   'oilrate': mpc_configs['NORMALIZATION_VALUES']['oilrate']}
+        # Constraints
+        self.config['ylb'] = self._normalize(mpc_configs['ylb'], ('gasrate','oilrate'))
+        self.config['yub'] = self._normalize(mpc_configs['yub'], ('gasrate','oilrate'))
+        self.config['ulb'] = self._normalize(mpc_configs['ulb'], ('choke','GL'))
+        self.config['uub'] = self._normalize(mpc_configs['uub'], ('choke','GL'))
+        self.config['dulb'] = self._normalize(mpc_configs['dulb'], ('choke','GL'))
+        self.config['duub'] = self._normalize(mpc_configs['duub'], ('choke','GL'))
+        self.config['elb'] = mpc_configs['elb']
+        self.config['eub'] = mpc_configs['eub']
 
         # Solver options
-        p_opts = configs['PLUGIN_OPTIONS']
-        s_opts = configs['SOLVER_OPTIONS']
+        p_opts = mpc_configs['PLUGIN_OPTIONS']
+        s_opts = mpc_configs['SOLVER_OPTIONS']
 
         # Timekeeping
-        self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.warm_start_t = configs['RUNNING_PARAMETERS']['warm_start_t']
-        self.final_t = configs['RUNNING_PARAMETERS']['final_t'] + self.warm_start_t
+        self.delta_t = mpc_configs['delta_t']
+        self.warm_start_t = mpc_configs['warm_start_t']
+        self.final_t = mpc_configs['final_t'] + self.warm_start_t
         self.t = 0
 
         # -- Set up references -- #
@@ -97,16 +92,16 @@ class RNNMPC:
                                         time=0)
 
         # -- Load neural network model -- #   
-        configs = self._read_yaml(nn_config_path)
-        self.config['mu'] = configs['mu']
-        self.config['my'] = configs['my']    
+        nn_configs = self._read_yaml(nn_config_path)
+        self.config['mu'] = nn_configs['mu']
+        self.config['my'] = nn_configs['my']    
         # Load model
         layers = []
         layers.append(self.config['n_MV'] * (self.config['mu'] + 1) + \
                       self.config['n_CV'] * (self.config['my'] + 1))
         self.input_layer = layers[-1]
 
-        layers += configs['hlszs']
+        layers += nn_configs['hlszs']
         self.hidden_layers = layers[-1]
 
         layers.append(self.config['n_CV'])
@@ -250,6 +245,7 @@ class RNNMPC:
         self.opti.subject_to(constraints)
 
     def solve_OCP(self, debug=False, plot=False):
+        #! Takes longer and longer for each iteration
         sol = self.opti.solve() #! Takes a very long time before even starting to iterate - some sort of initialization? - probably normal, though
         
         # Need to denormalize actuation, since FMU takes non-normalized (in self.iterate_system)
@@ -289,6 +285,7 @@ class RNNMPC:
         self.simulated_y['k'] += 1 
         self.full_refs['gas rate'].append(self._normalize(self.Y_ref[0][0], 'gasrate'))
         self.full_refs['oil rate'].append(self._normalize(self.Y_ref[0][1], 'oilrate'))
+        self.refs.update() # Iterate reference for next step
         
         x = []
         x.extend(self.simulated_u['choke'][-1:-self.mu-2:-1])      # current->past (want 1 + my (current _and_ past), hence -2)
@@ -324,7 +321,9 @@ class RNNMPC:
         n_layers = len(weights) # Number of layers (excluding input layer, since no function call happens there)
 
         placeholder = ca.MX.sym('placeholder')
-        ReLU = ca.Function('ReLU', [placeholder], [placeholder * (placeholder > 0)],
+        # TODO: More robust fetch of leak_rate (currently just hardcoded into neuralnetwork.py)
+        leak_rate = 0.2
+        LReLU = ca.Function('LReLU', [placeholder], [ca.if_else(placeholder >= 0, placeholder, leak_rate * placeholder)],
                                     ['relu_in'], ['relu_out'])
 
         x_in = ca.MX.sym('x', len(weights[0]))
@@ -336,7 +335,7 @@ class RNNMPC:
                                 ['layer_in'], ['layer_out'])
             x = layer(x)
             if (l+1) < n_layers:
-                x = ReLU(x)
+                x = LReLU(x)
 
         return ca.Function('f_MLP', [x_in], [x], ['MLP_in'], ['MLP_out'])
         

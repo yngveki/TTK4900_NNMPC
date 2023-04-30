@@ -1,0 +1,14 @@
+Third grid search spanned values of:
+
+Q: [[0.01,0.01], [0.01,0.1], [0.01,1], [0.1,0.01], [0.1,0.1],[0.1,1],[1,0.01],[1,0.1],[1,1]]  
+
+with R=[1000,1000], rho=[1000,1000] and H=100 (two last as per usual wrt earlier grid searches)
+
+Configs 0-5 could not target-track, 6 and 7 target tracked decently, while config 8 target tracked
+poorly, and with oscillations. Went for config 7, as it might have seemed slightly better than 6.
+
+Takeaway: Penalty on errors in target tracking of oil rate has to be significantly higher than
+          penalty on errors in target tracking of gas rate.
+
+Next test: Hold penalty on oil rate static (e.g. on 1) and vary gas rate quite a bit. 
+           Also investigate effect of altering rho and H?

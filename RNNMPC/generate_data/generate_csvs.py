@@ -381,15 +381,16 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
     # 4) Should stay for some time within "local bounds", so as to make cover all regions better, with some certainty 
     # 5) Should vary probabilities for increment/decrement randomly (within limits)
 
-    filename = 'random_walk_50k'
-    num_periods = 5       # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
-    period_length = 10000   # num steps before updating local bounds and inc/dec-probabilities
+    filename = 'random_walk_30k_fast'
+    save_dir = 'rnnmpc_random_walk'
+    num_periods = 30      # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
+    period_length = 1000   # num steps before updating local bounds and inc/dec-probabilities
 
     choke_specs = {'init': 50, 
                    'global_bounds': [20,100],
                    'local_bound_size': 20, 
                    'inc_bounds': [-0.55,0.55], 
-                   'waiting_limits': [50,100], 
+                   'waiting_limits': [20,50], 
                    'p': [0.55,0.45], # initial probability for [increment, decrement], respectively
                    'p_inc': 0.04,
                    'p_bounds': [0.35, 0.65],
@@ -401,7 +402,7 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
                 'global_bounds': [0, 10000],
                 'local_bound_size': 2000,
                 'inc_bounds': [-166.7, 166.7], 
-                'waiting_limits': [50,100], 
+                'waiting_limits': [20,50], 
                 'p': [0.55,0.45], # initial probability for [increment, decrement], respectively
                 'p_inc': 0.04,
                 'p_bounds': [0.35, 0.65],
@@ -424,7 +425,7 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
     plt.close()
 
     # Save results
-    csv_path = Path(__file__).parent / ('inputs/rnnmpc_random_walk/' + filename + '.csv')
+    csv_path = Path(__file__).parent / ('inputs/' + save_dir + '/' + filename + '.csv')
     safe_save(csv_path, sequence, filetype='csv')
 
     yaml_path = csv_path.parent / (csv_path.stem + '.yaml')

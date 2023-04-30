@@ -1,0 +1,39 @@
+# System parameters
+n_MV: 2
+n_CV: 2
+
+# Horizons (current OCP-formulation demands these be equal)
+H: [100] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
+
+# Tuning parameters
+Q: [[1000,1],[1000,10],[1000,100],[1000,1000],[100,10],[100,100],[100,1000],[10,10],[10,1000],[10,1000],[1,10],[1,100],[1,1000]]
+R: [[1000,1000],[1,1000],[1000,1]]
+rho: [[1000,1000]]
+
+# Constraints
+ylb: [0,0]
+yub: [18537,349]
+ulb: [0, 0]
+uub: [100, 10000]
+dulb: [-0.55,-166.7]
+duub: [0.55,166.7]
+elb: [0,0]
+eub: [1000000, 1000000]
+
+# Running parameters
+delta_t: 10
+warm_start_t: 2000
+final_t: 2000
+
+# These are layered, because they should be parsed as dicts
+PLUGIN_OPTIONS:
+  expand: True
+  
+SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
+  max_iter: 3000 # default
+  tol: 1 # 7000 # 1e8
+  dual_inf_tol: 1 # 7000 # 1e8
+  constr_viol_tol: 1 # 7000 # 1e8
+  compl_inf_tol: 1 # 7000 # 1e8
+  acceptable_tol: 1 # 7000 # 1e8
+  acceptable_iter: 5

@@ -1,0 +1,6 @@
+model_grid_0_smaller_training_0,step_choke_medium,1.8086735508404672e-05,LeakyReLU,10,10,20,64,200,4,0.001,0.1
+model_grid_0_smaller_training_0,step_choke_low,0.0019215670015130723,LeakyReLU,10,10,20,64,200,4,0.001,0.1
+model_grid_0_smaller_training_0,step_choke_high,4.528363518017743e-05,LeakyReLU,10,10,20,64,200,4,0.001,0.1
+model_grid_0_smaller_training_0,random_walk_short,8.497871339130096e-05,LeakyReLU,10,10,20,64,200,4,0.001,0.1
+model_grid_0_smaller_training_0,mixed_ramp_short,1.3069541418775695e-08,LeakyReLU,10,10,20,64,200,4,0.001,0.1
+model_grid_0_smaller_training_0,multiple_steps_interval100,6.067213689675554e-07,LeakyReLU,10,10,20,64,200,4,0.001,0.1

@@ -1,0 +1,12 @@
+This grid search spanned configurations of 
+
+R: [[1,1000],[10,1000],[100,1000],[550,1000],[1000,1],[1000,10],[1000,100],[1000,550],[1000,1000]]
+
+And all combinations where R[0] <= R[1] gave seemingly (ish) identical results to all decent 
+results from grid_search_fifth
+
+R[1] > R[0] gave lots of oscillations and bad behaviour.
+
+Summary:
+Overshoot is probably a result of model error. I believe much of the improved performance to be gained
+now must be gained by improving the model.

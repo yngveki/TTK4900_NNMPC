@@ -1,0 +1,31 @@
+Tried experimenting with Q-values, rho-values and control/prediction horizon:
+
+rho: [[1,1], [1000,1000], [1000000,1000000]]
+Q:   [[1, 0.001], [1, 0.005], [1, 0.01], [1, 0.05], [1, 0.1]]
+H:   [50,100,150]
+
+Looking at the marginal impacts of each variable, I observe the following:
+
+1) rho:
+Practically no difference between 1 and 1000, but for 1 000 000, solution became either unfeasible (H=100) or in practice trash with wild oscillations far from reference (H=50 or H=150).
+Takeaway here might be that with such a poor model as mine, one cannot be too loose-handed
+with slack-variables. This is potentially bad, but depends on how well target is tracked.
+
+2) Q:
+No visible difference in performance between all 5 variants
+
+3) H:
+Looking at the effects of H (each multiple of 15 uses same H; 0-14, 15-29, 30-44),
+I find that there definitely is an improvement from 50 to 100, but less visibly so between 100 and 150.
+Precisely where the boundary lies is hard to say, but should at least use 100 for good control.
+
+Takeaway: 
+- rho must not be too high; will either result in unacceptable performance or infeasibility
+- Q need more drastic changes in Q; more drastic relative changes, maybe?
+- Prediction horizon should be >100, but does little to no added effect after this.
+
+Time consumption per MPC loop should be considered when choosing between e.g. H=100 or H=150.
+
+Maybe we won't get much further, even with a good tuning, so long as the model is bad?
+
+Would be interesting to run a few tests on longer references and changes in references to see performance of best model + best tuning thus far.

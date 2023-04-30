@@ -1,0 +1,9 @@
+Second grid search spanned values of
+
+Q: [[1,1], [10,10], [100,100]]
+R: [[250,1000], [500,1000], [750,1000]]
+
+With the first three combinations (Q=[1,1], R=[[250,1000],[500,1000],[750,1000]]) being of fairly equal quality.
+
+No very easy conclusion to draw, other than that it seems that values of Q should be quite smaller than
+those of R.

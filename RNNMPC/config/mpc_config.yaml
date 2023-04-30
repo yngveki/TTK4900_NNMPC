@@ -1,8 +1,33 @@
-SYSTEM_PARAMETERS: 
-  n_MV: 2
-  n_CV: 2
+# System parameters
+n_MV: 2
+n_CV: 2
 
-PLUGIN_OPTIONS: 
+# Horizons (current OCP-formulation demands these be equal)
+Hu: 100
+Hp: 100
+
+# Tuning parameters
+Q: [1,0.001]
+R: [1000,1000]
+rho: [1,1]
+
+# Constraints
+ylb: [0,0]
+yub: [18537,349]
+ulb: [0, 0]
+uub: [100, 10000]
+dulb: [-0.55,-166.7]
+duub: [0.55,166.7]
+elb: [0,0]
+eub: [1000000, 1000000]
+
+# Running parameters
+delta_t: 10
+warm_start_t: 2000
+final_t: 21000
+
+# These are layered, because they should be parsed as dicts
+PLUGIN_OPTIONS:
   expand: True
   
 SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
@@ -12,35 +37,7 @@ SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
   constr_viol_tol: 1 # 7000 # 1e8
   compl_inf_tol: 1 # 7000 # 1e8
   acceptable_tol: 1 # 7000 # 1e8
-  acceptable_iter: 5
-
-TUNING_PARAMETERS:
-  #! Horizon values are tentative and should be tuned properly
-  # Horizons (current OCP-formulation demands these be equal)
-  Hu: 80 # Small value during testing for runtime-speed
-  Hp: 80 # Small value during testing for runtime-speed
-
-  #! Tuning parameters are tentative and should be tuned properly
-  # Tuning parameters
-  Q: [1000,1000]
-  R: [1,1]
-  rho: [1000,1000]
-
-  # Constraints
-  ylb: [0,0]
-  yub: [18537,349]
-  ulb: [0, 0]
-  uub: [100, 10000]
-  dulb: [-0.55,-166.7]
-  duub: [0.55,166.7]
-  elb: [0,0]
-  eub: [1000000, 1000000]
-
-RUNNING_PARAMETERS:
-  delta_t: 10
-  warm_start_t: 2000
-  final_t: 2000
-
+  
 NORMALIZATION_VALUES:
   choke: [0,100]     # Externally defined hard limits
   GL: [0,10000]      # Externally defined hard limits

@@ -1,0 +1,18 @@
+First grid search spanned combinations of:
+
+Q: [[1,1], [1000,1], [1,1000]]
+R: [[1,1], [1000,1], [1,1000]]
+
+and quite visibly, Q = [1,1] and R = [1,1000] (nr. 2) was incredibly much better than all others.
+This suggests that it's most important to constrain usage of gas lift in tuning.
+
+Next grid search will lock R[1] at 1000, and experiment more finely resoluted with the other penalties.
+
+Note that rho is set quite high ([1000,1000]) for all points in the grid, since we don't want to use more slack than necessary, and
+thus this parameter is assumed to should be high.
+
+Final note: configs 6-8 (Q = [1,1000] and R = [[1,1], [1000,1], [1,1000]]) terminated on _second_ iteration
+of the MPC-loop, specifically. This indicates that:
+1) it's detrimental if oil rate is punished too hard.
+2) it seems that any non-viable config fails at second MPC-iteration, which is weird. Why the second 
+   iteration specifically, and what would have happened if it managed to pass that second iteration?
