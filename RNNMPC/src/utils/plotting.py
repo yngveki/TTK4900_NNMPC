@@ -21,6 +21,7 @@ def plot_RNNMPC(mpc=None, warm_start_cutoff=True, pause=True, plot_bias=False):
         if-clause use, e.g. choke, gas_lift, gas_rate, oil_rate and t"""
         return NotImplementedError
     
+    # TODO: Fix cutoff in figs!
     # Denormalization
     gas_rate = mpc._normalize(mpc.simulated_y['gas rate'], 'gasrate', inverse=True)
     gas_rate_ref = mpc._normalize(mpc.full_refs['gas rate'], 'gasrate', inverse=True)

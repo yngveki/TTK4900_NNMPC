@@ -283,8 +283,8 @@ class RNNMPC:
         self.simulated_y['gas rate'].append(self._normalize(gas_rate_k, 'gasrate'))
         self.simulated_y['oil rate'].append(self._normalize(oil_rate_k, 'oilrate'))
         self.simulated_y['k'] += 1 
-        self.full_refs['gas rate'].append(self._normalize(self.Y_ref[0][0], 'gasrate'))
-        self.full_refs['oil rate'].append(self._normalize(self.Y_ref[0][1], 'oilrate'))
+        self.full_refs['gas rate'].append(self.Y_ref[0][0]) # Already normalized (top of update_OCP) 
+        self.full_refs['oil rate'].append(self.Y_ref[0][1]) # Already normalized (top of update_OCP)
         self.refs.update() # Iterate reference for next step
         
         x = []
