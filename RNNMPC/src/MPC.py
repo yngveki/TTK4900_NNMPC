@@ -64,13 +64,19 @@ class RNNMPC:
         self.config['R'] = np.diag(configs['TUNING_PARAMETERS']['R'])
         self.config['rho'] = configs['TUNING_PARAMETERS']['rho']
 
-        # Constraints
-        self.config['ylb'] = configs['TUNING_PARAMETERS']['ylb']
-        self.config['yub'] = configs['TUNING_PARAMETERS']['yub']
-        self.config['ulb'] = configs['TUNING_PARAMETERS']['ulb']
-        self.config['uub'] = configs['TUNING_PARAMETERS']['uub']
-        self.config['dulb'] = configs['TUNING_PARAMETERS']['dulb']
-        self.config['duub'] = configs['TUNING_PARAMETERS']['duub']
+        # Normalization - bounds are defined by ylb, yub, ulb and uub
+        self.normalization_vals = {'choke': configs['NORMALIZATION_VALUES']['choke'],
+                                   'GL': configs['NORMALIZATION_VALUES']['GL'],
+                                   'gasrate': configs['NORMALIZATION_VALUES']['gasrate'],
+                                   'oilrate': configs['NORMALIZATION_VALUES']['oilrate']}
+        
+        # Constraints - Constraints must be normalized for coherence
+        self.config['ylb'] = self._normalize(configs['TUNING_PARAMETERS']['ylb'], ('gasrate','oilrate'))
+        self.config['yub'] = self._normalize(configs['TUNING_PARAMETERS']['yub'], ('gasrate','oilrate'))
+        self.config['ulb'] = self._normalize(configs['TUNING_PARAMETERS']['ulb'], ('choke','GL'))
+        self.config['uub'] = self._normalize(configs['TUNING_PARAMETERS']['uub'], ('choke','GL'))
+        self.config['dulb'] = self._normalize(configs['TUNING_PARAMETERS']['dulb'], ('choke','GL'))
+        self.config['duub'] = self._normalize(configs['TUNING_PARAMETERS']['duub'], ('choke','GL'))
         self.config['elb'] = configs['TUNING_PARAMETERS']['elb']
         self.config['eub'] = configs['TUNING_PARAMETERS']['eub']
 
@@ -129,11 +135,11 @@ class RNNMPC:
                                                       self.warm_start_t,
                                                       vals=warm_start_input)
         
-        self.simulated_u['choke'] += init_u[:,0].tolist()
-        self.simulated_u['gas lift'] += init_u[:,1].tolist()
+        self.simulated_u['choke'] += self._normalize(init_u[:,0].tolist(), 'choke')
+        self.simulated_u['gas lift'] += self._normalize(init_u[:,1].tolist(), 'GL')
         self.simulated_u['k'] = int(self.t // self.delta_t)
-        self.simulated_y['gas rate'] += init_y[:,0].tolist()
-        self.simulated_y['oil rate'] += init_y[:,1].tolist()
+        self.simulated_y['gas rate'] += self._normalize(init_y[:,0].tolist(), 'gasrate')
+        self.simulated_y['oil rate'] += self._normalize(init_y[:,1].tolist(), 'oilrate')
         self.simulated_y['k'] = int(self.t // self.delta_t)
 
         self.uk = [self.simulated_u['choke'][-1],
@@ -160,7 +166,8 @@ class RNNMPC:
         self.U = self.opti.variable(self.config['n_MV'],self.Hu+self.mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
 
     def update_OCP(self):
-        self.Y_ref = self.refs.refs_as_lists()
+        refs = self.refs.refs_as_lists()
+        self.Y_ref = [self._normalize(ref, ('gasrate','oilrate')) for ref in refs]
 
         # (3a)
         cost = 0
@@ -182,10 +189,10 @@ class RNNMPC:
         #                 u_{k+i}            -> [mu + 1 + i]             -> [mu + 1 + i] (nåværende)
         #   -> From (3c): y_{k+i:k+i-my}     -> [my+i-my : my+i]         -> [i : my + 1 + i] (fra og med k+i-my, til _og med_ k+i; nåværende pluss historie)
         if self.yk is None:
-            self.yk = [0,0]
+            self.yk = [self._normalize(0, 'gasrate'),self._normalize(0, 'oilrate')]
             print(f'yk was not defined during warm start, and was now set to {self.yk}')
         if self.uk is None:
-            self.uk = [10,2000]
+            self.uk = [self._normalize(10, 'choke'),self._normalize(2000, 'GL')]
             print(f'uk was not defined during warm start, and was now set to {self.uk}')
         
         # Updating to correct past values
@@ -244,6 +251,8 @@ class RNNMPC:
 
     def solve_OCP(self, debug=False, plot=False):
         sol = self.opti.solve() #! Takes a very long time before even starting to iterate - some sort of initialization? - probably normal, though
+        
+        # Need to denormalize actuation, since FMU takes non-normalized (in self.iterate_system)
         self.uk = sol.value(self.U)[:,self.mu]
 
         # For debugging purposes
@@ -251,7 +260,7 @@ class RNNMPC:
             t1 = sol.value(self.Y)
             t2 = sol.value(self.DU)
             t3 = sol.value(self.U)
-            print('debugging')
+            print('debugging') 
 
         if plot:
             # TODO: make plot of step (du vet det derre helt standard MPC-plottet)
@@ -259,24 +268,27 @@ class RNNMPC:
             return NotImplementedError
 
     def iterate_system(self):
+        '''
+        Measure this timestep's calculated optimal control's effect on system
+        '''
         gas_rate_k, oil_rate_k, \
         choke_act_k, gas_lift_act_k, \
         _, _ = simulate_singlewell_step(self.fmu, 
                                         self.t, 
                                         self.delta_t, 
-                                        self.uk) # measurement from FMU, i.e. result from previous actuation
+                                        self._normalize(self.uk, ('choke','GL'), inverse=True)) 
 
-        self.yk = [gas_rate_k, oil_rate_k]
+        self.yk = self._normalize([gas_rate_k, oil_rate_k], ('gasrate','oilrate'))
 
         # Append puts current at end of array
-        self.simulated_u['choke'].append(choke_act_k)
-        self.simulated_u['gas lift'].append(gas_lift_act_k)
+        self.simulated_u['choke'].append(self._normalize(choke_act_k, 'choke'))
+        self.simulated_u['gas lift'].append(self._normalize(gas_lift_act_k, 'GL'))
         self.simulated_u['k'] += 1
-        self.simulated_y['gas rate'].append(gas_rate_k)
-        self.simulated_y['oil rate'].append(oil_rate_k)
+        self.simulated_y['gas rate'].append(self._normalize(gas_rate_k, 'gasrate'))
+        self.simulated_y['oil rate'].append(self._normalize(oil_rate_k, 'oilrate'))
         self.simulated_y['k'] += 1 
-        self.full_refs['gas rate'].append(self.Y_ref[0][0])
-        self.full_refs['oil rate'].append(self.Y_ref[0][1])
+        self.full_refs['gas rate'].append(self._normalize(self.Y_ref[0][0], 'gasrate'))
+        self.full_refs['oil rate'].append(self._normalize(self.Y_ref[0][1], 'oilrate'))
         
         x = []
         x.extend(self.simulated_u['choke'][-1:-self.mu-2:-1])      # current->past (want 1 + my (current _and_ past), hence -2)
@@ -305,18 +317,6 @@ class RNNMPC:
         with open(file_path, "r") as f:
             return safe_load(f)
 
-    # def _build_MLP(self, layers, path):
-    #     nn = mc.nn.CasadiNeuralNetwork(layers)
-    #     nn.load(path)
-
-    #     casadi_sym_inp = ca.MX.sym('inp', layers[0])
-    #     casadi_sym_out = nn(casadi_sym_inp)
-    #     return ca.Function('model2',
-    #                             [casadi_sym_inp],
-    #                             [casadi_sym_out],
-    #                             ['MLP_in'],
-    #                             ['MLP_out'])
-
     def _build_MLP(self, weights, biases):
         assert len(weights) == len(biases), "Each set of weights must have a corresponding set of biases!"
         assert len(weights) >= 2, "Must include at least input layer, hidden layer and output layer!"
@@ -340,3 +340,51 @@ class RNNMPC:
 
         return ca.Function('f_MLP', [x_in], [x], ['MLP_in'], ['MLP_out'])
         
+    def _normalize(self, vals: float, typ: str, rounding: int=5, inverse: bool=False):
+        '''
+        Normalizes given values (iterable or single value) wrt. bounds as defined in config
+
+        NP! _De_normalization if `inverse==True`
+        '''
+        if hasattr(typ, '__iter__') and not isinstance(typ, str):
+            #! If normalizing different typed values, only support for 1 type/val
+            if len(vals) == len(typ):
+                ret = []
+                if not inverse:
+                    # Normalize
+                    for val, t in zip(vals, typ):
+                        assert t in ('choke', 'GL', 'gasrate', 'oilrate'), 'Value to be normalized must be either choke, gas lift, gas rate or oil rate!'
+                        maxi = self.normalization_vals[t][1]
+                        mini = self.normalization_vals[t][0]
+                        ret.append(round((val - mini)/(maxi - mini), rounding))
+                    return ret
+                
+                else:
+                    # Denormalize
+                    for val, t in zip(vals, typ):
+                        maxi = self.normalization_vals[t][1]
+                        mini = self.normalization_vals[t][0]
+                        ret.append((val * (maxi - mini)) + mini)
+                    return ret
+            else:
+                return NotImplementedError, 'Not implemented for 2D lists yet!'
+            
+        assert typ in ('choke', 'GL', 'gasrate', 'oilrate'), 'Value to be normalized must be either choke, gas lift, gas rate or oil rate!'
+        maxi = self.normalization_vals[typ][1]
+        mini = self.normalization_vals[typ][0]
+        if hasattr(vals, '__iter__'):
+            if not inverse:
+                # Normalize
+                return [round((val - mini) / (maxi - mini), rounding) for val in vals]
+            else:
+                # Denormalize
+                return [(val * (maxi - mini)) + mini for val in vals]
+
+        # `vals` was single value, not iterable
+        else:
+            if not inverse:
+                # Normalize
+                return round((vals - mini)/(maxi - mini), rounding)
+            else:
+                # Denormalize
+                return (vals * (maxi - mini)) + mini

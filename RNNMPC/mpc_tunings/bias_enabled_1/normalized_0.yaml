@@ -1,0 +1,70 @@
+FILES:
+  fmu: c:\Users\Ynque\Desktop\Uni\'22-'23\masteroppgave\prosjektkode\TTK4900_NNMPC\RNNMPC\fmu\fmu_endret_deadband.fmu
+  model: c:\Users\Ynque\Desktop\Uni\'22-'23\masteroppgave\prosjektkode\TTK4900_NNMPC\RNNMPC\models\model_grid_0\model_grid_0.pt
+  refs: c:\Users\Ynque\Desktop\Uni\'22-'23\masteroppgave\prosjektkode\TTK4900_NNMPC\RNNMPC\config\refs\refs0.csv
+NORMALIZATION_VALUES:
+  GL:
+  - 0
+  - 10000
+  choke:
+  - 0
+  - 100
+  gasrate:
+  - 0
+  - 18537
+  oilrate:
+  - 0
+  - 349
+PLUGIN_OPTIONS:
+  expand: true
+RUNNING_PARAMETERS:
+  delta_t: 10
+  final_t: 2000
+  warm_start_t: 2000
+SOLVER_OPTIONS:
+  acceptable_iter: 5
+  acceptable_tol: 1
+  compl_inf_tol: 1
+  constr_viol_tol: 1
+  dual_inf_tol: 1
+  max_iter: 3000
+  tol: 1
+SYSTEM_PARAMETERS:
+  n_CV: 2
+  n_MV: 2
+TUNING_PARAMETERS:
+  Hp: 80
+  Hu: 80
+  Q:
+  - 1000
+  - 1000
+  R:
+  - 1
+  - 1
+  dulb:
+  - -0.55
+  - -166.7
+  duub:
+  - 0.55
+  - 166.7
+  elb:
+  - 0
+  - 0
+  eub:
+  - 1000000
+  - 1000000
+  rho:
+  - 1000
+  - 1000
+  ulb:
+  - 0
+  - 0
+  uub:
+  - 100
+  - 10000
+  ylb:
+  - 0
+  - 0
+  yub:
+  - 18537
+  - 349

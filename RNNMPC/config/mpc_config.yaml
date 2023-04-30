@@ -28,7 +28,7 @@ TUNING_PARAMETERS:
 
   # Constraints
   ylb: [0,0]
-  yub: [16000,500]
+  yub: [18537,349]
   ulb: [0, 0]
   uub: [100, 10000]
   dulb: [-0.55,-166.7]
@@ -40,3 +40,9 @@ RUNNING_PARAMETERS:
   delta_t: 10
   warm_start_t: 2000
   final_t: 2000
+
+NORMALIZATION_VALUES:
+  choke: [0,100]     # Externally defined hard limits
+  GL: [0,10000]      # Externally defined hard limits
+  gasrate: [0,18537] # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
+  oilrate: [0,349]   # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
