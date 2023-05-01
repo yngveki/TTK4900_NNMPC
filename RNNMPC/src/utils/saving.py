@@ -29,7 +29,7 @@ def make_parent_dir(dir):
         makedirs(dir)
 
 
-def safe_save(path, data, filetype, create_parent=False):
+def safe_save(path, data, filetype, create_parent=False, errmsgstr: str='___'):
     '''
     Custom function designed to save the given data to the given path, and safeguard for overwriting. 
     Filetype has to be specified, as different filetypes require different means of saving
@@ -56,8 +56,15 @@ def safe_save(path, data, filetype, create_parent=False):
         def save(path, data):        
             np_save(path, data)
 
+    elif filetype == 'fig':
+        def save(path, fig):
+            # TODO: Assert for \'fig\' to be a matplotlib-fib
+            for suffix in ['.png', '.eps']:
+                path = path.parent / (path.stem + suffix)
+                fig.savefig(path, bbox_inches='tight')
+
     else:
-        return ValueError('Invalid filetype specified. Options are \'csv\' and \'yaml\'')
+        return ValueError('Invalid filetype specified. Options are \'csv\', \'yaml\', \'npy\' and \'fig\'')
     
     # Perform 
     if create_parent: make_parent_dir(path.parent)
@@ -66,7 +73,7 @@ def safe_save(path, data, filetype, create_parent=False):
         save(path, data)
     
     else:
-        filename = input("File already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
+        filename = input(f"File ({errmsgstr}) already exists. Provide new name or \'y\' to overwrite ([enter] aborts. File-endings are automatic!): ")
         if filename != '': # Do _not_ abort save. Will overwrite if `filename=='y'`
             if filename != 'y': # Do _not_ overwrite
                 path = path.parent / (filename + '.' + filetype)
@@ -75,7 +82,7 @@ def safe_save(path, data, filetype, create_parent=False):
             print(f"File written to \'{path}\'")
 
         else:
-            print("File was not saved.")
+            print(f"File ({errmsgstr}) was not saved.")
 
 
     

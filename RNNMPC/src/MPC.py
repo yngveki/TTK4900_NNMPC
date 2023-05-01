@@ -84,6 +84,7 @@ class RNNMPC:
         self.warm_start_t = mpc_configs['warm_start_t']
         self.final_t = mpc_configs['final_t'] + self.warm_start_t
         self.t = 0
+        self.full_t = np.linspace(0, self.final_t, num=self.final_t // self.delta_t)
 
         # -- Set up references -- #
         self.refs = ReferenceTimeseries(ref_path, 
@@ -299,12 +300,12 @@ class RNNMPC:
 
         self.t += self.delta_t
 
-    def save_data(self, data_path):
-        np.save(data_path / 't.npy', np.linspace(0, self.final_t, num=self.final_t // self.delta_t))
-        np.save(data_path / 'gas_rate.npy', self.simulated_y['gas rate'])
-        np.save(data_path / 'oil_rate.npy', self.simulated_y['oil rate'])
-        np.save(data_path / 'choke.npy', self.simulated_u['choke'])
-        np.save(data_path / 'gas_lift.npy', self.simulated_u['gas lift'])
+    # def save_data(self, data_path):
+    #     np.save(data_path / 't.npy', np.linspace(0, self.final_t, num=self.final_t // self.delta_t))
+    #     np.save(data_path / 'gas_rate.npy', self.simulated_y['gas rate'])
+    #     np.save(data_path / 'oil_rate.npy', self.simulated_y['oil rate'])
+    #     np.save(data_path / 'choke.npy', self.simulated_u['choke'])
+    #     np.save(data_path / 'gas_lift.npy', self.simulated_u['gas lift'])
     
     # --- Private funcs --- #
     def _read_yaml(self, file_path):

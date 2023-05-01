@@ -141,60 +141,83 @@ for i, params in enumerate(sets):
         params['FILES'] = {'model': model_path.__str__(),
                         'fmu': fmu_path.__str__(),
                         'refs': ref_path.__str__()}
-        
-        # Setting up directory for results
         save_dir = parent_dir / config_name
-        if not exists(save_dir):
-            makedirs(save_dir)
 
-        config_save_path = save_dir / (config_name + '.yaml')
-
-        if exists(config_save_path):
-            name = input("Config with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
-            if name != '': # _not_ aborting
-                if name != 'y': # do _not_ want to override
-                    config_save_path = save_dir / (name + '.yaml')
-
-            else:
-                config_save_path = None
+        # -- SAVING CONFIG -- #
+        safe_save(save_dir / (config_name + '.yaml'), params, 'yaml', create_parent=True, errmsgstr='config')
         
-        if config_save_path is not None:
-            # Save config
-            with open(config_save_path, 'w', encoding = 'utf-8') as yaml_file:
-                yaml_file.write(dump(params, default_flow_style = False, allow_unicode = True, encoding = None))
-                mpc.save_data(config_save_path.parent)
-        else:
-            print('Config was not saved')
+        # -- SAVING MPC-DATA -- #
+        safe_save(save_dir / 'data/t.npy', mpc.full_t, 'npy', create_parent=True, errmsgstr='t.npy')
+        safe_save(save_dir / 'data/gas_rate.npy', mpc.simulated_y['gas rate'], 'npy', create_parent=True, errmsgstr='gas_rate')
+        safe_save(save_dir / 'data/oil_rate.npy', mpc.simulated_y['oil rate'], 'npy', create_parent=True, errmsgstr='oil_rate.npy')
+        safe_save(save_dir / 'data/choke.npy', mpc.simulated_u['choke'], 'npy', create_parent=True, errmsgstr='choke.npy')
+        safe_save(save_dir / 'data/gas_lift.npy', mpc.simulated_u['gas lift'], 'npy', create_parent=True, errmsgstr='gas_lift.npy')
+        
+        # -- SAVING TIMEKEEPING -- #
+        safe_save(save_dir / ('t/t_update_OCP.npy'), t_update_OCP, 'npy', create_parent=True, errmsgstr='t_update_OCP.npy')
+        safe_save(save_dir / ('t/t_solve_OCP.npy'), t_solve_OCP, 'npy', create_parent=True, errmsgstr='t_solve_OCP.npy')
+        safe_save(save_dir / ('t/t_iterate_system.npy'), t_iterate_system, 'npy', create_parent=True, errmsgstr='t_iterate_system.npy')
+        safe_save(save_dir / ('t/t_full_loop.npy'), t_full_loop, 'npy', create_parent=True, errmsgstr='t_full_loop.npy')
+
+        # -- SAVING FIGS -- #
+        safe_save(save_dir / (str(params['final_t'] // params['delta_t']) + '_steps'),
+                  fig,
+                  'fig',
+                  create_parent=True,
+                  errmsgstr=(str(params['final_t'] // params['delta_t']) + '_steps'))
+        # config_save_path = save_dir / (config_name + '/' + config_name + '.yaml')
+        # save_dir = parent_dir / config_name
+        # if not exists(save_dir):
+        #     makedirs(save_dir)
+
+        # config_save_path = save_dir / (config_name + '.yaml')
+
+        # if exists(config_save_path):
+        #     name = input("Config with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+        #     if name != '': # _not_ aborting
+        #         if name != 'y': # do _not_ want to override
+        #             config_save_path = save_dir / (name + '.yaml')
+
+        #     else:
+        #         config_save_path = None
+        
+        # if config_save_path is not None:
+        #     # Save config
+        #     with open(config_save_path, 'w', encoding = 'utf-8') as yaml_file:
+        #         yaml_file.write(dump(params, default_flow_style = False, allow_unicode = True, encoding = None))
+        #         mpc.save_data(config_save_path.parent)
+        # else:
+        #     print('Config was not saved')
 
         # -- SAVING FIGS -- #    
-        save_dir /= 'figs'
-        if not exists(save_dir):
-            makedirs(save_dir)
-        save_path = save_dir / (str(params['final_t'] // params['delta_t']) + '_steps')
+        # save_dir /= 'figs'
+        # if not exists(save_dir):
+        #     makedirs(save_dir)
+        # save_path = save_dir / (str(params['final_t'] // params['delta_t']) + '_steps')
 
-        if      exists(save_path.parent / (save_path.stem + '.png')) \
-            or  exists(save_path.parent / (save_path.stem + '.eps')):
-            name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
-            if name != '': # _not_ aborting
-                if name != 'y': # do _not_ want to override
-                    save_path = save_path.parent / name
+        # if      exists(save_path.parent / (save_path.stem + '.png')) \
+        #     or  exists(save_path.parent / (save_path.stem + '.eps')):
+        #     name = input("Figure(s) with same filename already exists. Provide new name or \'y\' to overwrite ([enter] aborts save, file-endings are automatic): ")
+        #     if name != '': # _not_ aborting
+        #         if name != 'y': # do _not_ want to override
+        #             save_path = save_path.parent / name
 
-            else:
-                save_path = None
+        #     else:
+        #         save_path = None
             
-        if save_path is not None:
-            for suffix in ['.png', '.eps']:
-                save_path = save_path.parent / (save_path.stem + suffix)
-                fig.savefig(save_path, bbox_inches='tight')
-        else:
-            print("Figures were not saved.")
+        # if save_path is not None:
+        #     for suffix in ['.png', '.eps']:
+        #         save_path = save_path.parent / (save_path.stem + suffix)
+        #         fig.savefig(save_path, bbox_inches='tight')
+        # else:
+        #     print("Figures were not saved.")
 
-        # -- SAVING TIMEKEEPING -- #
-        save_dir = save_dir.parent / 't'
-        safe_save(save_dir / ('t_update_OCP.npy'), t_update_OCP, 'npy', create_parent=True)
-        safe_save(save_dir / ('t_solve_OCP.npy'), t_solve_OCP, 'npy', create_parent=True)
-        safe_save(save_dir / ('t_iterate_system.npy'), t_iterate_system, 'npy', create_parent=True)
-        safe_save(save_dir / ('t_full_loop.npy'), t_full_loop, 'npy', create_parent=True)
+        # # -- SAVING TIMEKEEPING -- #
+        # # save_dir = save_dir.parent
+        # safe_save(save_dir / ('t/t_update_OCP.npy'), t_update_OCP, 'npy', create_parent=True)
+        # safe_save(save_dir / ('t/t_solve_OCP.npy'), t_solve_OCP, 'npy', create_parent=True)
+        # safe_save(save_dir / ('t/t_iterate_system.npy'), t_iterate_system, 'npy', create_parent=True)
+        # safe_save(save_dir / ('t/t_full_loop.npy'), t_full_loop, 'npy', create_parent=True)
 
     except: # To safeguard against exiting on solution failure
         parent_dir = Path(__file__).parent / 'mpc_tunings'
