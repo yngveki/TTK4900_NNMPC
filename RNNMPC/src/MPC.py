@@ -170,7 +170,7 @@ class RNNMPC:
         for i in range(self.Hp):
             cost += (self.Y[:,self.my+1+i] - self.Y_ref[i]).T @ self.config['Q'] @ (self.Y[:,self.my+1+i] - self.Y_ref[i]) # TODO: Is this matrix product correct? Isn't Q 2x1?
         for i in range(self.Hu):
-            cost += self.DU[:,i].T @ self.config['R'] @ self.DU[:,i] # TODO: Is this matrix product correct? Isn't R 2x1?
+            cost += self.DU[:,i].T @ self.config['R'] @ self.DU[:,i]
         for i in range(self.n_slack):
             cost += self.config['rho'][i] * self.epsy[i]
         self.opti.minimize(cost)

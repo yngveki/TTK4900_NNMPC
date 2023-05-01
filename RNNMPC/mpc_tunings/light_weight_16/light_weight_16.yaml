@@ -5,10 +5,10 @@ Hu: 100
 PLUGIN_OPTIONS:
   expand: true
 Q:
-- 1000
-- 1
+- 100
+- 100
 R:
-- 1000
+- 1
 - 1000
 SOLVER_OPTIONS:
   acceptable_iter: 5

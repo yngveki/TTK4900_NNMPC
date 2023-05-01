@@ -8,7 +8,7 @@ Q:
 - 1000
 - 1
 R:
-- 1000
+- 1
 - 1000
 SOLVER_OPTIONS:
   acceptable_iter: 5
