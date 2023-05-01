@@ -3,6 +3,7 @@ from pathlib import Path
 from os.path import exists
 from os import makedirs
 from yaml import dump
+from numpy import save as np_save
 
 def append_test_mse(csv_path, model_name, test_name, mse, **hyperparameters):
     '''
@@ -50,6 +51,10 @@ def safe_save(path, data, filetype, create_parent=False):
         def save(path, data):
             with open(path, "w", encoding = "utf-8") as yaml_file:
                 yaml_file.write(dump(data, default_flow_style = False, allow_unicode = True, encoding = None))
+
+    elif filetype == 'npy':
+        def save(path, data):        
+            np_save(path, data)
 
     else:
         return ValueError('Invalid filetype specified. Options are \'csv\' and \'yaml\'')

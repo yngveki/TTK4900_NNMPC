@@ -161,6 +161,7 @@ class RNNMPC:
         self.U = self.opti.variable(self.config['n_MV'],self.Hu+self.mu) # History does _not_ have +1, since it's mu steps backwards from k; k-1 is part of the mu amount of historical steps
 
     def update_OCP(self):
+        #! Takes longer and longer for each iteration
         refs = self.refs.refs_as_lists()
         self.Y_ref = [self._normalize(ref, ('gasrate','oilrate')) for ref in refs]
 

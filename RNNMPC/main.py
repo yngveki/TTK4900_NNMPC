@@ -87,7 +87,7 @@ for i, params in enumerate(sets):
         model_name = 'light_weight_0'
         model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
         fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
-        ref_path = Path(__file__).parent / 'config/refs/refs0.csv'
+        ref_path = Path(__file__).parent / 'config/refs/refs1.csv'
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
         parent_dir = Path(__file__).parent / 'mpc_tests'
@@ -109,6 +109,12 @@ for i, params in enumerate(sets):
         run = 1
         total_runs = (mpc.final_t - mpc.warm_start_t) // mpc.delta_t
 
+        # Timekeeping (for data for results-section)
+        t_update_OCP = []
+        t_solve_OCP = []
+        t_iterate_system = []
+        t_full_loop = []
+
         while mpc.t < mpc.final_t:
             print(f'Run #{run} / {total_runs}')
 
@@ -116,15 +122,16 @@ for i, params in enumerate(sets):
             mpc.update_OCP()
 
             # Solve OCP for this timestep
-            if timed_loop: stopwatch.lap(silent=False)
+            if timed_loop: t_update_OCP.append(stopwatch.lap(silent=False, ret=True))
             mpc.solve_OCP()
 
             # Simulate one step for the system
-            if timed_loop: stopwatch.lap(silent=False)
+            if timed_loop: t_solve_OCP.append(stopwatch.lap(silent=False, ret=True))
             mpc.iterate_system()
 
-            if timed_loop: stopwatch.total_time()
+            if timed_loop: t_iterate_system.append(stopwatch.lap(silent=False, ret=True))
             run += 1
+            if timed_loop: t_full_loop.append(stopwatch.total_time(ret=True))
 
         # Return fig for saving purposes
         fig = plot_RNNMPC(mpc=mpc, pause=True, plot_bias=True)
@@ -181,6 +188,13 @@ for i, params in enumerate(sets):
                 fig.savefig(save_path, bbox_inches='tight')
         else:
             print("Figures were not saved.")
+
+        # -- SAVING TIMEKEEPING -- #
+        save_dir = save_dir.parent / 't'
+        safe_save(save_dir / ('t_update_OCP.npy'), t_update_OCP, 'npy', create_parent=True)
+        safe_save(save_dir / ('t_solve_OCP.npy'), t_solve_OCP, 'npy', create_parent=True)
+        safe_save(save_dir / ('t_iterate_system.npy'), t_iterate_system, 'npy', create_parent=True)
+        safe_save(save_dir / ('t_full_loop.npy'), t_full_loop, 'npy', create_parent=True)
 
     except: # To safeguard against exiting on solution failure
         parent_dir = Path(__file__).parent / 'mpc_tunings'
