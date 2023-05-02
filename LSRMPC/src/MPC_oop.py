@@ -137,7 +137,6 @@ class MPC:
                                                         self.start_time, 
                                                         self.final_time, # Needed for initialization, but different from warm start time
                                                         self.delta_t, 
-                                                        self.Hp,
                                                         self.warm_start_t)
         self.y_prev[0] = self.y_sim[-1][0]
         self.y_prev[1] = self.y_sim[-1][1]
@@ -229,7 +228,8 @@ class MPC:
         self.u_prev_act[0], self.u_prev_act[1], \
         self.u_prev_meas[0], self.u_prev_meas[1] = simulate_singlewell_step(self.model, 
                                                                             self.time, 
-                                                                            self.delta_t, 
+                                                                            self.delta_t,
+                                                                            self.warm_start_t, 
                                                                             self.U_next) # measurement from FMU, i.e. result from previous actuation
         # --- Roll the input, and set the newest input at the end --- #
         self.u_sim = np.roll(self.u_sim, [-1, -1]) # put newest input at end of array
@@ -258,7 +258,7 @@ class MPC:
         self.gas_rate_per_hr_vec[curr_step] = copy.deepcopy(self.y_prev[0])
         self.oil_rate_per_hr_vec[curr_step] = copy.deepcopy(self.y_prev[1])
         self.gas_rate_ref_vec[curr_step] = copy.deepcopy(self.T[0])
-        self.oil_rate_ref_vec[curr_step] = copy.deepcopy(self.T[self.Hp])
+        self.oil_rate_ref_vec[curr_step] = copy.deepcopy(self.T[self.Hp + 1]) # +1 Since every output has current + horizon
 
 
         self.choke_input[curr_step] = copy.deepcopy(self.u_prev_act[0])
@@ -273,50 +273,37 @@ class MPC:
         self.time += self.delta_t
         self.refs.curr_time += self.delta_t
 
-    # def save_data(self, data_path):
-    #     np.save(data_path / 't.npy', self.t)
-    #     np.save(data_path / 'oil_rate_ref_vec.npy', self.oil_rate_ref_vec)
-
-    #     np.save(data_path / 'gas_rate_per_hr_vec.npy', self.gas_rate_per_hr_vec )
-    #     np.save(data_path / 'gas_rate_ref_vec.npy', self.gas_rate_ref_vec)
-
-    #     np.save(data_path / 'choke_input.npy', self.choke_input)
-    #     np.save(data_path / 'gas_lift_input.npy', self.gas_lift_input)
-    #     np.save(data_path / 'choke_actual.npy', self.choke_actual)
-
-    #     np.save(data_path / 'bias_gas.npy', self.bias_gas)
-    #     np.save(data_path / 'bias_oil.npy', self.bias_oil)
-
-
     # --- Private funcs --- #
     def _read_yaml(self, file_path):
-        # Reads the config-file of YAML-format at designated file_path and returns 
-        # a dictionary containing the configs
-        #
-        # Input:
-        # - file_path: file path relative to current script
-        # 
-        # Returns: Dictionary containing all config-values
-
+        '''
+        Reads the config-file of YAML-format at designated file_path and returns 
+        a dictionary containing the configs
+        
+        Args:
+            - file_path: file path relative to current script
+        
+        Returns: Dictionary containing all config-values
+        '''
         with open(file_path, "r") as f:
             return safe_load(f)
 
     def _S_xx_append(self, P, S_xx):
         S_xx_steady = S_xx[(len(S_xx)-1)]
         
-        for i in range(P-len(S_xx)):
+        for _ in range(P-len(S_xx)):
             S_xx = np.append(S_xx, S_xx_steady)
 
         return S_xx
 
     def _read_S(self, rel_S_paths):
-        # Reads data file containing the S-matrix
-        #
-        # Input:
-        # - file_path: file path relative to current script
-        # 
-        # Returns: S matrix
-
+        '''
+        Reads data file containing the S-matrix
+        
+        Args:
+            - file_path: file path relative to current script
+            
+        Returns: S-matrix
+        '''
         Sijs = []
         for key in rel_S_paths:
             Sijs.append(np.load(Path(__file__).parent / rel_S_paths[key]))

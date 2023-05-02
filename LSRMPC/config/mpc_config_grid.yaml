@@ -8,8 +8,10 @@ Hp: 100
 Hw: 0
 
 # Tuning parameters
-R_bar: [[0.1,1]]
-Q_bar: [[0.01,1000]]
+R_bar: [[0.1,1]] # Origianl tuning for master's
+Q_bar: [[0.01,1000]] # Origianl tuning for master's
+# R_bar: [[1,1]] # Tuning from prosjekt
+# Q_bar: [[0.0000001,100]] # Tuning from prosjekt
 
 # # Must be array-nested (like above) if to be grid searched over
 rho_h: [10000, 10000]
@@ -29,5 +31,5 @@ e_under_bar: 0
 
 # Running parameters
 delta_t: 10
-final_time: 21000
+final_time: 100
 warm_start_t: 2000

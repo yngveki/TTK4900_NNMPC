@@ -19,19 +19,6 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
     
     if not mpc:
         return NotImplementedError, 'Support for not providing mpc-object lacking. Implement path-capabilities.'
-        # t = np.load('t.npy')
-        # oil_rate_per_hr_vec = np.load('oil_rate_per_hr_vec.npy')
-        # oil_rate_ref_vec = np.load('oil_rate_ref_vec.npy')
-
-        # gas_rate_per_hr_vec = np.load('gas_rate_per_hr_vec.npy')
-        # gas_rate_ref_vec = np.load('gas_rate_ref_vec.npy')
-
-        # choke_input = np.load('choke_input.npy')
-        # gas_lift_input = np.load('gas_lift_input.npy')
-        # choke_actual = np.load('choke_actual.npy')
-
-        # bias_gas = np.load('bias_gas.npy')
-        # bias_oil = np.load('bias_oil.npy')
     else:
         t = np.array(mpc.t) # This array is just a list of floats, not a list of arrays, as the rest
         
@@ -55,23 +42,6 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
 
     To avoid plotting the resulting spikes in the beginning, a subsection is cut off.
     """
-    
-    # Plotting set-up
-    # # Note that arrays don't need to be cut, as they are all already from after warm_start 
-    # num = mpc.final_time // mpc.delta_t
-    # t = np.linspace(0, num * mpc.delta_t, num=num)
-
-    # gas_rate = gas_rate_per_hr_vec
-    # gas_rate_ref = gas_rate_ref_vec
-    # gas_rate_bias = bias_gas
-
-    # oil_rate = oil_rate_per_hr_vec
-    # oil_rate_ref = oil_rate_ref_vec
-    # oil_rate_bias = bias_oil
-
-    # choke = choke_input
-    # gas_lift = gas_lift_input
-    # choke_actual = choke_actual 
 
     # Filter the data, and plot both the original and filtered signals.
     if filter_output:
@@ -143,65 +113,3 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
 
     # Saving outsourced to main by returning fig    
     return fig
-    # figure = plt.figure(1)
-    # plt.clf()
-    # plt.subplot(2,1,1)
-    # plt.plot(t, gas_rate_per_hr_vec, label = 'Gas rate', linewidth = 4)
-    # plt.plot(t, gas_rate_ref_vec, label = 'Reference signal', linewidth = 4, linestyle = "dashed")
-    # plt.title('Gas rate measurements', fontsize=16)
-    # plt.grid(linestyle='dotted', linewidth=1)
-    # plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
-    # plt.ylabel('Gas rate [m3/hr]', fontdict=None, labelpad=None, fontsize=14)
-    # plt.legend(fontsize = 'x-large', loc='lower right')
-
-    # plt.subplot(2,1,2)
-    # plt.plot(t, oil_rate_per_hr_vec, label = 'Oil rate', linewidth = 4)
-    # plt.plot(t, oil_rate_ref_vec, label = 'Reference signal', linewidth = 4, linestyle = "dashed")
-    # plt.title('Oil rate measurements', fontsize=16)
-    # plt.grid(linestyle='dotted', linewidth=1)
-    # plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
-    # plt.ylabel('Oil rate [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
-    # plt.legend(fontsize = 'x-large', loc='lower right')
-
-    # figure = plt.figure(2)
-    # plt.clf()
-    # plt.subplot(211)
-    # plt.plot(t, choke_input, label = 'Choke input', linewidth = 4)
-    # plt.plot(t, choke_actual, label = 'Actual choke opening', linewidth = 1)
-    # plt.title('Choke input', fontsize=16)
-    # plt.grid(linestyle='dotted', linewidth=1)
-    # plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
-    # plt.ylabel('Choke input [%]', fontdict=None, labelpad=None, fontsize=14)
-    # plt.legend(fontsize = 'x-large', loc='lower right')
-
-    # plt.subplot(212)
-    # plt.plot(t, gas_lift_input, label = 'Gas-lift rate', linewidth = 4)
-    # plt.title('Gas-lift rate input', fontsize=16)
-    # plt.grid(linestyle='dotted', linewidth=1)
-    # plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
-    # plt.ylabel('Gas-lift rate [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
-    # plt.legend(fontsize = 'x-large', loc='lower right')
-
-    # figure = plt.figure(3)
-    # plt.subplot(211)
-    # plt.plot(t, bias_gas, label = 'Gas rate bias', linewidth = 4)
-    # plt.title('Gas rate bias', fontsize=16)
-    # plt.grid(linestyle='dotted', linewidth=1)
-    # plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
-    # plt.ylabel('Bias [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
-    # plt.legend(fontsize = 'x-large', loc='lower right')
-
-    # plt.subplot(212)
-    # plt.plot(t, bias_oil, label = 'Oil rate bias', linewidth = 4)
-    # plt.title('Oil rate bias', fontsize=16)
-    # plt.grid(linestyle='dotted', linewidth=1)
-    # plt.xlabel('Time', fontdict=None, labelpad=None, fontsize=14)
-    # plt.ylabel('Bias [m^3/hr]', fontdict=None, labelpad=None, fontsize=14)
-    # plt.legend(fontsize = 'x-large', loc='lower right')
-
-    # plt.show()
-
-    # return 'fig' # TODO: Fix this to return the actual fig!
-
-if __name__ == "__main__":
-    plot_LSRMPC()
