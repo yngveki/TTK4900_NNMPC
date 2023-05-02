@@ -6,7 +6,7 @@ n_CV: 2
 H: [100] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
 
 # Tuning parameters
-Q: [[1000,1],[1000,10],[1000,100],[1000,1000],[100,10],[100,100],[100,1000],[10,10],[10,1000],[10,1000],[1,10],[1,100],[1,1000]]
+Q: [[10,100],[10,1000],[1,10],[1,100],[1,1000]]
 R: [[1000,1000],[1,1000],[1000,1]]
 rho: [[1000,1000]]
 
@@ -37,3 +37,9 @@ SOLVER_OPTIONS: # https://coin-or.github.io/Ipopt/OPTIONS.html
   compl_inf_tol: 1 # 7000 # 1e8
   acceptable_tol: 1 # 7000 # 1e8
   acceptable_iter: 5
+  
+NORMALIZATION_VALUES:
+  choke: [0,100]     # Externally defined hard limits
+  GL: [0,10000]      # Externally defined hard limits
+  gasrate: [0,18537] # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'
+  oilrate: [0,349]   # Investigated max (and rounded up) from '/inputs/div/ramp_choke_and_gl'

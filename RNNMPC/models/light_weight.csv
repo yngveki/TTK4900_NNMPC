@@ -1,0 +1,12 @@
+light_weight_1,step_choke_medium,7.918455438422305e-05,LeakyReLU,15,0,10,64,200,4,0.001,0.1
+light_weight_1,step_choke_low,0.008844194667679923,LeakyReLU,15,0,10,64,200,4,0.001,0.1
+light_weight_1,step_choke_high,0.00018962471014154808,LeakyReLU,15,0,10,64,200,4,0.001,0.1
+light_weight_1,random_walk_short,0.00040383358155527424,LeakyReLU,15,0,10,64,200,4,0.001,0.1
+light_weight_1,mixed_ramp_short,4.3347343318482156e-08,LeakyReLU,15,0,10,64,200,4,0.001,0.1
+light_weight_1,multiple_steps_interval100,1.8757483173560883e-06,LeakyReLU,15,0,10,64,200,4,0.001,0.1
+light_weight_2,step_choke_medium,4.199863594424512e-06,LeakyReLU,50,0,10,64,200,4,0.001,0.1
+light_weight_2,step_choke_low,0.008022431284189224,LeakyReLU,50,0,10,64,200,4,0.001,0.1
+light_weight_2,step_choke_high,3.551741662834372e-05,LeakyReLU,50,0,10,64,200,4,0.001,0.1
+light_weight_2,random_walk_short,0.00037746720256343964,LeakyReLU,50,0,10,64,200,4,0.001,0.1
+light_weight_2,mixed_ramp_short,6.043571458565685e-07,LeakyReLU,50,0,10,64,200,4,0.001,0.1
+light_weight_2,multiple_steps_interval100,1.7382883552207257e-06,LeakyReLU,50,0,10,64,200,4,0.001,0.1

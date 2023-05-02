@@ -105,9 +105,9 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_1_globally_normalized.csv', 'mixed_ramp_short'),
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
-model_nr_offset = 0
+model_nr_offset = 2
 model_name = 'light_weight_'
-mse_log_path = Path(__file__).parent / 'models/light_weight_0.csv'
+mse_log_path = Path(__file__).parent / ('models/light_weight.csv')
 
 delta_t = 10
 suffixes = ['.png', '.eps'] # Save formats for figures

@@ -1,0 +1,8 @@
+The thought was to train a model which understands the full process from only the history
+of inputs, as this should (ideally) indirectly give the history of outputs.
+
+This did not work according to plan. I suspect that a muuuch larger mu must be chosen for
+this to work, in which case the model may quickly become prohibitively large. Might well
+be a better compromise to use some my!=0, such that mu and my may both be smaller.
+
+I'll try with much larger mu, though - for science.

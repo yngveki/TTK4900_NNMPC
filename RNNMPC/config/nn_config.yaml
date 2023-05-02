@@ -1,8 +1,8 @@
 activation: 'LeakyReLU' # Can be either 'ReLU' or 'LeakyReLU'
 
 # STRUCTURAL PARAMETERS
-mu: 5          # history of inputs considered
-my: 5          # history of outputs considered
+mu: 50          # history of inputs considered
+my: 0          # history of outputs considered
 hlszs: [10]  # sizes of only hidden layers (input and output layers' sizes are implicit from other factors)
 
 # LEARNING PARAMETERS
