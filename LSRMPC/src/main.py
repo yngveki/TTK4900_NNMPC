@@ -166,7 +166,9 @@ for i, params in enumerate(sets):
                     errmsgstr=(str(params['final_time'] // params['delta_t']) + '_steps'))
         
     
-    except: # To safeguard against exiting on solution failure
+    except Exception as error: # To safeguard against exiting on solution failure
+        print(f'An error occurred: {error}')
+
         parent_dir = Path(__file__).parent / 'mpc_tunings'
         save_dir = parent_dir / config_name
         config_save_path = save_dir / (config_name + '.yaml')
