@@ -15,7 +15,7 @@ class MPC:
     __N = 100 # The length of each SISO step response model once all are made equally long
 
     def __init__(self, 
-                config_path,
+                configs,
                 S_paths, 
                 ref_path):
         """
@@ -24,40 +24,41 @@ class MPC:
 
         self.model = None # Initialization
 
-        #### ----- Setting config ----- ####
-        configs = self._read_yaml(config_path)
+        # #### ----- Setting config ----- ####
+        # configs = self._read_yaml(config_path)
 
         # -- config used during updates inside control loop -- #
-        self.n_MV = configs['SYSTEM_PARAMETERS']['n_MV']         # number of input variables - given from system (p.426)
-        self.n_CV = configs['SYSTEM_PARAMETERS']['n_CV']         # number of outputs - given from system (p. 423) 
+        self.n_MV = configs['n_MV']         # number of input variables - given from system (p.426)
+        self.n_CV = configs['n_CV']         # number of outputs - given from system (p. 423) 
 
-        self.Hu = configs['TUNING_PARAMETERS']['Hu']             # control horizon - design parameter (p. 416)
-        self.Hp = configs['TUNING_PARAMETERS']['Hp']             # prediction horizon - design parameter (p. 417)
-        self.Hw = configs['TUNING_PARAMETERS']['Hw']             # time step from which prediction horizon effectively starts
+        self.Hu = configs['Hu']             # control horizon - design parameter (p. 416)
+        self.Hp = configs['Hp']             # prediction horizon - design parameter (p. 417)
+        self.Hw = configs['Hw']             # time step from which prediction horizon effectively starts
         
-        self.rho_h = np.array(configs['TUNING_PARAMETERS']['rho_h'], dtype=int, ndmin=2).T
-        self.rho_l = np.array(configs['TUNING_PARAMETERS']['rho_l'], dtype=int, ndmin=2).T
+        self.rho_h = np.array(configs['rho_h'], dtype=int, ndmin=2).T
+        self.rho_l = np.array(configs['rho_l'], dtype=int, ndmin=2).T
 
-        self.du_over_bar = configs['TUNING_PARAMETERS']['du_over_bar']      # Upper limit of deltaMVs
-        self.du_under_bar = configs['TUNING_PARAMETERS']['du_under_bar']    # Lower limit of deltaMVs
-        self.e_over_bar = configs['TUNING_PARAMETERS']['e_over_bar']        # Upper limit of slack variables epsilon
-        self.e_under_bar = configs['TUNING_PARAMETERS']['e_under_bar']      # Lower limit of slack variables epsilon
+        self.du_over_bar = configs['du_over_bar']      # Upper limit of deltaMVs
+        self.du_under_bar = configs['du_under_bar']    # Lower limit of deltaMVs
+        self.e_over_bar = configs['e_over_bar']        # Upper limit of slack variables epsilon
+        self.e_under_bar = configs['e_under_bar']      # Lower limit of slack variables epsilon
         
         # -- config used only during initialization -- #
         n_eh = self.n_CV                                         # Same as "ny_over_bar"; amount of CVs that have upper limits
         n_el = self.n_CV                                         # Same as "ny_under_bar"; amount of CVs that have lower limits
         
-        P_bar = configs['TUNING_PARAMETERS']['P_bar']       # Weight for actuations 
-        Q_bar = configs['TUNING_PARAMETERS']['Q_bar']       # Weight for errors from ref
+        R_bar = configs['R_bar']       # Weight for actuations 
+        Q_bar = configs['Q_bar']       # Weight for errors from ref
         
-        y_over_bar = configs['TUNING_PARAMETERS']['y_over_bar']             # Upper limit of CVs
-        y_under_bar = configs['TUNING_PARAMETERS']['y_under_bar']           # Lower limit of CVs
-        u_over_bar = configs['TUNING_PARAMETERS']['u_over_bar']             # Upper limit of MVs
-        u_under_bar = configs['TUNING_PARAMETERS']['u_under_bar']           # Lower limit of MVs
+        y_over_bar = configs['y_over_bar']             # Upper limit of CVs
+        y_under_bar = configs['y_under_bar']           # Lower limit of CVs
+        u_over_bar = configs['u_over_bar']             # Upper limit of MVs
+        u_under_bar = configs['u_under_bar']           # Lower limit of MVs
 
         # -- time-keeping -- #
-        self.delta_t = configs['RUNNING_PARAMETERS']['delta_t']
-        self.final_time = configs['RUNNING_PARAMETERS']['final_time']
+        self.delta_t = configs['delta_t']
+        self.final_time = configs['final_time']
+        self.warm_start_t = configs['warm_start_t']
         self.time = 0
         self.start_time = self.time
         num_steps = self.final_time // self.delta_t
@@ -75,10 +76,10 @@ class MPC:
 
         # -- Build minimization problem matrix Hd -- #
         Q_y = mg.get_Q(Q_bar, self.Hp, self.Hw)    # shape: (n_CV * (Hp - Hw + 1)) x (n_CV * (Hp - Hw + 1)).
-        P = mg.get_P(P_bar, self.Hu)               # shape: (n_MV * Hu) x (n_MV * Hu).
+        R = mg.get_P(R_bar, self.Hu)               # shape: (n_MV * Hu) x (n_MV * Hu).
 
         self.Hd = np.zeros(((self.n_MV * self.Hu) + n_eh + n_el, (self.n_MV * self.Hu) + n_eh + n_el))
-        self.Hd[:(self.n_MV * self.Hu), :(self.n_MV * self.Hu)] = self.Theta.T @ Q_y @ self.Theta + P # Hd_bar
+        self.Hd[:(self.n_MV * self.Hu), :(self.n_MV * self.Hu)] = self.Theta.T @ Q_y @ self.Theta + R # Hd_bar
         self.Hd *= 2
 
         # -- Build inequality system matrix Ad -- #
@@ -128,7 +129,7 @@ class MPC:
         self.bias_oil = [0] * num_steps
         self.t = [0] * num_steps
 
-    def warm_start(self, fmu_path, warm_start_t=1000):
+    def warm_start(self, fmu_path):
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
@@ -137,7 +138,7 @@ class MPC:
                                                         self.final_time, # Needed for initialization, but different from warm start time
                                                         self.delta_t, 
                                                         self.Hp,
-                                                        warm_start_t)
+                                                        self.warm_start_t)
         self.y_prev[0] = self.y_sim[-1][0]
         self.y_prev[1] = self.y_sim[-1][1]
         self.y_hat[0] = 0
@@ -272,19 +273,19 @@ class MPC:
         self.time += self.delta_t
         self.refs.curr_time += self.delta_t
 
-    def save_data(self, data_path):
-        np.save(data_path / 't.npy', self.t)
-        np.save(data_path / 'oil_rate_ref_vec.npy', self.oil_rate_ref_vec)
+    # def save_data(self, data_path):
+    #     np.save(data_path / 't.npy', self.t)
+    #     np.save(data_path / 'oil_rate_ref_vec.npy', self.oil_rate_ref_vec)
 
-        np.save(data_path / 'gas_rate_per_hr_vec.npy', self.gas_rate_per_hr_vec )
-        np.save(data_path / 'gas_rate_ref_vec.npy', self.gas_rate_ref_vec)
+    #     np.save(data_path / 'gas_rate_per_hr_vec.npy', self.gas_rate_per_hr_vec )
+    #     np.save(data_path / 'gas_rate_ref_vec.npy', self.gas_rate_ref_vec)
 
-        np.save(data_path / 'choke_input.npy', self.choke_input)
-        np.save(data_path / 'gas_lift_input.npy', self.gas_lift_input)
-        np.save(data_path / 'choke_actual.npy', self.choke_actual)
+    #     np.save(data_path / 'choke_input.npy', self.choke_input)
+    #     np.save(data_path / 'gas_lift_input.npy', self.gas_lift_input)
+    #     np.save(data_path / 'choke_actual.npy', self.choke_actual)
 
-        np.save(data_path / 'bias_gas.npy', self.bias_gas)
-        np.save(data_path / 'bias_oil.npy', self.bias_oil)
+    #     np.save(data_path / 'bias_gas.npy', self.bias_gas)
+    #     np.save(data_path / 'bias_oil.npy', self.bias_oil)
 
 
     # --- Private funcs --- #

@@ -29,9 +29,8 @@ class Timer:
         self._total_time += elapsed_time
         self._start_time = None
         print(f"Elapsed time: {elapsed_time:0.4f} seconds")
-
-    # TODO: Make into a decorator
-    def lap(self, silent=False):
+        
+    def lap(self, silent=False, ret: bool=False):
         elapsed_time = time.perf_counter() - self._start_time
         self._total_time += elapsed_time
         self._start_time = None
@@ -39,5 +38,9 @@ class Timer:
         
         self._start_time = time.perf_counter()
 
-    def total_time(self):
+        if ret: return elapsed_time
+
+    def total_time(self, ret: bool=False):
         print(f"Total time: {self._total_time:0.4f} seconds")
+
+        if ret: return self._total_time
