@@ -169,8 +169,8 @@ for i, params in enumerate(sets):
     except Exception as error: # To safeguard against exiting on solution failure
         print(f'An error occurred: {error}')
 
-        parent_dir = Path(__file__).parent / 'mpc_tunings'
+        parent_dir = Path(__file__).parent / '../mpc_tunings'
         save_dir = parent_dir / config_name
-        config_save_path = save_dir / (config_name + '.yaml')
+        config_save_path = save_dir / (config_name + '_error.yaml')
         safe_save(config_save_path, params, 'yaml', create_parent=True, errmsgstr='config')
         continue
