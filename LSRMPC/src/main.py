@@ -4,7 +4,7 @@ from pathlib import Path
 from yaml import safe_load
 from itertools import product
 
-from MPC_oop import MPC
+from MPC import MPC
 from utils.plotting import plot_LSRMPC
 from utils.custom_timing import Timer
 from utils.saving import safe_save
