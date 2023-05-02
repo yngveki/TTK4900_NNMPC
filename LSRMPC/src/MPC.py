@@ -219,6 +219,8 @@ class MPC:
 
         self.y_hat = self.Psi @ self.dU_tilde_prev + self.Upsilon @ self.U_tilde_prev + self.Theta @ dU
 
+        return self.m.objVal
+
     def iterate_system(self):
         """
         Applies optimal control and updates values input and output values' timestep

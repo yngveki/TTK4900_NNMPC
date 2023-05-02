@@ -22,12 +22,12 @@ def grid_search_params(config_path, searchable):
     '''
     
     def parse_to_dict(values, keys):
-        """
+        '''
         Parses an individual combination of parameter values back to dictionary format
         
         Note that \'m\' is implemented this way because mu and my must always be alike,
         so they cannot be implemented as two distinct lists in the config-file
-        """
+        '''
         d = {}
         for val, key in zip(values, keys):
             if key in ['PLUGIN_OPTIONS', 'SOLVER_OPTIONS']:
@@ -35,9 +35,6 @@ def grid_search_params(config_path, searchable):
 
             d[key] = val
 
-        # d['Hp'] = d['H']
-        # d['Hu'] = d['H']
-        # del d['H']
         return d
     
     with open(config_path, "r") as f:
@@ -83,7 +80,7 @@ for i, params in enumerate(sets):
         ref_path = Path(__file__).parent / "../config/refs0.csv"
         parent_dir = Path(__file__).parent / '../mpc_tunings'
 
-        config_name = 'test_' + str(i)
+        config_name = 'grid0_' + str(i)
 
         # Initialize the controller. Sets up all parameters and static matrices
         mpc = MPC(params, S_paths, ref_path)
@@ -104,6 +101,9 @@ for i, params in enumerate(sets):
         t_iterate_system = []
         t_full_loop = []
 
+        # Logging objective function values in order to measure qualitative performance of any given tuning
+        objective_vals = []
+
         while mpc.time < mpc.final_time:
             if run % 10 == 0: print(f'Run #{run} / {total_runs}')
 
@@ -116,7 +116,7 @@ for i, params in enumerate(sets):
 
             # Solve OCP for this timestep
             if timed_loop: t_update_OCP.append(stopwatch.lap(silent=True, ret=True))
-            mpc.solve_OCP()
+            objective_vals.append(mpc.solve_OCP())
 
             # Simulate one step for the system
             if timed_loop: t_solve_OCP.append(stopwatch.lap(silent=True, ret=True))
@@ -148,6 +148,7 @@ for i, params in enumerate(sets):
         safe_save(save_dir / 'data/choke_actual.npy', mpc.t, 'npy', create_parent=True, errmsgstr='choke_actual.npy')
         safe_save(save_dir / 'data/bias_gas.npy', mpc.t, 'npy', create_parent=True, errmsgstr='bias_gas.npy')
         safe_save(save_dir / 'data/bias_oil.npy', mpc.t, 'npy', create_parent=True, errmsgstr='bias_oil.npy')
+        safe_save(save_dir / 'data/objective_function.npy', objective_vals, 'npy', create_parent=True, errmsgstr='objective_function.npy')
 
         # -- SAVING TIMEKEEPING -- #
         safe_save(save_dir / ('t/t_update_matrices.npy'), t_update_matrices, 'npy', create_parent=True, errmsgstr='t_update_matrices.npy')

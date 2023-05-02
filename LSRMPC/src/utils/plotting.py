@@ -32,6 +32,7 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
 
         choke = np.array(mpc.choke_input)[:,0]
         gas_lift = np.array(mpc.gas_lift_input)[:,0]
+        # TODO: Check if `choke_actual` is identical to `choke`
         choke_actual = np.array(mpc.choke_actual)[:,0] # TODO: Is this variable superfluous?
 
 
@@ -102,6 +103,27 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
     axes[1,1].plot(t, gas_lift, label='gas lift rate', color='blue')
     if not warm_start_cutoff: axes[1,1].axvline(mpc.warm_start_t, color='tab:green')
     axes[1,1].legend(loc='best', prop={'size': 15})
+
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
+
+    plt.show(block=False)
+    if pause:
+        plt.pause(10)
+        plt.close()
+
+    # Saving outsourced to main by returning fig    
+    return fig
+
+def plot_objective(obj_vals, sim_name: str, delta_t: int=10, pause: bool=True):# Plotting ground truth and predicted gas rates
+    t = np.linspace(0, len(obj_vals) * delta_t, num=len(obj_vals))
+
+    fig, ax = plt.plot()
+    
+    ax.set_title(f'Objective function of simulation: {sim_name}')
+    ax.set_ylabel('objective function value', fontsize=15)
+    ax.plot(t, obj_vals, '-', label='obj.', color='tab:blue')
+    ax.legend(loc='best',prop={'size': 15})
 
     manager = plt.get_current_fig_manager()
     manager.window.showMaximized()
