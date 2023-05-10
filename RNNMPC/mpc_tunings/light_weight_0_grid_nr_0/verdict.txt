@@ -1,0 +1,13 @@
+Tuning spanned:
+
+Q: [[1000,1],[1000,10],[1000,100],[1000,1000],[100,10],[100,100],[100,1000],[10,10],[10,1000],[10,1000],[1,10],[1,100],[1,1000]]
+R: [[1000,1000],[1,1000],[1000,1]]
+rho: [[1000,1000]]
+
+Best tuning(s):
+- 15 (slightly bedre på oljerate) (Q=[100,100], R=[1000,1000], rho=[1000,1000])
+- 16 (slightly bedre på gassrate) (Q=[100,100], R=[1,1000], rho=[1000,1000])
+- 20 (treigere innsving på gassrate, men også tilsynelatende "svakere" innsving på oljerate, som ga mindre overskyt) (Q=[100,1000], R=[1000,1], rho=[1000,1000])
+
+Indicates that: 
+Q and R should be pretty similar. Control is best for least punished gas lift rate
