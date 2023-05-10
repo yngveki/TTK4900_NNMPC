@@ -99,7 +99,7 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
     # Plotting history of gas lift rate input
     axes[1,1].set_title('Input: gas lift rate', fontsize=20)
     axes[1,1].set_xlabel('time [s]', fontsize=15)
-    axes[1,1].set_ylabel('percent opening [m^3/h]', fontsize=15)
+    axes[1,1].set_ylabel('flow rate [m^3/h]', fontsize=15)
     axes[1,1].plot(t, gas_lift, label='gas lift rate', color='blue')
     if not warm_start_cutoff: axes[1,1].axvline(mpc.warm_start_t, color='tab:green')
     axes[1,1].legend(loc='best', prop={'size': 15})
@@ -124,6 +124,43 @@ def plot_objective(obj_vals, sim_name: str, delta_t: int=10, pause: bool=True):#
     ax.set_ylabel('objective function value', fontsize=15)
     ax.plot(t, obj_vals, '-', label='obj.', color='tab:blue')
     ax.legend(loc='best',prop={'size': 15})
+
+    manager = plt.get_current_fig_manager()
+    manager.window.showMaximized()
+
+    plt.show(block=False)
+    if pause:
+        plt.pause(10)
+        plt.close()
+
+    # Saving outsourced to main by returning fig    
+    return fig
+
+def plot_IO(gasrate, oilrate, choke, gaslift, time, delta_t, pause: bool=True):
+    # Plotting ground truth and predicted gas rates
+    fig, axes = plt.subplots(2, 2, sharex=True)
+    fig.suptitle(f'Simulated FMU for {time[-1] // delta_t} steps of {delta_t} [s] each. Total time is {time[-1]} [s]', fontsize=23)
+
+    axes[0,0].set_title('Output: Gas rate', fontsize=20)
+    axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
+    axes[0,0].plot(time, gasrate, '-', label='gas rate', color='tab:orange')
+
+    # Plotting ground truth and predicted oil rates
+    axes[0,1].set_title('Output: Oil rate', fontsize=20)
+    axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
+    axes[0,1].plot(time, oilrate, label='true oil rate', color='tab:orange')
+
+    # Plotting history of choke input
+    axes[1,0].set_title('Input: Choke opening', fontsize=20)
+    axes[1,0].set_xlabel('time [s]', fontsize=15)
+    axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
+    axes[1,0].plot(time, choke, label='choke', color='blue')
+
+    # Plotting history of gas lift rate input
+    axes[1,1].set_title('Input: gas lift rate', fontsize=20)
+    axes[1,1].set_xlabel('time [s]', fontsize=15)
+    axes[1,1].set_ylabel('flow rate [m^3/h]', fontsize=15)
+    axes[1,1].plot(time, gaslift, label='gas lift rate', color='blue')
 
     manager = plt.get_current_fig_manager()
     manager.window.showMaximized()
