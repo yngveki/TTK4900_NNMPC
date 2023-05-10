@@ -64,7 +64,7 @@ def grid_search_params(config_path, searchable):
 
 # -- SCRIPT BEGINS -- #
 
-GRID = True
+GRID = False
 
 if GRID == True:
     mpc_config_path = Path(__file__).parent / 'config/mpc_config_grid.yaml'
@@ -85,7 +85,7 @@ for i, params in enumerate(sets):
         model_name = 'light_weight_0'
         model_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.pt')
         fmu_path = Path(__file__).parent / 'fmu/fmu_endret_deadband.fmu'
-        ref_path = Path(__file__).parent / 'config/refs/refs1.csv'
+        ref_path = Path(__file__).parent / 'config/refs/refs2.csv'
         nn_config_path = Path(__file__).parent / ('models/' + model_name + '/' + model_name + '.yaml')
         # fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
         parent_dir = Path(__file__).parent / 'mpc_tunings'

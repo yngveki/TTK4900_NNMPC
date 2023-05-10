@@ -212,10 +212,13 @@ class RNNMPC:
             # U_(k+i) -> U_(k-m_u+i) = U[-l + mu + i:-l - 1 + i:-1]
             # 
             # Exactly the same applies to Y.
+            # TODO: Isn't it -i? So that for increasing i, the negative stride starts at higher and higher index
+            # TODO: Does this mean that only historical data is used? No switch to mix of real/predicted data?
+            # TODO: Isn't it self.my for self.Y?
             x = ca.horzcat(self.U[0,-l_U + self.mu + i:-l_U - 1 + i:-1],
                            self.U[1,-l_U + self.mu + i:-l_U - 1 + i:-1],
-                           self.Y[0,-l_Y + self.mu + i:-l_Y - 1 + i:-1],
-                           self.Y[1,-l_Y + self.mu + i:-l_Y - 1 + i:-1])
+                           self.Y[0,-l_Y + self.my + i:-l_Y - 1 + i:-1],
+                           self.Y[1,-l_Y + self.my + i:-l_Y - 1 + i:-1])
             constraints.append(self.Y[:,self.my + 1 + i] == self.f_MLP(MLP_in=x)['MLP_out'] + self.V) 
         
             # (3d)
