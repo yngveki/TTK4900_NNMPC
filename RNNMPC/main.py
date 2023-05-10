@@ -90,7 +90,7 @@ for i, params in enumerate(sets):
         # fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
         parent_dir = Path(__file__).parent / 'mpc_tunings'
 
-        config_name = model_name + '_gridnr_1_' + str(i) # For saving the config along with results
+        config_name = model_name + '_gridnr_2_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,

@@ -85,7 +85,7 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     u1 = float(model.get('u[1]'))
     u2 = float(model.get('u[2]'))
     choke_opening = model.get('choke.opening')
-    gas_lift_current= float(model.get('y[4]'))
+    gas_lift_current = np.multiply(np.divide(float(model.get('y[4]')), 24), 1000) # 'y[4]' was in km3/d
 
     #! Fetched from LSRMPC/src/utils/simulate_fmu.py - borrow (commented out) conversions?
     # # Get output
