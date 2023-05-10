@@ -78,7 +78,7 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     # Perform 1-step simulation
     _ = model.do_step(time, delta_t) #Do step delta_t from current time, maybe add status_step
 
-    # TODO: Verify units
+    # TODO: Verify units; consistent_reachable_values.csv don't seem to have matching desired choke/gl and actually actuated choke/gl
     # Get output
     gas_rate = float(model.get('y[1]'))
     oil_rate = float(model.get('y[2]'))
@@ -86,5 +86,17 @@ def simulate_singlewell_step(model, time, delta_t, Uk, time_series=None):
     u2 = float(model.get('u[2]'))
     choke_opening = model.get('choke.opening')
     gas_lift_current= float(model.get('y[4]'))
+
+    #! Fetched from LSRMPC/src/utils/simulate_fmu.py - borrow (commented out) conversions?
+    # # Get output
+    # gas_rate = float(model.get('y[1]'))
+    # oil_rate = float(model.get('y[2]'))
+    # u1 = float(model.get('u[1]'))
+    # u2 = float(model.get('u[2]'))
+    # choke_opening = model.get('choke.opening')
+    # gas_lift_current= float(model.get('y[4]'))
+    # #oil_rate_per_hr = np.divide(oil_rate, 24)                   #Convert from m3/day to m3/hr
+    # #gas_rate_km3_per_hr = np.divide(gas_rate,24)                #Convert from km3/day to km3/hr
+    # #gas_rate_per_hr = np.multiply(gas_rate_km3_per_hr, 1000)    #Convert from km3/hr to m3/hr
 
     return [gas_rate, oil_rate, u1, u2, choke_opening, gas_lift_current]
