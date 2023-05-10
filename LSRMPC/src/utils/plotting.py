@@ -136,7 +136,7 @@ def plot_objective(obj_vals, sim_name: str, delta_t: int=10, pause: bool=True):#
     # Saving outsourced to main by returning fig    
     return fig
 
-def plot_IO(gasrate, oilrate, choke, gaslift, time, delta_t, pause: bool=True):
+def plot_IO(gasrate, oilrate, choke, gaslift, time, delta_t, choke_act=None, gaslift_act=None, pause: bool=True):
     # Plotting ground truth and predicted gas rates
     fig, axes = plt.subplots(2, 2, sharex=True)
     fig.suptitle(f'Simulated FMU for {time[-1] // delta_t} steps of {delta_t} [s] each. Total time is {time[-1]} [s]', fontsize=23)
@@ -144,23 +144,43 @@ def plot_IO(gasrate, oilrate, choke, gaslift, time, delta_t, pause: bool=True):
     axes[0,0].set_title('Output: Gas rate', fontsize=20)
     axes[0,0].set_ylabel('gas rate [m^3/h]', fontsize=15)
     axes[0,0].plot(time, gasrate, '-', label='gas rate', color='tab:orange')
+    axes[0,0].legend(loc='best', prop={'size': 15})
 
     # Plotting ground truth and predicted oil rates
     axes[0,1].set_title('Output: Oil rate', fontsize=20)
     axes[0,1].set_ylabel('oil rate [m^3/h]', fontsize=15)
-    axes[0,1].plot(time, oilrate, label='true oil rate', color='tab:orange')
+    axes[0,1].plot(time, oilrate, label='oil rate', color='tab:orange')
+    axes[0,0].legend(loc='best', prop={'size': 15})
 
     # Plotting history of choke input
     axes[1,0].set_title('Input: Choke opening', fontsize=20)
     axes[1,0].set_xlabel('time [s]', fontsize=15)
     axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
-    axes[1,0].plot(time, choke, label='choke', color='blue')
+    axes[1,0].plot(time, choke, label='choke (act)', color='blue')
 
     # Plotting history of gas lift rate input
     axes[1,1].set_title('Input: gas lift rate', fontsize=20)
     axes[1,1].set_xlabel('time [s]', fontsize=15)
     axes[1,1].set_ylabel('flow rate [m^3/h]', fontsize=15)
-    axes[1,1].plot(time, gaslift, label='gas lift rate', color='blue')
+    axes[1,1].plot(time, gaslift, label='gas lift rate (act)', color='blue')
+
+    if choke_act is not None:
+        # Plotting history of actually actuated choke input
+        axes[1,0].set_title('Input: Choke opening', fontsize=20)
+        axes[1,0].set_xlabel('time [s]', fontsize=15)
+        axes[1,0].set_ylabel('percent opening [%]', fontsize=15)
+        axes[1,0].plot(time, choke_act, '--', label='choke (meas)', color='red')
+    
+    if gaslift_act is not None:
+        # Plotting history of gas lift rate input
+        axes[1,1].set_title('Input: gas lift rate', fontsize=20)
+        axes[1,1].set_xlabel('time [s]', fontsize=15)
+        axes[1,1].set_ylabel('flow rate [m^3/h]', fontsize=15)
+        axes[1,1].plot(time, gaslift_act, '--', label='gas lift rate (meas)', color='red')
+        
+    axes[1,0].legend(loc='best', prop={'size': 15})
+    axes[1,1].legend(loc='best', prop={'size': 15})
+
 
     manager = plt.get_current_fig_manager()
     manager.window.showMaximized()

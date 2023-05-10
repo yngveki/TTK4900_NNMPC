@@ -63,12 +63,12 @@ if __name__ == '__main__':
     
     save_dir = Path(__file__).parent.parent / ('tests/find_consistent_references/')
     # Plot results
-    fig_dir = save_dir / ('choke20-100_gl0-10000')
+    fig_dir = save_dir / ('choke20-100_gl0-10000_w_act')
     timeline = np.linspace(warm_start_t, time, num=(time-warm_start_t)//delta_t)
-    fig = plot_IO(full_gasrate, full_oilrate, full_choke_act, full_gl_act, timeline, delta_t)
+    fig = plot_IO(full_gasrate, full_oilrate, full_choke_act, full_gl_act, timeline, delta_t, choke_act=full_choke_meas, gaslift_act=full_gl_meas)
     safe_save(fig_dir, fig, 'fig', create_parent=True, errmsgstr='fig')
     # Save results?
-    data_name = 'consistent_reachable_values.csv'
+    data_name = 'consistent_reachable_values_w_act.csv'
     data_dir = save_dir / data_name
     data = np.zeros((n_steps_per_input * n_inputs, 6))
     # data[0,:] = ['choke', 'gaslift', 'gasrate', 'oilrate', 'measured_choke', 'measured_gl']
