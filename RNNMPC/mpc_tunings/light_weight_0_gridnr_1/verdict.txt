@@ -1,0 +1,12 @@
+They are all terrible, so the search was stopped early. I think the problem was in the references that I used.
+
+Though the references should not be a problem, the tuning overshoots wildly in the beginning. This maybe could
+have been tuned away, but I think it was also a result of the model being poor. Furthermore, i want to test
+with constant references, instead of varying ones. This is after advice from Lars, as tuning after changing
+values is (from experience) very very very difficult.
+
+Based off of consistent_reachable_values_w_act.csv, l. 7000, I set the references for the next grid search
+to match the steady state values for [choke, gl]=[100,60], as the modelling error seems to be lower for
+higher-valued outputs. I don't know if this is the best argument ("shouldn't I test it where it's bad as well?"),
+but I want to first give myself best odds of the control working, and then potentially carry successes over
+to regions that are more difficult to control (i.e. lower input values).
