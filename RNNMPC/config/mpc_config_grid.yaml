@@ -3,11 +3,11 @@ n_MV: 2
 n_CV: 2
 
 # Horizons (current OCP-formulation demands these be equal)
-H: [80,100,120] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
+H: [120] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
 
 # Tuning parameters
-Q: [[10,1],[100,1],[1000,1]]
-R: [[1,1000],[1,10000],[1,100000]]
+Q: [[1000,1],[100,1],[1000,1]]
+R: [[1,100000],[1,1000],[1,10000],[1,100000]]
 rho: [[1000,1000]]
 
 # Constraints
@@ -23,7 +23,7 @@ eub: [1000000, 1000000]
 # Running parameters
 delta_t: 10
 warm_start_t: 2000
-final_t: 3000
+final_t: 1000
 
 # These are layered, because they should be parsed as dicts
 PLUGIN_OPTIONS:
