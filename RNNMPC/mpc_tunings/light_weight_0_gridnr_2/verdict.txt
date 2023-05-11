@@ -5,15 +5,17 @@ Hei!
 
 Jobber litt med tuning av RNNMPCen nå, og støter på noen problemer. Jeg har som mål nå referansene ved å først makse ut choke, og så spe på med hvor enn mye gassløft som trengs etterpå. Jevnt over så sliter jeg med at RNNMPCen bruker gassløft altfor mye, med den konsekvensen at choke blir nedjustert. Når jeg setter vektingene på pådragene til [r_choke, r_gl]=[1, 100 000] (for å prøve å prioritere choke), og vektingene på outputs til [q_gassrate, q_oljerate]=[1000,1] (for å prøve å prioritere oljerate), så får jeg disse resultatene:
 
-<light_weight_0_gridnr_2_1>
+<light_weight_0_gridnr_2_1_t>
 
 Jeg prøver derfor å skru opp vektingen på gassløft, r_gl, veldig mye, og setter [r_choke, r_gl]=[1, 100 000 000], samt fortsatt [q_gassrate, q_oljerate]=[1000,1]. Da får jeg dette:
 
-<light_weight_0_gridnr_2_0>
+<light_weight_0_gridnr_2_0_t>
 
 Dette siste tilfellet tolker jeg som at jeg har fortalt RNNMPCen at det aller viktigste er å ikke bruke gassløft, siden referansene ikke blir nådd, choke er makset ut, og gassløften fortsatt bare så vidt endrer seg. Det gir forsåvidt mening, siden jeg satte r_gl=100 000 000. 
 
 Så problemet jeg har: jeg klarer ikke å tune RNNMPCen sånn at vektingen på gassløften blir høy nok til at choken makses ut før gassløften brukes, samtidig som vektingen på outputene forblir høy nok til at å faktisk møte referansene blir en prioritet. Har du noen tips?
 "
 
-So I tried increasing the horizon, but that seemed to change absolutely nothing, potentially even making it worse
+So I tried increasing the horizon, but that seemed to change absolutely nothing.
+
+<light_weight_0_gridnr_2_0>
