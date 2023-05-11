@@ -6,8 +6,8 @@ n_CV: 2
 H: [80,100,120] # Try with different horizons once a good tuning is in place (it's not so mystical; longer is better)
 
 # Tuning parameters
-Q: [[100,100],[100,1000],[1000,100]]
-R: [[1,1],[1,10],[1,100],[1,1000]]
+Q: [[10,1],[100,1],[1000,1]]
+R: [[1,1000],[1,10000],[1,100000]]
 rho: [[1000,1000]]
 
 # Constraints
