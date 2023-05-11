@@ -68,7 +68,7 @@ GRID = True
 
 if GRID == True:
     mpc_config_path = Path(__file__).parent / 'config/mpc_config_grid.yaml'
-    sets = grid_search_params(mpc_config_path, ('H', 'Q', 'R', 'rho'))
+    sets = grid_search_params(mpc_config_path, ('H', 'Q', 'R'))
 else:
     mpc_config_path = Path(__file__).parent / 'config/mpc_config.yaml'
     with open(mpc_config_path, "r") as f:
@@ -92,7 +92,7 @@ for i, params in enumerate(sets):
         # fig_save_path = Path(__file__).parent / 'figs/mpc/test_fig.png'
         parent_dir = Path(__file__).parent / 'mpc_tunings'
 
-        config_name = model_name + '_gridnr_2_' + str(i) # For saving the config along with results
+        config_name = model_name + '_gridnr_5_' + str(i) # For saving the config along with results
 
         # Initialize the controller
         mpc = RNNMPC(nn_path=model_path,
