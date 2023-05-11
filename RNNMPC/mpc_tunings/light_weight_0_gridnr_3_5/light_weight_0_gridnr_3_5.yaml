@@ -22,7 +22,7 @@ NORMALIZATION_VALUES:
 PLUGIN_OPTIONS:
   expand: true
 Q:
-- 1000
+- 100
 - 1
 R:
 - 1

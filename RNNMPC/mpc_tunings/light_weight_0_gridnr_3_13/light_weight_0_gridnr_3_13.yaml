@@ -22,11 +22,11 @@ NORMALIZATION_VALUES:
 PLUGIN_OPTIONS:
   expand: true
 Q:
-- 1000
-- 1
+- 100000
+- 100
 R:
 - 1
-- 10000
+- 640000
 SOLVER_OPTIONS:
   acceptable_iter: 5
   acceptable_tol: 1

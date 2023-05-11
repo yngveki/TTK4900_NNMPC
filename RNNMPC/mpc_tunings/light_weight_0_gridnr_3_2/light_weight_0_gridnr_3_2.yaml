@@ -26,7 +26,7 @@ Q:
 - 1
 R:
 - 1
-- 10000
+- 160000
 SOLVER_OPTIONS:
   acceptable_iter: 5
   acceptable_tol: 1

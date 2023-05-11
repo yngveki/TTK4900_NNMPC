@@ -6,3 +6,7 @@ by just keeping H static, as I would otherwise have to alter parse_to_dict - don
 Next steps will be trying to figure out a balance between punishing use of gas lift v. not punishing so much that avoiding gas lift supercedes reaching references.
 
 Given desired specifications, oil rate is somewhat a priority over gas rate.
+
+If results are very poor from this, I must reconsider starting conditions (such as warm start values for actuation) and what references I am trying to achieve. I don't
+know what it should've been, but I feel like some regions of outputs are more prone to issues than others (due to rapid changes leading to poor predictions, overshoot, 
+oscillations etc.).
