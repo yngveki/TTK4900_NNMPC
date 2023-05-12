@@ -1,0 +1,7 @@
+Used 55.5 as limits for rate of change in gas lift rate. That comes from 10 000 m^3/h/30min=(10 000 /(60*30))*10[m^3/h/10s]
+
+In truth, the gas lift rate can go from 0-10000 in 5 min, so the next grid search will try with 333.3 as limits.
+
+13 is by far best wrt. oil rate _tracking_, but 14 is maybe better wrt gas rate, at expense of oil rate _precision_, but still fewer oscillations in oil rate; no
+overshoot. 15 and 16 are decent, just a bit worse.
+
