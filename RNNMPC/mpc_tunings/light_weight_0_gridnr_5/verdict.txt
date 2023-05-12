@@ -1,0 +1,9 @@
+Scaled up rate of change in gas lift rate (0-10000 in 5 min, not 30) - in line with orders.
+
+Earlier searches has almost not punished changes in choke at all, meaning a decreasing choke has been optimal. I'll try now to span values punishing change in choke
+as well. Also trying to divide every weight by 100 (Don't think that makes a difference, as the weight is applied linearly),
+except choke, as I want choke to be harder to alter.
+
+Restricting choke more just made everything worse. light_weight_0_gridnr_4_14 is still the best so far.
+
+I think the next improvement must include altering the constraints somewhat, potentially adding soft constraints to actuation.
