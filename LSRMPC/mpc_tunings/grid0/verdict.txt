@@ -1,0 +1,5 @@
+Used constant references here.
+
+TL;DR: Everything looks equal.
+
+Next grid search will use moving references.
