@@ -86,10 +86,10 @@ for i, params in enumerate(sets):
         S_paths = {'S11': '../LSRmodel/S11_data_new.npy', 'S21': '../LSRmodel/S12_data_new.npy',
                 'S12': '../LSRmodel/S21_data_new.npy', 'S22': '../LSRmodel/S22_data_new.npy'}
         fmu_path = Path(__file__).parent / "../fmu/fmu_endret_deadband.fmu"
-        ref_path = Path(__file__).parent / "../config/ref_const_0.csv"
+        ref_path = Path(__file__).parent / "../config/refs1.csv"
         parent_dir = Path(__file__).parent / '../mpc_tunings'
 
-        config_name = 'grid0_' + str(i)
+        config_name = 'grid1_' + str(i)
 
         # Initialize the controller. Sets up all parameters and static matrices
         mpc = MPC(params, S_paths, ref_path)
