@@ -2,14 +2,14 @@
 n_MV: 2
 n_CV: 2
 
-# Horizons (current OCP-formulation demands these be equal)
-Hu: [50,100,150,200] #80
-Hp: [50,100,150,200] #100
+# Horizons (vals argued for in grid1/verdict.txt)
+Hu: 100
+Hp: 120 
 Hw: 0
 
 # Tuning parameters
-R_bar: [1,1] #[[1,1],[1,10],[1,100],[1,1000],[10,1],[10,10],[10,100],[10,1000],[100,1],[100,10],[100,100],[100,1000],[1000,1],[1000,10],[1000,100],[1000,1000]]
-Q_bar: [1,1] ##[[1,1],[10,10],[100,100],[1000,1000]]
+R_bar: [[1,1],[1,10000],[10000,1],[10000,10000]]
+Q_bar: [[1,1],[1,10000],[10000,1],[10000,10000]]
 
 # # Must be array-nested (like above) if to be grid searched over
 rho_h: [10000, 10000]

@@ -91,7 +91,7 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = True
+TRAIN = False
 GRID = False
 TEST = True
 
@@ -105,7 +105,7 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/random_mixed_ramp/csv/mixed_ramp_short_1_globally_normalized.csv', 'mixed_ramp_short'),
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
-model_nr_offset = 2
+model_nr_offset = 0
 model_name = 'light_weight_'
 mse_log_path = Path(__file__).parent / ('models/light_weight.csv')
 
@@ -263,7 +263,7 @@ for i, hyperparameters in enumerate(sets):
 
             if plot_offset:
                 axes00_twinx = axes[0,0].twinx()
-                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=0.75, color='tab:green')
+                axes00_twinx.plot(t[offset_y1:], pred['bias y1'], '--', linewidth=1.0, color='tab:green')
                 axes00_twinx.set_ylabel('diff. ground truth v. predicted gas rate [m^3/h]', color='tab:green')
                 axes00_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes00_twinx.spines['right'].set_color('tab:green')
@@ -280,7 +280,7 @@ for i, hyperparameters in enumerate(sets):
             
             if plot_offset:
                 axes01_twinx = axes[0,1].twinx()
-                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=0.75, color='tab:green')
+                axes01_twinx.plot(t[offset_y2:], pred['bias y2'], '--', linewidth=1.0, color='tab:green')
                 axes01_twinx.set_ylabel('diff. ground truth v. predicted oil rate [m^3/h]', color='tab:green')
                 axes01_twinx.tick_params(axis='y', color='tab:green', labelcolor='tab:green')
                 axes01_twinx.spines['right'].set_color('tab:green')
@@ -306,7 +306,7 @@ for i, hyperparameters in enumerate(sets):
             manager.window.showMaximized()
 
             plt.show(block=False)
-            plt.pause(1)
+            plt.pause(5)
             plt.close()
 
             # -- SAVING FIGS -- #

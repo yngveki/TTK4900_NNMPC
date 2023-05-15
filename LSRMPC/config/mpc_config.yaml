@@ -6,10 +6,10 @@
 n_MV: 2
 n_CV: 2
 
-# Horizons
-Hu: 80 # 200 # 80 gir helt ok resultater
-Hp: 100 # 250 # 100 gir helt ok resultater
-Hw: 0 # 1
+# Horizons (vals argued for in grid1/verdict.txt)
+Hu: 100
+Hp: 120
+Hw: 0
 
 # Tuning parameters
 R_bar: [0.1, 1]
