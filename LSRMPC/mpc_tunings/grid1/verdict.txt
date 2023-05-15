@@ -1,0 +1,3 @@
+Some performance improvement seen when both when both become > 100, and some further for Hp>Hu.
+
+Chosen values are [Hp,Hu]=[120,100], as increase of Hp wrt Hu over 100 was miniscule, but some.
