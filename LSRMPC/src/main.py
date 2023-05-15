@@ -61,13 +61,22 @@ def grid_search_params(config_path, searchable):
 
 # -- SCRIPT BEGINS -- #
 
-GRID = False
+GRID = True
 
 if GRID == True:
     mpc_config_path = Path(__file__).parent / '../config/mpc_config_grid.yaml'
-    sets = grid_search_params(mpc_config_path, ('R_bar', 'Q_bar'))
+    sets = grid_search_params(mpc_config_path, ('Hp', 'Hu'))
+
+    to_pop = []
+    for i, s in enumerate(sets):
+        if s['Hu'] > s['Hp']:
+            to_pop.append(i)
+    to_pop.reverse()
+    for i in to_pop:
+        sets.pop(i)
+
 else:
-    mpc_config_path = Path(__file__).parent / '../mpc_tunings/grid0_12/grid0_12.yaml'
+    mpc_config_path = Path(__file__).parent / '../config/mpc_config.yaml'
     with open(mpc_config_path, "r") as f:
         params = safe_load(f)
     sets = [params]
@@ -77,10 +86,10 @@ for i, params in enumerate(sets):
         S_paths = {'S11': '../LSRmodel/S11_data_new.npy', 'S21': '../LSRmodel/S12_data_new.npy',
                 'S12': '../LSRmodel/S21_data_new.npy', 'S22': '../LSRmodel/S22_data_new.npy'}
         fmu_path = Path(__file__).parent / "../fmu/fmu_endret_deadband.fmu"
-        ref_path = Path(__file__).parent / "../config/refs2.csv"
+        ref_path = Path(__file__).parent / "../config/ref_const_0.csv"
         parent_dir = Path(__file__).parent / '../mpc_tunings'
 
-        config_name = 'grid0_' + str(12+i)
+        config_name = 'grid0_' + str(i)
 
         # Initialize the controller. Sets up all parameters and static matrices
         mpc = MPC(params, S_paths, ref_path)

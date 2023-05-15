@@ -3,27 +3,27 @@ n_MV: 2
 n_CV: 2
 
 # Horizons (current OCP-formulation demands these be equal)
-Hu: 80
-Hp: 100
+Hu: [50,100,150,200] #80
+Hp: [50,100,150,200] #100
 Hw: 0
 
 # Tuning parameters
-R_bar: [[1,1],[1,10],[1,100],[1,1000],[10,1],[10,10],[10,100],[10,1000],[100,1],[100,10],[100,100],[100,1000],[1000,1],[1000,10],[1000,100],[1000,1000]]
-Q_bar: [[1,1],[10,10],[100,100],[1000,1000]]
+R_bar: [1,1] #[[1,1],[1,10],[1,100],[1,1000],[10,1],[10,10],[10,100],[10,1000],[100,1],[100,10],[100,100],[100,1000],[1000,1],[1000,10],[1000,100],[1000,1000]]
+Q_bar: [1,1] ##[[1,1],[10,10],[100,100],[1000,1000]]
 
 # # Must be array-nested (like above) if to be grid searched over
 rho_h: [10000, 10000]
-rho_l: [10, 10]
+rho_l: [10000, 10000]
 
 # Constraints
-z_bar_lb: [-0.55, -166.7, 0] # = [deltaU_lb, epsilon_h, epsilon_l] # Epsilon bounds come from (4.1b) in Kufoalor
-z_bar_ub: [0.55, 166.7, 1000]
+z_bar_lb: [-0.55, -333.3, 0] # = [deltaU_lb, epsilon_h, epsilon_l] # Epsilon bounds come from (4.1b) in Kufoalor
+z_bar_ub: [0.55, 333.3, 1000]
 y_over_bar: [18537, 349]
 y_under_bar: [0, 0]
 u_over_bar: [100, 10000]
 u_under_bar: [0, 0]
-du_over_bar: [0.55, 166.7]
-du_under_bar: [-0.55, -166.7]
+du_over_bar: [0.55, 333.3]
+du_under_bar: [-0.55, -333.3]
 e_over_bar: 1000000
 e_under_bar: 0
 
