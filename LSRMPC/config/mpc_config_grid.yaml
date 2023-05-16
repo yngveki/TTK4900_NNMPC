@@ -29,5 +29,5 @@ e_under_bar: 0
 
 # Running parameters
 delta_t: 10
-final_time: 21000
+final_time: 25000
 warm_start_t: 2000

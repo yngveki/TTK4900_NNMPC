@@ -95,7 +95,7 @@ for i, params in enumerate(sets):
         mpc = MPC(params, S_paths, ref_path)
 
         # Ensure FMU is in a defined state
-        mpc.warm_start(fmu_path, warm_start_input=[90,0])
+        mpc.warm_start(fmu_path, warm_start_input=[90,3000])
 
         timed_loop = True
         if timed_loop: stopwatch = Timer()
