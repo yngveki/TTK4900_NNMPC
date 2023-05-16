@@ -8,8 +8,8 @@ Hp: 120
 Hw: 0
 
 # Tuning parameters
-Q_bar: [[1,8000],[100,8000],[1,12000],[100,12000]]
-R_bar: [[1,8000],[1,12000]]
+R_bar: [[1,6000],[1,8000],[1,10000]]
+Q_bar: [[50,8000],[50,10000],[50,12000],[200,8000],[200,10000],[200,12000]]
 
 # # Must be array-nested (like above) if to be grid searched over
 rho_h: [10000, 10000]
@@ -29,5 +29,5 @@ e_under_bar: 0
 
 # Running parameters
 delta_t: 10
-final_time: 25000
+final_time: 100 # 25000
 warm_start_t: 2000

@@ -89,7 +89,7 @@ for i, params in enumerate(sets):
         ref_path = Path(__file__).parent / "../config/ref_const_1.csv"
         parent_dir = Path(__file__).parent / '../mpc_tunings'
 
-        config_name = 'grid3_v2_' + str(i)
+        config_name = 'grid4_' + str(i)
 
         # Initialize the controller. Sets up all parameters and static matrices
         mpc = MPC(params, S_paths, ref_path)

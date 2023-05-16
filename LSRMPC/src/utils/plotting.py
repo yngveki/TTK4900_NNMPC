@@ -32,8 +32,6 @@ def plot_LSRMPC(mpc=None, warm_start_cutoff: bool=True, plot_bias: bool=True, pa
 
         choke = np.array(mpc.choke_input)[:,0]
         gas_lift = np.array(mpc.gas_lift_input)[:,0]
-        # TODO: Check if `choke_actual` is identical to `choke`
-        choke_actual = np.array(mpc.choke_actual)[:,0] # TODO: Is this variable superfluous?
 
 
     """
