@@ -129,7 +129,7 @@ class MPC:
         self.bias_oil = [0] * num_steps
         self.t = [0] * num_steps
 
-    def warm_start(self, fmu_path):
+    def warm_start(self, fmu_path, warm_start_input=[50,0]):
         """
         Simulates the fmu for a few steps to ensure defined state before optimization loop
         """
@@ -137,7 +137,8 @@ class MPC:
                                                         self.start_time, 
                                                         self.final_time, # Needed for initialization, but different from warm start time
                                                         self.delta_t, 
-                                                        self.warm_start_t)
+                                                        self.warm_start_t,
+                                                        vals=warm_start_input)
         self.y_prev[0] = self.y_sim[-1][0]
         self.y_prev[1] = self.y_sim[-1][1]
         self.y_hat[0] = 0

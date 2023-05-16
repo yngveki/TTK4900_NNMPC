@@ -89,13 +89,13 @@ for i, params in enumerate(sets):
         ref_path = Path(__file__).parent / "../config/ref_const_1.csv"
         parent_dir = Path(__file__).parent / '../mpc_tunings'
 
-        config_name = 'grid2_' + str(i)
+        config_name = 'grid3_v2_' + str(i)
 
         # Initialize the controller. Sets up all parameters and static matrices
         mpc = MPC(params, S_paths, ref_path)
 
         # Ensure FMU is in a defined state
-        mpc.warm_start(fmu_path)
+        mpc.warm_start(fmu_path, warm_start_input=[90,0])
 
         timed_loop = True
         if timed_loop: stopwatch = Timer()
@@ -149,14 +149,16 @@ for i, params in enumerate(sets):
 
         # -- SAVING MPC-DATA -- #
         safe_save(save_dir / 'data/t.npy', mpc.t, 'npy', create_parent=True, errmsgstr='t.npy')
-        safe_save(save_dir / 'data/oil_rate_ref_vec.npy', mpc.t, 'npy', create_parent=True, errmsgstr='oil_rate_ref_vec.npy')
-        safe_save(save_dir / 'data/gas_rate_per_hr_vec.npy', mpc.t, 'npy', create_parent=True, errmsgstr='gas_rate_per_hr_vec.npy')
-        safe_save(save_dir / 'data/gas_rate_ref_vec.npy', mpc.t, 'npy', create_parent=True, errmsgstr='gas_rate_ref_vec.npy')
-        safe_save(save_dir / 'data/choke_input.npy', mpc.t, 'npy', create_parent=True, errmsgstr='choke_input.npy')
-        safe_save(save_dir / 'data/gas_lift_input.npy', mpc.t, 'npy', create_parent=True, errmsgstr='gas_lift_input.npy')
-        safe_save(save_dir / 'data/choke_actual.npy', mpc.t, 'npy', create_parent=True, errmsgstr='choke_actual.npy')
-        safe_save(save_dir / 'data/bias_gas.npy', mpc.t, 'npy', create_parent=True, errmsgstr='bias_gas.npy')
-        safe_save(save_dir / 'data/bias_oil.npy', mpc.t, 'npy', create_parent=True, errmsgstr='bias_oil.npy')
+        safe_save(save_dir / 'data/oil_rate_per_hr_vec.npy', mpc.oil_rate_per_hr_vec, 'npy', create_parent=True, errmsgstr='oil_rate_per_hr_vec.npy')
+        safe_save(save_dir / 'data/oil_rate_ref_vec.npy', mpc.oil_rate_ref_vec, 'npy', create_parent=True, errmsgstr='oil_rate_ref_vec.npy')
+        safe_save(save_dir / 'data/gas_rate_per_hr_vec.npy', mpc.gas_rate_per_hr_vec, 'npy', create_parent=True, errmsgstr='gas_rate_per_hr_vec.npy')
+        safe_save(save_dir / 'data/gas_rate_ref_vec.npy', mpc.gas_rate_ref_vec, 'npy', create_parent=True, errmsgstr='gas_rate_ref_vec.npy')
+        safe_save(save_dir / 'data/choke_input.npy', mpc.choke_input, 'npy', create_parent=True, errmsgstr='choke_input.npy')
+        safe_save(save_dir / 'data/gas_lift_input.npy', mpc.gas_lift_input, 'npy', create_parent=True, errmsgstr='gas_lift_input.npy')
+        safe_save(save_dir / 'data/choke_actual.npy', mpc.choke_actual, 'npy', create_parent=True, errmsgstr='choke_actual.npy')
+        safe_save(save_dir / 'data/gas_lift_actual.npy', mpc.gas_lift_actual, 'npy', create_parent=True, errmsgstr='gas_lift_actual.npy')
+        safe_save(save_dir / 'data/bias_gas.npy', mpc.bias_gas, 'npy', create_parent=True, errmsgstr='bias_gas.npy')
+        safe_save(save_dir / 'data/bias_oil.npy', mpc.bias_oil, 'npy', create_parent=True, errmsgstr='bias_oil.npy')
         safe_save(save_dir / 'data/objective_function.npy', objective_vals, 'npy', create_parent=True, errmsgstr='objective_function.npy')
 
         # -- SAVING TIMEKEEPING -- #

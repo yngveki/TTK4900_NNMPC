@@ -8,8 +8,8 @@ Hp: 120
 Hw: 0
 
 # Tuning parameters
-R_bar: [[1,1],[1,10000],[10000,1],[10000,10000]]
-Q_bar: [[1,1],[1,10000],[10000,1],[10000,10000]]
+Q_bar: [[1,8000],[100,8000],[1,12000],[100,12000]]
+R_bar: [[1,8000],[1,12000]]
 
 # # Must be array-nested (like above) if to be grid searched over
 rho_h: [10000, 10000]
