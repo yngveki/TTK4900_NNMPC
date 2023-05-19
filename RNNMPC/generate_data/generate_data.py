@@ -118,7 +118,7 @@ if __name__ == '__main__':
         resolution = config['resolution']
         
         file_family = 'rnnmpc_random_walk'
-        filename = 'random_walk_30k_fast'
+        filename = 'random_walk_200k_fast'
         filepath = Path(__file__).parent / ('inputs/' + file_family + '/' + filename + '.csv')
         
         stopwatch = Timer()
@@ -168,12 +168,12 @@ if __name__ == '__main__':
 
             axs[0,0].plot(t, y1, label='gas rate', color='tab:orange')
             axs[0,0].legend(loc='best')
-            axs[0,0].axvline(warm_start_t, color='tab:green')
+            # axs[0,0].axvline(warm_start_t, color='tab:green')
             axs[1,0].plot(t, u1, label='choke')
             axs[1,0].legend(loc='best')
             axs[0,1].plot(t, y2, label='oil rate', color='tab:orange')
             axs[0,1].legend(loc='best')
-            axs[0,1].axvline(warm_start_t, color='tab:green')
+            # axs[0,1].axvline(warm_start_t, color='tab:green')
             axs[1,1].plot(t, u2, label='GL rate')
             axs[1,1].legend(loc='best')
         else:   

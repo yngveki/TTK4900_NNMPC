@@ -1,0 +1,13 @@
+FILES:
+  train_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\rnnmpc_random_walk\csv\random_walk_200k_fast_globally_normalized.csv
+  val_file: c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\rnnmpc_random_walk\csv\random_walk_30k_fast_globally_normalized.csv
+activation: LeakyReLU
+bsz: 64
+e: 200
+hlszs:
+- 200
+lr: 0.001
+mu: 50
+my: 5
+p: 5
+weight_decay: 0.1

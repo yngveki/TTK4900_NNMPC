@@ -312,6 +312,7 @@ def semi_random_walk(num_periods,
             if wait == 0:
                 # Peform step
                 inc = np.random.uniform(low=inc_bounds[0], high=inc_bounds[1])
+                inc *= np.random.choice([1,-1],p=p)
                 update = seq[idx - 1] + inc
                 seq[idx] = round(max(min(update, local_bounds[1]), local_bounds[0]), n_decimals) # Lock update within current bounds
 
@@ -381,18 +382,18 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
     # 4) Should stay for some time within "local bounds", so as to make cover all regions better, with some certainty 
     # 5) Should vary probabilities for increment/decrement randomly (within limits)
 
-    filename = 'random_walk_30k_fast'
+    filename = 'random_walk_200k_fast'
     save_dir = 'rnnmpc_random_walk'
-    num_periods = 30      # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
+    num_periods = 200      # num periods of period_length steps each (e.g. 50 * 1e4 = 500 000 timestamps in one dataset)
     period_length = 1000   # num steps before updating local bounds and inc/dec-probabilities
 
-    choke_specs = {'init': 50, 
+    choke_specs = {'init': 20, 
                    'global_bounds': [20,100],
                    'local_bound_size': 20, 
-                   'inc_bounds': [-0.55,0.55], 
+                   'inc_bounds': [0,0.55], 
                    'waiting_limits': [20,50], 
                    'p': [0.55,0.45], # initial probability for [increment, decrement], respectively
-                   'p_inc': 0.04,
+                   'p_inc': 0.01,
                    'p_bounds': [0.35, 0.65],
                    'n_decimals': 2
                    }
@@ -401,10 +402,10 @@ if __name__ == '__main__' and sequence == 'rnnmpc_random_walk':
     gl_specs = {'init': 0, 
                 'global_bounds': [0, 10000],
                 'local_bound_size': 2000,
-                'inc_bounds': [-166.7, 166.7], 
+                'inc_bounds': [0, 333.3], 
                 'waiting_limits': [20,50], 
                 'p': [0.55,0.45], # initial probability for [increment, decrement], respectively
-                'p_inc': 0.04,
+                'p_inc': 0.01,
                 'p_bounds': [0.35, 0.65],
                 'n_decimals': 2
                 }

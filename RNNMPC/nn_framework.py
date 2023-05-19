@@ -72,9 +72,9 @@ def grid_search_params(config_path):
         d = {}
         for val, key in zip(values, keys):
             d[key] = val
-        d['mu'] = d['m']
-        d['my'] = d['m']
-        del d['m']
+        # d['mu'] = d['m']
+        # d['my'] = d['m']
+        # del d['m']
         return d
     
     with open(config_path, "r") as f:
@@ -91,11 +91,11 @@ def grid_search_params(config_path):
 
 # ----- SCRIPT BEGINS ----- #
 # -- SETUP -- #
-TRAIN = False
-GRID = False
+TRAIN = True
+GRID = True
 TEST = True
 
-csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_150k_fast_globally_normalized.csv'
+csv_path_train = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_200k_fast_globally_normalized.csv'
 csv_path_val = Path(__file__).parent / 'generate_data/outputs/rnnmpc_random_walk/csv/random_walk_30k_fast_globally_normalized.csv'
 
 tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_choke_50_52_globally_normalized.csv', 'step_choke_medium'),
@@ -106,7 +106,7 @@ tests = [(Path(__file__).parent / 'generate_data/outputs/steps_choke/csv/step_ch
          (Path(__file__).parent / 'generate_data/outputs/ramp/csv/ramp_choke_gl_interval100_globally_normalized.csv', 'multiple_steps_interval100')]
 
 model_nr_offset = 0
-model_name = 'light_weight_'
+model_name = 'grid0_'
 mse_log_path = Path(__file__).parent / ('models/light_weight.csv')
 
 delta_t = 10

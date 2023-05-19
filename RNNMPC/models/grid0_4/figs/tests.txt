@@ -1,0 +1,18 @@
+Test results showed in 'step_choke_medium' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_50_52_globally_normalized.csv
+	MSE: 1.021e-06
+Test results showed in 'step_choke_low' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_20_22_globally_normalized.csv
+	MSE: 1.779e-05
+Test results showed in 'step_choke_high' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\steps_choke\csv\step_choke_98_100_globally_normalized.csv
+	MSE: 1.2697e-06
+Test results showed in 'random_walk_short' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\rnnmpc_random_walk\csv\random_walk_10k_globally_normalized.csv
+	MSE: 8.3888e-07
+Test results showed in 'mixed_ramp_short' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\random_mixed_ramp\csv\mixed_ramp_short_1_globally_normalized.csv
+	MSE: 1.6113e-07
+Test results showed in 'multiple_steps_interval100' came from testing with file at:
+	c:\Users\yngveki\Documents\Master\prosjektkode\TTK4900_NNMPC\RNNMPC\generate_data\outputs\ramp\csv\ramp_choke_gl_interval100_globally_normalized.csv
+	MSE: 7.7123e-07
