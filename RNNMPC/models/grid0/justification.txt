@@ -1,0 +1,3 @@
+I chose this model over the others, as it performs satisfactory. Though other models probably perform better, running RNNMPC
+even with this light model takes ages. Thus, since the model performs satisfactory and is as light weight as I need, the
+choice was easy. The choice was made after tuning the RNNMPC with using this model, and receiving relatively great results.
