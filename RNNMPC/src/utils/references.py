@@ -108,11 +108,10 @@ class References:
         
         Ex.: [(t=0,[100,0]), (t=4,[90,10])] -> [[100,0],[90,10]]
         """
-        as_lists = [0] * len(self)
-        for idx, _ in enumerate(as_lists):
-            as_lists[idx] = self[idx].stripped()
 
-        return as_lists
+        # Knowing future reference changes is unrealistic; always assume static reference
+        return [self[0].stripped() for _ in range(len(self))]
+        
 
     def _link_refs(self):
         self.refs[0].nxt = self.refs[1]
